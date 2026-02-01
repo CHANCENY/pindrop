@@ -23,7 +23,7 @@ groups:
     
     plugins:
       title: Plugins
-      route: admin.plugin
+      route: admin.plugins
       icon: fa fa-plug
       weight: 4
       roles: [admin, super_admin]

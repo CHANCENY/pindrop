@@ -37,7 +37,7 @@ class PluginController extends ControllerBase
     /**
      * List all plugins
      */
-    public function index(Request $request, string $route_name): Response
+    public function index(Request $request, string $route_name, array $options): Response
     {
         return $this->renderTwig('admin/plugins.twig', [
             'page_title' => 'Plugins',
@@ -48,7 +48,7 @@ class PluginController extends ControllerBase
     /**
      * Install a plugin
      */
-    public function install(Request $request, string $route_name): Response
+    public function install(Request $request, string $route_name, array $options): Response
     {
         if ($request->isMethod('POST')) {
             $pluginName = $request->query->get('plugin');
@@ -90,7 +90,7 @@ class PluginController extends ControllerBase
     /**
      * Uninstall a plugin
      */
-    public function uninstall(Request $request, string $route_name): Response
+    public function uninstall(Request $request, string $route_name,array $options): Response
     {
         $plugin = $request->query->get('plugin');
         if (!$plugin) {
@@ -111,7 +111,7 @@ class PluginController extends ControllerBase
     /**
      * Enable a plugin
      */
-    public function enable(Request $request, string $route_name): Response
+    public function enable(Request $request, string $route_name,array $options): Response
     {
         $plugin = $request->query->get('plugin');
         if (!$plugin) {
@@ -132,7 +132,7 @@ class PluginController extends ControllerBase
     /**
      * Disable a plugin
      */
-    public function disable(Request $request, string $route_name): Response
+    public function disable(Request $request, string $route_name,array $options): Response
     {
         $plugin = $request->query->get('plugin');
         if (!$plugin) {
@@ -153,7 +153,7 @@ class PluginController extends ControllerBase
     /**
      * Configure a plugin
      */
-    public function config(Request $request, string $route_name): Response
+    public function config(Request $request, string $route_name,array $options): Response
     {
         $plugin = $request->query->get('plugin');
         if (!$plugin) {
@@ -210,7 +210,7 @@ class PluginController extends ControllerBase
     /**
      * Scan for new plugins
      */
-    public function scan(Request $request, string $route_name): Response
+    public function scan(Request $request, string $route_name,array $options): Response
     {
         try {
             // Use PluginManager to re-discover plugins
@@ -255,7 +255,7 @@ class PluginController extends ControllerBase
     /**
      * Upload and install a plugin
      */
-    public function upload(Request $request, string $route_name): Response
+    public function upload(Request $request, string $route_name,array $options): Response
     {
         try {
             if ($request->isMethod('POST')) {
