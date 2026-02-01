@@ -1,0 +1,105 @@
+{% extends "templates/auth/base.twig" %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Sign In</h1>
+            <p class="auth-subtitle">Welcome back! Please sign in to your account.</p>
+        </div>
+
+        {% if message %}
+            {% if message == 'registration_success' %}
+                <div class="admin-alert admin-alert-success">
+                    <strong>Registration successful!</strong> Please check your email to verify your account before signing in.
+                </div>
+            {% elseif message == 'password_reset_success' %}
+                <div class="admin-alert admin-alert-success">
+                    <strong>Password reset successful!</strong> You can now sign in with your new password.
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if error %}
+            <div class="admin-alert admin-alert-danger">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="/user/login" class="auth-form">
+            <div class="admin-form-group">
+                <label for="email" class="admin-form-label">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="admin-form-control" 
+                    value="{{ old_input.email|default('') }}"
+                    required 
+                    autocomplete="email"
+                    placeholder="Enter your email address"
+                >
+            </div>
+
+            <div class="admin-form-group">
+                <label for="password" class="admin-form-label">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="admin-form-control" 
+                    required 
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                >
+            </div>
+
+            <div class="admin-form-group">
+                <div class="admin-form-check">
+                    <input type="checkbox" id="remember" name="remember" class="admin-form-check-input">
+                    <label for="remember" class="admin-form-check-label">
+                        Remember me for 24 hours
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="admin-button admin-button-primary admin-button-full">
+                Sign In
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <div class="auth-links">
+                <a href="/user/forgot-password" class="admin-link">Forgot your password?</a>
+            </div>
+            <div class="auth-register">
+                <span>Don't have an account?</span>
+                <a href="/user/register" class="admin-link admin-link-primary">Sign up</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-links {
+    margin-bottom: 1rem;
+}
+
+.auth-register {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.auth-links .admin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.auth-register .admin-link-primary {
+    margin-left: 0.25rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,275 @@
+{% extends "templates/auth/base.twig" %}
+
+{% block title %}{% if success %}Email Verified{% else %}Email Verification Failed{% endif %}{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            {% if success %}
+                <div class="auth-verify-icon auth-verify-success">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h1 class="auth-title">Email Verified Successfully!</h1>
+                <p class="auth-subtitle">
+                    {% if user %}
+                        Thank you {{ user.displayName|default(user.username) }}! Your email address has been verified.
+                    {% else %}
+                        Thank you! Your email address has been verified.
+                    {% endif %}
+                </p>
+            {% else %}
+                <div class="auth-verify-icon auth-verify-error">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <h1 class="auth-title">Email Verification Failed</h1>
+                <p class="auth-subtitle">
+                    {% if error %}
+                        {{ error }}
+                    {% else %}
+                        We couldn't verify your email address. The verification link may be invalid or expired.
+                    {% endif %}
+                </p>
+            {% endif %}
+        </div>
+
+        {% if success %}
+            <div class="auth-verify-content">
+                <div class="auth-verify-message">
+                    <h2>What's Next?</h2>
+                    <p>Your account is now active and ready to use. You can sign in with your email address and password.</p>
+                </div>
+                
+                {% if user %}
+                    <div class="auth-verify-user-info">
+                        <h3>Account Details</h3>
+                        <div class="auth-user-details">
+                            <div class="auth-user-detail">
+                                <span class="auth-detail-label">Username:</span>
+                                <span class="auth-detail-value">{{ user.username }}</span>
+                            </div>
+                            <div class="auth-user-detail">
+                                <span class="auth-detail-label">Email:</span>
+                                <span class="auth-detail-value">{{ user.email }}</span>
+                            </div>
+                            <div class="auth-user-detail">
+                                <span class="auth-detail-label">Status:</span>
+                                <span class="auth-detail-value auth-status-active">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="auth-verify-actions">
+                    <a href="/user/login" class="admin-button admin-button-primary admin-button-large">
+                        Sign In to Your Account
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <div class="auth-verify-content">
+                <div class="auth-verify-troubleshooting">
+                    <h3>Troubleshooting</h3>
+                    <ul class="auth-troubleshooting-list">
+                        <li>Make sure you clicked the complete link in your email</li>
+                        <li>Verification links expire after 24 hours</li>
+                        <li>Check if the link has already been used</li>
+                        <li>Try requesting a new verification email</li>
+                    </ul>
+                </div>
+
+                <div class="auth-verify-actions">
+                    <div class="auth-action-row">
+                        <a href="/user/login" class="admin-button admin-button-secondary">
+                            Back to Sign In
+                        </a>
+                        <button onclick="requestNewVerification()" class="admin-button admin-button-outline">
+                            Request New Verification Email
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="auth-footer">
+            <div class="auth-verify-help">
+                <p>Need help? <a href="/support" class="admin-link">Contact Support</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-verify-icon {
+    margin: 0 auto 1.5rem;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-verify-success {
+    background-color: #d1fae5;
+    color: #10b981;
+}
+
+.auth-verify-error {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+
+.auth-verify-content {
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.auth-verify-message {
+    margin-bottom: 2rem;
+}
+
+.auth-verify-message h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.auth-verify-message p {
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.auth-verify-user-info {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.auth-verify-user-info h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.auth-user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.auth-user-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.auth-detail-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.auth-detail-value {
+    font-size: 0.875rem;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.auth-status-active {
+    color: #10b981;
+    background-color: #d1fae5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.auth-verify-troubleshooting {
+    margin-bottom: 2rem;
+}
+
+.auth-verify-troubleshooting h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.auth-troubleshooting-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.auth-troubleshooting-list li {
+    padding: 0.5rem 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.auth-troubleshooting-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #3b82f6;
+    font-weight: bold;
+}
+
+.auth-verify-actions {
+    margin-bottom: 2rem;
+}
+
+.auth-action-row {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+.auth-verify-help p {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .auth-action-row {
+        flex-direction: row;
+    }
+    
+    .auth-action-row .admin-button {
+        flex: 1;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-redirect to login after successful verification
+    {% if success %}
+    setTimeout(function() {
+        window.location.href = '/user/login';
+    }, 10000); // 10 seconds
+    {% endif %}
+});
+
+function requestNewVerification() {
+    // This would typically make an AJAX call to request a new verification email
+    // For now, we'll redirect to the login page with a message
+    window.location.href = '/user/login?message=resend_verification';
+}
+</script>
+{% endblock %}

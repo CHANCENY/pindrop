@@ -1,0 +1,129 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Dashboard</h2>
+        <p class="admin-page-description">Welcome to your admin panel</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon admin-stat-icon-users">
+                <i class="admin-icon-users"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3 class="admin-stat-number">{{ stats.total_users }}</h3>
+                <p class="admin-stat-label">Total Users</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon admin-stat-icon-content">
+                <i class="admin-icon-content"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3 class="admin-stat-number">{{ stats.total_content }}</h3>
+                <p class="admin-stat-label">Content Items</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon admin-stat-icon-media">
+                <i class="admin-icon-media"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3 class="admin-stat-number">{{ stats.total_media }}</h3>
+                <p class="admin-stat-label">Media Files</p>
+            </div>
+        </div>
+
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon admin-stat-icon-activity">
+                <i class="admin-icon-activity"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3 class="admin-stat-number">{{ stats.recent_logins }}</h3>
+                <p class="admin-stat-label">Recent Logins</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="admin-section">
+        <h3 class="admin-section-title">Quick Actions</h3>
+        <div class="admin-actions-grid">
+            <a href="/admin/content/create" class="admin-action-card">
+                <div class="admin-action-icon">
+                    <i class="admin-icon-plus"></i>
+                </div>
+                <h4 class="admin-action-title">Create Content</h4>
+                <p class="admin-action-description">Add new pages, articles, or posts</p>
+            </a>
+
+            <a href="/admin/users/create" class="admin-action-card">
+                <div class="admin-action-icon">
+                    <i class="admin-icon-user-plus"></i>
+                </div>
+                <h4 class="admin-action-title">Add User</h4>
+                <p class="admin-action-description">Create new user account</p>
+            </a>
+
+            <a href="/admin/settings" class="admin-action-card">
+                <div class="admin-action-icon">
+                    <i class="admin-icon-cog"></i>
+                </div>
+                <h4 class="admin-action-title">Settings</h4>
+                <p class="admin-action-description">Configure your application</p>
+            </a>
+
+            <a href="/admin/cache/clear" class="admin-action-card">
+                <div class="admin-action-icon">
+                    <i class="admin-icon-refresh"></i>
+                </div>
+                <h4 class="admin-action-title">Clear Cache</h4>
+                <p class="admin-action-description">Clear application cache</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="admin-section">
+        <h3 class="admin-section-title">Recent Activity</h3>
+        <div class="admin-activity-list">
+            <div class="admin-activity-item">
+                <div class="admin-activity-icon">
+                    <i class="admin-icon-user"></i>
+                </div>
+                <div class="admin-activity-content">
+                    <p class="admin-activity-text">New user <strong>john_doe</strong> registered</p>
+                    <span class="admin-activity-time">2 minutes ago</span>
+                </div>
+            </div>
+
+            <div class="admin-activity-item">
+                <div class="admin-activity-icon">
+                    <i class="admin-icon-content"></i>
+                </div>
+                <div class="admin-activity-content">
+                    <p class="admin-activity-text">Content <strong>Blog Post</strong> was published</p>
+                    <span class="admin-activity-time">1 hour ago</span>
+                </div>
+            </div>
+
+            <div class="admin-activity-item">
+                <div class="admin-activity-icon">
+                    <i class="admin-icon-settings"></i>
+                </div>
+                <div class="admin-activity-content">
+                    <p class="admin-activity-text">System settings were updated</p>
+                    <span class="admin-activity-time">3 hours ago</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

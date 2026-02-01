@@ -1,0 +1,152 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Create Content{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Create Content</h2>
+        <p class="admin-page-description">Choose the type of content you want to create</p>
+        <div class="admin-page-actions">
+            <a href="/admin/content" class="admin-button admin-button-outline">
+                <i class="admin-icon-arrow-left"></i> Back to Content
+            </a>
+        </div>
+    </div>
+
+    <!-- Content Types Grid -->
+    <div class="admin-content-types-grid">
+        {% for content_type in content_types %}
+        <div class="admin-content-type-card">
+            <div class="admin-content-type-header">
+                <div class="admin-content-type-icon">
+                    <i class="admin-icon-{{ content_type.name }}"></i>
+                </div>
+                <h3 class="admin-content-type-title">{{ content_type.label }}</h3>
+            </div>
+            
+            <div class="admin-content-type-body">
+                <p class="admin-content-type-description">
+                    {{ content_type.description|default('Create a new ' ~ content_type.label|lower) }}
+                </p>
+                
+                <div class="admin-content-type-meta">
+                    <span class="admin-content-type-category">
+                        <i class="admin-icon-folder"></i>
+                        {{ content_type.category|default('content')|title }}
+                    </span>
+                    <span class="admin-content-type-class">
+                        <i class="admin-icon-code"></i>
+                        {{ content_type.class|split('\\')|last }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="admin-content-type-footer">
+                <a href="/admin/content/{{ content_type.name }}/add" class="admin-button admin-button-primary admin-button-full">
+                    <i class="admin-icon-plus"></i> Create {{ content_type.label }}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty State -->
+    {% if content_types|length == 0 %}
+    <div class="admin-empty-state">
+        <div class="admin-empty-icon">
+            <i class="admin-icon-content"></i>
+        </div>
+        <h3 class="admin-empty-title">No Content Types Available</h3>
+        <p class="admin-empty-description">
+            No content types have been registered. Please ensure your plugins are properly configured.
+        </p>
+        <a href="/admin/plugins" class="admin-button admin-button-primary">
+            <i class="admin-icon-plugin"></i> Manage Plugins
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.admin-content-types-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.admin-content-type-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.admin-content-type-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    transform: translateY(-2px);
+}
+
+.admin-content-type-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-content-type-icon {
+    width: 48px;
+    height: 48px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #6b7280;
+}
+
+.admin-content-type-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.admin-content-type-body {
+    margin-bottom: 1.5rem;
+}
+
+.admin-content-type-description {
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.admin-content-type-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+}
+
+.admin-content-type-category,
+.admin-content-type-class {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #9ca3af;
+}
+
+.admin-content-type-footer {
+    margin-top: auto;
+}
+
+.admin-button-full {
+    width: auto;
+    justify-content: center;
+}
+</style>
+{% endblock %}

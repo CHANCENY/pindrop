@@ -1,0 +1,12 @@
+alert.admin.settings:
+  path: '/admin/config/system/alert'
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\alert\src\Controller\AlertController::settingsPanel'
+  requirements:
+    _permission: ['administrator']
+alert.admin.settings.form:
+  path: '/admin/config/system/alert/form'
+  defaults:
+    _form: 'Simp\Pindrop\Modules\alert\src\Form\AlertForm'
+  requirements:
+    _permission: ['administrator']

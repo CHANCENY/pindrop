@@ -1,0 +1,63 @@
+<!-- Article-Specific Dynamic Fields -->
+<div class="form-field">
+    <label class="form-label" for="category">Category</label>
+    <div class="form-input">
+        <input type="text" id="category" name="category" value="{{ entity.getValue('category') }}">
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="tags">Tags (JSON format)</label>
+    <div class="form-input">
+        <textarea id="tags" name="tags" rows="3">{{ entity.getValue('tags')|json_encode }}</textarea>
+        <small>Enter tags as JSON array, e.g., ["tag1", "tag2", "tag3"]</small>
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="featured_image">Featured Image</label>
+    <div class="form-input">
+        <input type="text" id="featured_image" name="featured_image" value="{{ entity.getValue('featured_image') }}">
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="video_url">Video URL</label>
+    <div class="form-input">
+        <input type="url" id="video_url" name="video_url" value="{{ entity.getValue('video_url') }}">
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="download_url">Download URL</label>
+    <div class="form-input">
+        <input type="url" id="download_url" name="download_url" value="{{ entity.getValue('download_url') }}">
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="reading_time">Reading Time (minutes)</label>
+    <div class="form-input">
+        <input type="number" id="reading_time" name="reading_time" value="{{ entity.getValue('reading_time') }}">
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="difficulty_level">Difficulty Level</label>
+    <div class="form-input">
+        <select id="difficulty_level" name="difficulty_level">
+            <option value="">Select Difficulty</option>
+            <option value="beginner" {{ entity.getValue('difficulty_level') == 'beginner' ? 'selected' : '' }}>Beginner</option>
+            <option value="intermediate" {{ entity.getValue('difficulty_level') == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
+            <option value="advanced" {{ entity.getValue('difficulty_level') == 'advanced' ? 'selected' : '' }}>Advanced</option>
+            <option value="expert" {{ entity.getValue('difficulty_level') == 'expert' ? 'selected' : '' }}>Expert</option>
+        </select>
+    </div>
+</div>
+
+<div class="form-field">
+    <label class="form-label" for="author_bio">Author Bio</label>
+    <div class="form-input">
+        <textarea id="author_bio" name="author_bio" rows="3">{{ entity.getValue('author_bio') }}</textarea>
+    </div>
+</div>

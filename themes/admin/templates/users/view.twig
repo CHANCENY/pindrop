@@ -1,0 +1,239 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}User Details{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">User Details</h2>
+        <p class="admin-page-description">View complete user profile information</p>
+        <div class="admin-page-actions">
+            <a href="/admin/users" class="admin-button admin-button-secondary">
+                <i class="admin-icon-arrow-left"></i> Back to Users
+            </a>
+            <a href="/admin/users/{{ user.id }}/edit" class="admin-button admin-button-primary">
+                <i class="admin-icon-edit"></i> Edit User
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-user-profile">
+        <!-- User Header -->
+        <div class="admin-user-header">
+            <div class="admin-user-avatar-large">
+                {{ user.username|first|upper }}
+            </div>
+            <div class="admin-user-info">
+                <h3 class="admin-user-name">{{ user.displayName|default(user.username) }}</h3>
+                <p class="admin-user-email">{{ user.email }}</p>
+                <div class="admin-user-badges">
+                    <span class="admin-badge admin-badge-{{ user.role|lower }}">
+                        {{ user.role|replace({'_': ' '})|title }}
+                    </span>
+                    <span class="admin-status admin-status-{{ user.status|lower }}">
+                        {{ user.status|title }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Details Grid -->
+        <div class="admin-details-grid">
+            <!-- Basic Information -->
+            <div class="admin-details-section">
+                <h4 class="admin-section-title">Basic Information</h4>
+                <div class="admin-details-list">
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">User ID:</label>
+                        <span class="admin-detail-value">{{ user.id }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Username:</label>
+                        <span class="admin-detail-value">{{ user.username }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Display Name:</label>
+                        <span class="admin-detail-value">{{ user.displayName|default('Not set') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Email:</label>
+                        <span class="admin-detail-value">{{ user.email }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Role:</label>
+                        <span class="admin-detail-value">
+                            <span class="admin-badge admin-badge-{{ user.role|lower }}">
+                                {{ user.role|replace({'_': ' '})|title }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Status:</label>
+                        <span class="admin-detail-value">
+                            <span class="admin-status admin-status-{{ user.status|lower }}">
+                                {{ user.status|title }}
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="admin-details-section">
+                <h4 class="admin-section-title">Account Information</h4>
+                <div class="admin-details-list">
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Created:</label>
+                        <span class="admin-detail-value">{{ user.createdAt.format('d-m-y')|default('Unknown') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Updated:</label>
+                        <span class="admin-detail-value">{{ user.updatedAt.format('d-m-y')|default('Never') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Last Login:</label>
+                        <span class="admin-detail-value">{{ user.lastLoginAt|default('Never') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Last Login IP:</label>
+                        <span class="admin-detail-value">{{ user.lastLoginIp|default('Unknown') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Login Attempts:</label>
+                        <span class="admin-detail-value">{{ user.loginAttempts|default(0) }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Locked Until:</label>
+                        <span class="admin-detail-value">{{ user.lockedUntil|default('Not locked') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verification Status -->
+            <div class="admin-details-section">
+                <h4 class="admin-section-title">Verification Status</h4>
+                <div class="admin-details-list">
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Email Verified:</label>
+                        <span class="admin-detail-value">
+                            {% if user.emailVerified %}
+                                <span class="admin-status admin-status-active">Verified</span>
+                                <small>({{ user.emailVerifiedAt|default('Unknown date') }})</small>
+                            {% else %}
+                                <span class="admin-status admin-status-disabled">Not Verified</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Phone Verified:</label>
+                        <span class="admin-detail-value">
+                            {% if user.phoneVerified %}
+                                <span class="admin-status admin-status-active">Verified</span>
+                                <small>({{ user.phoneVerifiedAt|default('Unknown date') }})</small>
+                            {% else %}
+                                <span class="admin-status admin-status-disabled">Not Verified</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Account Verified:</label>
+                        <span class="admin-detail-value">
+                            {% if user.isVerified %}
+                                <span class="admin-status admin-status-active">Verified</span>
+                                <small>({{ user.verifiedAt|default('Unknown date') }})</small>
+                            {% else %}
+                                <span class="admin-status admin-status-disabled">Not Verified</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Two-Factor Auth:</label>
+                        <span class="admin-detail-value">
+                            {% if user.twoFactorEnabled %}
+                                <span class="admin-status admin-status-active">Enabled</span>
+                            {% else %}
+                                <span class="admin-status admin-status-disabled">Disabled</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Information -->
+            <div class="admin-details-section">
+                <h4 class="admin-section-title">Personal Information</h4>
+                <div class="admin-details-list">
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">First Name:</label>
+                        <span class="admin-detail-value">{{ user.firstName|default('Not set') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Last Name:</label>
+                        <span class="admin-detail-value">{{ user.lastName|default('Not set') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Phone:</label>
+                        <span class="admin-detail-value">{{ user.phone|default('Not set') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Timezone:</label>
+                        <span class="admin-detail-value">{{ user.timezone|default('Not set') }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <label class="admin-detail-label">Language:</label>
+                        <span class="admin-detail-value">{{ user.language|default('Not set') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="admin-actions-bar">
+            <div class="admin-actions-left">
+                <button 
+                    onclick="toggleUserStatus({{ user.id }})" 
+                    class="admin-button admin-button-secondary">
+                    <i class="admin-icon-toggle"></i> Toggle Status
+                </button>
+                <a href="/admin/users/{{ user.id }}/delete" class="admin-button admin-button-danger">
+                    <i class="admin-icon-trash"></i> Delete User
+                </a>
+            </div>
+            <div class="admin-actions-right">
+                <a href="/admin/users/{{ user.id }}/edit" class="admin-button admin-button-primary">
+                    <i class="admin-icon-edit"></i> Edit User
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function toggleUserStatus(userId) {
+    if (confirm('Are you sure you want to toggle this user\'s status?')) {
+        fetch(`/admin/users/${userId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while toggling user status');
+        });
+    }
+}
+</script>
+{% endblock %}
+{% endblock %}

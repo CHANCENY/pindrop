@@ -1,0 +1,903 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Users</h2>
+        <p class="admin-page-description">Manage user accounts and permissions</p>
+        <div class="admin-page-actions">
+            <button onclick="openImportModal()" class="admin-button admin-button-secondary">
+                <i class="admin-icon-upload"></i> Import Users
+            </button>
+            <a href="/admin/users/create" class="admin-button admin-button-primary">
+                <i class="admin-icon-plus"></i> Add User
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="admin-filters">
+        <div class="admin-search">
+            <input type="text" placeholder="Search users..." class="admin-search-input">
+            <button class="admin-search-button">
+                <i class="admin-icon-search"></i>
+            </button>
+        </div>
+        
+        <div class="admin-filter-group">
+            <select class="admin-filter-select">
+                <option value="">All Roles</option>
+                <option value="administrator">Administrator</option>
+                <option value="user">User</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="admin-table-checkbox">
+                        <input type="checkbox" class="admin-checkbox-all">
+                    </th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_item in users %}
+                <tr class="admin-table-row">
+                    <td class="admin-table-checkbox">
+                        <input type="checkbox" value="{{ user_item.id }}" class="admin-checkbox-item">
+                    </td>
+                    <td class="admin-table-primary">
+                        <div class="admin-user-info">
+                            <div class="admin-user-avatar">
+                                {{ user_item.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="admin-user-name">{{ user_item.username }}</div>
+                                <div class="admin-user-id">ID: {{ user_item.id }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ user_item.email }}</td>
+                    <td>
+                        <span class="admin-badge admin-badge-{{ user_item.role|lower }}">
+                            {{ user_item.role }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="admin-status admin-status-{{ user_item.status|lower }}">
+                            {{ user_item.status|title }}
+                        </span>
+                    </td>
+                    <td>{{ user_item.created_at|default("Unknown") }}</td>
+                    <td style="width: 80px; text-align: center; position: relative;">
+                        <div style="position: relative; display: inline-block;">
+                            <button class="admin-button admin-button-secondary" onclick="toggleDropdown({{ user_item.id }})" style="padding: 0.25rem 0.5rem; font-size: 1.2rem; line-height: 1;" title="Actions">
+                                ⋮
+                            </button>
+                            <div id="dropdown-{{ user_item.id }}" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 0.375rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 9999; min-width: 150px; overflow: visible;">
+                                <a href="/admin/users/{{ user_item.id }}" style="display: block; padding: 0.5rem 1rem; color: #1e293b; text-decoration: none; font-size: 0.875rem; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">
+                                    👁️ View
+                                </a>
+                                <a href="/admin/users/{{ user_item.id }}/edit" style="display: block; padding: 0.5rem 1rem; color: #1e293b; text-decoration: none; font-size: 0.875rem; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">
+                                    ✏️ Edit
+                                </a>
+                                <button onclick="toggleUserStatus({{ user_item.id }})" style="display: block; width: 100%; padding: 0.5rem 1rem; background: none; border: none; color: #1e293b; text-align: left; font-size: 0.875rem; cursor: pointer; border-bottom: 1px solid #e2e8f0; white-space: nowrap;">
+                                    🔄 Toggle Status
+                                </button>
+                                <a href="/admin/users/{{ user_item.id }}/delete" style="display: block; padding: 0.5rem 1rem; color: #ef4444; text-decoration: none; font-size: 0.875rem; white-space: nowrap;">
+                                    🗑️ Delete
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.total_pages > 1 %}
+    <div class="admin-pagination">
+        <div class="admin-pagination-info">
+            Showing 
+            {{ ((pagination.current_page - 1) * pagination.per_page) + 1 }}-
+            {{ min(pagination.current_page * pagination.per_page, pagination.total_items) }} 
+            of {{ pagination.total_items }} users
+        </div>
+        <div class="admin-pagination-controls">
+            {% if pagination.has_previous %}
+                <a href="?page={{ pagination.previous_page }}" class="admin-pagination-button">Previous</a>
+            {% else %}
+                <button class="admin-pagination-button" disabled>Previous</button>
+            {% endif %}
+            
+            {% set start_page = max(1, pagination.current_page - 2) %}
+            {% set end_page = min(pagination.total_pages, pagination.current_page + 2) %}
+            
+            {% if start_page > 1 %}
+                <a href="?page=1" class="admin-pagination-button">1</a>
+                {% if start_page > 2 %}
+                    <span class="admin-pagination-ellipsis">...</span>
+                {% endif %}
+            {% endif %}
+            
+            {% for page in range(start_page, end_page) %}
+                {% if page == pagination.current_page %}
+                    <button class="admin-pagination-button admin-pagination-active">{{ page }}</button>
+                {% else %}
+                    <a href="?page={{ page }}" class="admin-pagination-button">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if end_page < pagination.total_pages %}
+                {% if end_page < pagination.total_pages - 1 %}
+                    <span class="admin-pagination-ellipsis">...</span>
+                {% endif %}
+                <a href="?page={{ pagination.total_pages }}" class="admin-pagination-button">{{ pagination.total_pages }}</a>
+            {% endif %}
+            
+            {% if pagination.has_next %}
+                <a href="?page={{ pagination.next_page }}" class="admin-pagination-button">Next</a>
+            {% else %}
+                <button class="admin-pagination-button" disabled>Next</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- User Import Modal -->
+    <div id="importModal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title">Import Users</h3>
+                <button onclick="closeImportModal()" class="admin-modal-close">&times;</button>
+            </div>
+            
+            <div class="admin-modal-body">
+                <div class="admin-import-section">
+                    <h4>Import Instructions</h4>
+                    <p>Upload a CSV or Excel file containing user data. The file should include the following columns:</p>
+                    <ul class="admin-import-requirements">
+                        <li><strong>username</strong> - Unique username (required)</li>
+                        <li><strong>email</strong> - Email address (required)</li>
+                        <li><strong>first_name</strong> - First name (optional)</li>
+                        <li><strong>last_name</strong> - Last name (optional)</li>
+                        <li><strong>role</strong> - User role: user, moderator, admin, super_admin (optional, defaults to 'user')</li>
+                        <li><strong>status</strong> - Account status: active, inactive, pending (optional, defaults to 'pending')</li>
+                    </ul>
+                    
+                    <div class="admin-import-download">
+                        <a href="/admin/users/import-template" class="admin-button admin-button-outline">
+                            <i class="admin-icon-download"></i> Download Template
+                        </a>
+                    </div>
+                </div>
+
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="admin-form-group">
+                        <label for="importFile" class="admin-form-label">Select File</label>
+                        <input type="file" id="importFile" name="import_file" accept=".csv,.xlsx,.xls" class="admin-form-input" required>
+                        <small class="admin-form-help">Supported formats: CSV, Excel (.xlsx, .xls)</small>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label class="admin-form-label">Import Options</label>
+                        <div class="admin-checkbox-group">
+                            <label class="admin-checkbox">
+                                <input type="checkbox" name="send_welcome_email" value="1" checked>
+                                <span class="admin-checkbox-checkmark"></span>
+                                Send welcome email to new users
+                            </label>
+                            <label class="admin-checkbox">
+                                <input type="checkbox" name="require_password_reset" value="1" checked>
+                                <span class="admin-checkbox-checkmark"></span>
+                                Require password reset on first login
+                            </label>
+                            <label class="admin-checkbox">
+                                <input type="checkbox" name="skip_duplicates" value="1" checked>
+                                <span class="admin-checkbox-checkmark"></span>
+                                Skip duplicate users (by email/username)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="admin-import-preview" id="importPreview" style="display: none;">
+                        <h4>Preview</h4>
+                        <div class="admin-preview-stats">
+                            <div class="admin-stat">
+                                <span class="admin-stat-label">Total Rows:</span>
+                                <span class="admin-stat-value" id="totalRows">0</span>
+                            </div>
+                            <div class="admin-stat">
+                                <span class="admin-stat-label">Valid Users:</span>
+                                <span class="admin-stat-value" id="validUsers">0</span>
+                            </div>
+                            <div class="admin-stat">
+                                <span class="admin-stat-label">Duplicates:</span>
+                                <span class="admin-stat-value" id="duplicateUsers">0</span>
+                            </div>
+                        </div>
+                        <div class="admin-preview-table" id="previewTable">
+                            <!-- Preview table will be populated here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="admin-modal-footer">
+                <button type="button" onclick="closeImportModal()" class="admin-button admin-button-secondary">Cancel</button>
+                <button type="button" onclick="previewImport()" class="admin-button admin-button-outline">Preview</button>
+                <button type="button" onclick="submitImport()" class="admin-button admin-button-primary" id="importButton" disabled>Import Users</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Progress Modal -->
+    <div id="importProgressModal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title">Importing Users</h3>
+            </div>
+            
+            <div class="admin-modal-body">
+                <div class="admin-progress-container">
+                    <div class="admin-progress-bar">
+                        <div class="admin-progress-fill" id="importProgress" style="width: 0%;"></div>
+                    </div>
+                    <div class="admin-progress-text" id="progressText">Starting import...</div>
+                </div>
+                
+                <div class="admin-import-log" id="importLog">
+                    <!-- Import log will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Dropdown functionality
+function toggleDropdown(userId) {
+    const dropdown = document.getElementById(`dropdown-${userId}`);
+    const allDropdowns = document.querySelectorAll('[id^="dropdown-"]');
+    
+    // Close all other dropdowns
+    allDropdowns.forEach(d => {
+        if (d !== dropdown) {
+            d.style.display = 'none';
+        }
+    });
+    
+    // Toggle current dropdown
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+    } else {
+        dropdown.style.display = 'none';
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('button[onclick*="toggleDropdown"]') && !event.target.closest('[id^="dropdown-"]')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(d => {
+            d.style.display = 'none';
+        });
+    }
+});
+
+// Toggle user status
+function toggleUserStatus(userId) {
+    if (confirm('Are you sure you want to toggle this user\'s status?')) {
+        fetch(`/admin/users/${userId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while toggling user status');
+        });
+    }
+}
+
+// Import Modal Functions
+function openImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetImportForm();
+}
+
+function resetImportForm() {
+    document.getElementById('importForm').reset();
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importButton').disabled = true;
+    document.getElementById('importProgress').style.width = '0%';
+    document.getElementById('progressText').textContent = 'Starting import...';
+    document.getElementById('importLog').innerHTML = '';
+}
+
+// Preview Import
+function previewImport() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file to import');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('import_file', file);
+    formData.append('action', 'preview');
+    
+    // Add form options
+    const checkboxes = document.querySelectorAll('#importForm input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        formData.append(checkbox.name, checkbox.checked ? '1' : '0');
+    });
+    
+    fetch('/admin/users/import-preview', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayImportPreview(data.preview);
+            document.getElementById('importButton').disabled = false;
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while previewing the import');
+    });
+}
+
+// Display Import Preview
+function displayImportPreview(preview) {
+    document.getElementById('importPreview').style.display = 'block';
+    document.getElementById('totalRows').textContent = preview.total_rows;
+    document.getElementById('validUsers').textContent = preview.valid_users;
+    document.getElementById('duplicateUsers').textContent = preview.duplicates;
+    
+    // Create preview table
+    const previewTable = document.getElementById('previewTable');
+    if (preview.sample_data && preview.sample_data.length > 0) {
+        let tableHTML = '<table class="admin-table admin-table-sm"><thead><tr>';
+        
+        // Table headers
+        const headers = Object.keys(preview.sample_data[0]);
+        headers.forEach(header => {
+            tableHTML += `<th>${header}</th>`;
+        });
+        tableHTML += '</tr></thead><tbody>';
+        
+        // Table rows (show first 5 rows)
+        preview.sample_data.slice(0, 5).forEach(row => {
+            tableHTML += '<tr>';
+            headers.forEach(header => {
+                tableHTML += `<td>${row[header] || ''}</td>`;
+            });
+            tableHTML += '</tr>';
+        });
+        
+        tableHTML += '</tbody></table>';
+        
+        if (preview.sample_data.length > 5) {
+            tableHTML += `<p class="admin-preview-note">Showing first 5 of ${preview.sample_data.length} rows</p>`;
+        }
+        
+        previewTable.innerHTML = tableHTML;
+    } else {
+        previewTable.innerHTML = '<p>No data to preview</p>';
+    }
+}
+
+// Submit Import
+function submitImport() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file to import');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to import these users? This action cannot be undone.')) {
+        return;
+    }
+    
+    // Close import modal and show progress modal
+    closeImportModal();
+    document.getElementById('importProgressModal').style.display = 'flex';
+    
+    const formData = new FormData();
+    formData.append('import_file', file);
+    formData.append('action', 'import');
+    
+    // Add form options
+    const checkboxes = document.querySelectorAll('#importForm input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        formData.append(checkbox.name, checkbox.checked ? '1' : '0');
+    });
+    
+    // Use XMLHttpRequest for progress tracking
+    const xhr = new XMLHttpRequest();
+    
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            document.getElementById('importProgress').style.width = percentComplete + '%';
+            document.getElementById('progressText').textContent = `Uploading... ${Math.round(percentComplete)}%`;
+        }
+    });
+    
+    xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                handleImportResponse(response);
+            } catch (e) {
+                addImportLog('Error: Invalid response from server', 'error');
+            }
+        } else {
+            addImportLog(`Error: Server returned status ${xhr.status}`, 'error');
+        }
+    });
+    
+    xhr.addEventListener('error', function() {
+        addImportLog('Error: Network connection failed', 'error');
+    });
+    
+    xhr.open('POST', '/admin/users/import');
+    xhr.send(formData);
+    
+    addImportLog('Starting import process...', 'info');
+}
+
+// Handle Import Response
+function handleImportResponse(response) {
+    if (response.success) {
+        document.getElementById('importProgress').style.width = '100%';
+        document.getElementById('progressText').textContent = 'Import completed!';
+        
+        if (response.results) {
+            addImportLog(`Successfully imported ${response.results.imported} users`, 'success');
+            addImportLog(`Skipped ${response.results.skipped} duplicates`, 'info');
+            addImportLog(`Failed to import ${response.results.failed} users`, 'warning');
+            
+            if (response.results.errors && response.results.errors.length > 0) {
+                response.results.errors.forEach(error => {
+                    addImportLog(`Row ${error.row}: ${error.message}`, 'error');
+                });
+            }
+        }
+        
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+            document.getElementById('importProgressModal').style.display = 'none';
+            location.reload(); // Refresh to show new users
+        }, 3000);
+    } else {
+        addImportLog('Import failed: ' + response.message, 'error');
+        document.getElementById('progressText').textContent = 'Import failed';
+    }
+}
+
+// Add Import Log Entry
+function addImportLog(message, type = 'info') {
+    const logContainer = document.getElementById('importLog');
+    const logEntry = document.createElement('div');
+    logEntry.className = `admin-log-entry admin-log-${type}`;
+    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// File input change handler
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('importFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            const fileName = this.files[0]?.name || '';
+            const fileLabel = this.nextElementSibling;
+            if (fileLabel && fileLabel.classList.contains('admin-form-help')) {
+                fileLabel.textContent = fileName ? `Selected: ${fileName}` : 'Supported formats: CSV, Excel (.xlsx, .xls)';
+            }
+        });
+    }
+});
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to table rows using existing CSS
+    const tableRows = document.querySelectorAll('.admin-table-row');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'var(--admin-surface)';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+
+<style>
+/* Import Modal Styles */
+.admin-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.admin-modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.admin-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.admin-modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #64748b;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-modal-close:hover {
+    color: #1e293b;
+}
+
+.admin-modal-body {
+    padding: 1.5rem;
+}
+
+.admin-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+/* Import Section Styles */
+.admin-import-section {
+    margin-bottom: 2rem;
+}
+
+.admin-import-section h4 {
+    margin: 0 0 0.5rem 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+.admin-import-section p {
+    margin: 0 0 1rem 0;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.admin-import-requirements {
+    margin: 0 0 1rem 0;
+    padding-left: 1.5rem;
+    color: #475569;
+}
+
+.admin-import-requirements li {
+    margin-bottom: 0.25rem;
+}
+
+.admin-import-download {
+    margin-top: 1rem;
+}
+
+/* Form Styles */
+.admin-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.admin-form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.admin-form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.15s;
+}
+
+.admin-form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admin-form-help {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Checkbox Styles */
+.admin-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.admin-checkbox input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+/* Preview Styles */
+.admin-import-preview {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.admin-import-preview h4 {
+    margin: 0 0 1rem 0;
+    color: #1e293b;
+}
+
+.admin-preview-stats {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.admin-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.admin-stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.admin-preview-table {
+    margin-top: 1rem;
+    overflow-x: auto;
+}
+
+.admin-table-sm {
+    font-size: 0.75rem;
+}
+
+.admin-preview-note {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Progress Styles */
+.admin-progress-container {
+    margin-bottom: 1.5rem;
+}
+
+.admin-progress-bar {
+    width: 100%;
+    height: 1rem;
+    background: #e2e8f0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.admin-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    transition: width 0.3s ease;
+}
+
+.admin-progress-text {
+    font-size: 0.875rem;
+    color: #64748b;
+    text-align: center;
+}
+
+/* Log Styles */
+.admin-import-log {
+    max-height: 200px;
+    overflow-y: auto;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.admin-log-entry {
+    padding: 0.25rem 0;
+    font-size: 0.75rem;
+    font-family: monospace;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-log-entry:last-child {
+    border-bottom: none;
+}
+
+.admin-log-info {
+    color: #64748b;
+}
+
+.admin-log-success {
+    color: #059669;
+}
+
+.admin-log-warning {
+    color: #d97706;
+}
+
+.admin-log-error {
+    color: #dc2626;
+}
+
+/* Button Styles */
+.admin-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.admin-button-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.admin-button-primary:hover {
+    background: #2563eb;
+}
+
+.admin-button-secondary {
+    background: #64748b;
+    color: white;
+}
+
+.admin-button-secondary:hover {
+    background: #475569;
+}
+
+.admin-button-outline {
+    background: transparent;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.admin-button-outline:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.admin-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .admin-preview-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .admin-modal-footer {
+        flex-direction: column;
+    }
+    
+    .admin-modal-footer .admin-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+{% endblock %}

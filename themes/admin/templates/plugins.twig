@@ -1,0 +1,224 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Plugins{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Plugins</h2>
+        <p class="admin-page-description">Manage your application plugins and extensions</p>
+        <div class="admin-page-actions">
+            <a href="/admin/plugins/install" class="admin-button admin-button-primary">
+                <i class="admin-icon-plus"></i> Install Plugin
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="admin-filters">
+        <div class="admin-search">
+            <input type="text" placeholder="Search plugins..." class="admin-search-input">
+            <button class="admin-search-button">
+                <i class="admin-icon-search"></i>
+            </button>
+        </div>
+        
+        <div class="admin-filter-group">
+            <select class="admin-filter-select">
+                <option value="">All Status</option>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Plugins Grid -->
+    <div class="admin-plugins-grid">
+        {% for plugin in plugins %}
+        <div class="admin-plugin-card">
+            <div class="admin-plugin-header">
+                <div class="admin-plugin-info">
+                    <h3 class="admin-plugin-name">{{ plugin.id }}</h3>
+                    <span class="admin-plugin-version">v{{ plugin.version|default('unknown') }}</span>
+                </div>
+                <div class="admin-plugin-status">
+                    {% if plugin.enabled %}
+                        <span class="admin-status admin-status-active">Enabled</span>
+                    {% else %}
+                        <span class="admin-status admin-status-disabled">Disabled</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="admin-plugin-description">
+                <p>Plugin ID: {{ plugin.id }}</p>
+                <p>Path: {{ plugin.path }}</p>
+                {% if plugin.installed %}
+                    <p>Status: Installed and {{ plugin.enabled ? 'enabled' : 'disabled' }}</p>
+                {% else %}
+                    <p>Status: Not installed</p>
+                {% endif %}
+            </div>
+
+            <div class="admin-plugin-meta">
+                <div class="admin-plugin-author">
+                    <span>Location: {{ plugin.path }}</span>
+                </div>
+            </div>
+
+            <div class="admin-plugin-actions">
+                {% if plugin.installed %}
+                    {% if plugin.enabled %}
+                        <button 
+                            onclick="console.log('Disable button clicked'); AdminTheme.pluginAction('disable', '{{ plugin.id }}');"
+                            class="admin-button admin-button-secondary">
+                            <i class="admin-icon-disable"></i> Disable
+                        </button>
+                    {% else %}
+                        <button 
+                            onclick="console.log('Enable button clicked'); AdminTheme.pluginAction('enable', '{{ plugin.id }}');"
+                            class="admin-button admin-button-primary">
+                            <i class="admin-icon-enable"></i> Enable
+                        </button>
+                    {% endif %}
+                    
+                    {% if plugin.id != 'admin' %}
+                        <button 
+                            onclick="console.log('Uninstall button clicked'); AdminTheme.pluginAction('uninstall', '{{ plugin.id }}');"
+                            class="admin-button admin-button-danger">
+                            <i class="admin-icon-trash"></i> Uninstall
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <button 
+                        onclick="console.log('Install button clicked'); AdminTheme.pluginAction('install', '{{ plugin.id }}');"
+                        class="admin-button admin-button-primary">
+                        <i class="admin-icon-download"></i> Install
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty State -->
+    {% if plugins|length == 0 %}
+    <div class="admin-empty-state">
+        <div class="admin-empty-icon">
+            <i class="admin-icon-plugin"></i>
+        </div>
+        <h3 class="admin-empty-title">No plugins installed</h3>
+        <p class="admin-empty-description">Extend your application by installing plugins.</p>
+        <a href="/admin/plugins/install" class="admin-button admin-button-primary">
+            <i class="admin-icon-plus"></i> Install Plugin
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Debug Test Button -->
+    <div style="margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 5px;">
+        <h4>Debug Test</h4>
+        <button onclick="console.log('Test button clicked'); alert('JavaScript is working!');" class="admin-button admin-button-primary">
+            Test JavaScript
+        </button>
+        <button onclick="console.log('AdminTheme:', AdminTheme); alert('AdminTheme object: ' + (AdminTheme ? 'exists' : 'missing'));" class="admin-button admin-button-secondary">
+            Test AdminTheme
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Plugin filtering functionality
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof AdminTheme === 'undefined') {
+        console.error('AdminTheme is not defined!');
+        return;
+    }
+    
+    const searchInput = document.querySelector('.admin-search-input');
+    const filterSelect = document.querySelector('.admin-filter-select');
+    const pluginCards = document.querySelectorAll('.admin-plugin-card');
+    
+    function filterPlugins() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filterValue = filterSelect.value;
+        
+        pluginCards.forEach(card => {
+            const pluginName = card.querySelector('.admin-plugin-name').textContent.toLowerCase();
+            const pluginStatus = card.querySelector('.admin-plugin-status').textContent.toLowerCase();
+            
+            let matchesSearch = pluginName.includes(searchTerm);
+            let matchesFilter = true;
+            
+            if (filterValue === 'enabled') {
+                matchesFilter = pluginStatus.includes('enabled');
+            } else if (filterValue === 'disabled') {
+                matchesFilter = pluginStatus.includes('disabled');
+            }
+            
+            if (matchesSearch && matchesFilter) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Check if any plugins are visible
+        const visibleCards = Array.from(pluginCards).filter(card => card.style.display !== 'none');
+        const emptyState = document.querySelector('.admin-empty-state');
+        const pluginsGrid = document.querySelector('.admin-plugins-grid');
+        
+        if (visibleCards.length === 0 && pluginCards.length > 0) {
+            // Show "no results" message
+            if (!document.querySelector('.admin-no-results')) {
+                const noResults = document.createElement('div');
+                noResults.className = 'admin-empty-state admin-no-results';
+                noResults.innerHTML = `
+                    <div class="admin-empty-icon">
+                        <i class="admin-icon-search"></i>
+                    </div>
+                    <h3 class="admin-empty-title">No plugins found</h3>
+                    <p class="admin-empty-description">Try adjusting your search or filter criteria.</p>
+                `;
+                pluginsGrid.parentNode.insertBefore(noResults, pluginsGrid.nextSibling);
+            }
+        } else {
+            // Hide "no results" message if it exists
+            const noResults = document.querySelector('.admin-no-results');
+            if (noResults) {
+                noResults.remove();
+            }
+        }
+    }
+    
+    // Add event listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', filterPlugins);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                filterPlugins();
+            }
+        });
+    }
+    
+    if (filterSelect) {
+        filterSelect.addEventListener('change', filterPlugins);
+    }
+    
+    // Add search button functionality
+    const searchButton = document.querySelector('.admin-search-button');
+    if (searchButton) {
+        searchButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            filterPlugins();
+        });
+    }
+    
+    console.log('Plugin filters initialized');
+});
+</script>
+{% endblock %}

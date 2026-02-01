@@ -1,0 +1,587 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<style>
+/* Enhanced Form Layout - Two Column Grid (2:1 ratio) */
+.admin-content-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .admin-content-form {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* Enhanced Form field styling - TARGETING ACTUAL HTML STRUCTURE */
+.admin-content-form .form-field {
+    margin-bottom: 1.75rem;
+    position: relative;
+    padding: 0 0.5rem; /* Add padding to prevent field overflow */
+}
+
+.admin-content-form .form-label {
+    display: block;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    transition: color 0.2s ease;
+}
+
+/* ENHANCED INPUT STYLING - MAXIMUM SPECIFICITY */
+.admin-content-form .form-input input,
+.admin-content-form .form-input select,
+.admin-content-form .form-input textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem 1.25rem !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    font-size: 0.9375rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    outline: none !important;
+    box-sizing: border-box !important; /* Fix overflow issue */
+}
+
+/* FORCE OVERRIDE ANY CONFLICTING STYLES */
+form .form-input input,
+form .form-input select,
+form .form-input textarea,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+textarea,
+select {
+    border-radius: 12px !important;
+    border: 2px solid #e2e8f0 !important;
+    padding: 1rem 1.25rem !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    box-sizing: border-box !important; /* Fix overflow issue */
+}
+
+/* FIELDSET ENHANCEMENTS - Fix overflow */
+.admin-content-form fieldset {
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%) !important;
+    overflow: hidden !important; /* Prevent content overflow */
+    position: relative !important;
+}
+
+/* DETAILS ENHANCEMENTS - Collapsible sections */
+.admin-content-form details {
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    margin-bottom: 1.5rem !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%) !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.admin-content-form details[open] {
+    padding: 1.5rem !important;
+    padding-top: 0 !important;
+}
+
+.admin-content-form summary {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: #1a202c;
+    padding: 1rem 1.5rem !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    list-style: none !important;
+    position: relative !important;
+    transition: all 0.2s ease !important;
+}
+
+.admin-content-form summary::-webkit-details-marker {
+    display: none !important;
+}
+
+.admin-content-form summary::before {
+    content: '▶' !important;
+    position: absolute !important;
+    left: 0.5rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 0.875rem !important;
+    color: #667eea !important;
+    transition: transform 0.2s ease !important;
+}
+
+.admin-content-form details[open] > summary::before {
+    transform: translateY(-50%) rotate(90deg) !important;
+}
+
+.admin-content-form summary:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.admin-content-form details[open] > summary {
+    margin-bottom: 1rem !important;
+}
+
+.admin-content-form legend {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: #1a202c;
+    padding: 0 0.75rem;
+    margin-bottom: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* HOVER EFFECTS */
+.admin-content-form .form-input input:hover,
+.admin-content-form .form-input select:hover,
+.admin-content-form .form-input textarea:hover {
+    border-color: #667eea !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15) !important;
+}
+
+/* FOCUS EFFECTS */
+.admin-content-form .form-input input:focus,
+.admin-content-form .form-input select:focus,
+.admin-content-form .form-input textarea:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1), 0 2px 8px rgba(102, 126, 234, 0.2) !important;
+    transform: translateY(-1px) !important;
+    background: #ffffff !important;
+}
+
+/* INPUT FIELD ICONS - FORCE VISIBLE */
+.admin-content-form .form-input input[type="text"],
+form .form-input input[type="text"],
+input[type="text"] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e0' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2h2.828l8.586-8.586z'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1.25rem !important;
+    padding-right: 3rem !important;
+}
+
+.admin-content-form .form-input input[type="url"],
+form .form-input input[type="url"],
+input[type="url"] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e0' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1.25rem !important;
+    padding-right: 3rem !important;
+}
+
+.admin-content-form .form-input input[type="email"],
+form .form-input input[type="email"],
+input[type="email"] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e0' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1.25rem !important;
+    padding-right: 3rem !important;
+}
+
+.admin-content-form .form-input input[type="number"],
+form .form-input input[type="number"],
+input[type="number"] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e0' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M7 20l4-16m2 16l4-16M6 9h14M4 15h14'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1.25rem !important;
+    padding-right: 3rem !important;
+}
+
+/* TEXTAREA ENHANCEMENTS */
+.admin-content-form .form-input textarea {
+    resize: vertical !important;
+    min-height: 120px !important;
+    line-height: 1.6 !important;
+}
+
+.admin-content-form .form-input textarea.rich-editor {
+    min-height: 300px !important;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+}
+
+/* SELECT ENHANCEMENTS - FORCE VISIBLE */
+.admin-content-form .form-input select,
+form .form-input select,
+select {
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23667eea' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e") !important;
+    background-position: right 1rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.25rem !important;
+    padding-right: 3rem !important;
+    cursor: pointer !important;
+    border-radius: 12px !important;
+    border: 2px solid #e2e8f0 !important;
+    padding: 1rem 1.25rem !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* CHECKBOX ENHANCEMENTS - FORCE VISIBLE */
+.admin-content-form .form-input input[type="checkbox"],
+form .form-input input[type="checkbox"],
+input[type="checkbox"] {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    cursor: pointer !important;
+    accent-color: #667eea !important;
+    border-radius: 4px !important;
+    border: 2px solid #e2e8f0 !important;
+}
+
+/* BUTTON ENHANCEMENTS */
+.admin-content-form .form-input input[type="submit"],
+.admin-content-form .form-input input[type="button"],
+form .form-input input[type="submit"],
+form .form-input input[type="button"],
+input[type="submit"],
+input[type="button"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.625rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2) !important;
+    font-size: 0.875rem !important;
+}
+
+.admin-content-form .form-input input[type="submit"]:hover,
+.admin-content-form .form-input input[type="button"]:hover,
+form .form-input input[type="submit"]:hover,
+form .form-input input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+.admin-content-form .form-input input[type="button"],
+form .form-input input[type="button"],
+input[type="button"] {
+    background: linear-gradient(135deg, #f7fafc 0%, #e2e8f0 100%) !important;
+    color: #4a5568 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* BUTTON CONTAINER - Side by side */
+.admin-content-form .form-input.button-group {
+    display: flex !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+}
+
+.admin-content-form .form-input.button-group input[type="submit"],
+.admin-content-form .form-input.button-group input[type="button"] {
+    flex: 1 !important;
+    max-width: none !important;
+}
+
+/* PLACEHOLDER STYLING */
+.admin-content-form .form-input input::placeholder,
+.admin-content-form .form-input select::placeholder,
+.admin-content-form .form-input textarea::placeholder {
+    color: #a0aec0 !important;
+    font-style: italic !important;
+    transition: color 0.2s ease !important;
+}
+
+.admin-content-form .form-input input:focus::placeholder,
+.admin-content-form .form-input select:focus::placeholder,
+.admin-content-form .form-input textarea:focus::placeholder {
+    color: #e2e8f0 !important;
+}
+
+/* ERROR AND SUCCESS STATES */
+.admin-content-form .form-input input.error,
+.admin-content-form .form-input select.error,
+.admin-content-form .form-input textarea.error {
+    border-color: #e53e3e !important;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+}
+
+.admin-content-form .form-input input.success,
+.admin-content-form .form-input select.success,
+.admin-content-form .form-input textarea.success {
+    border-color: #38a169 !important;
+    box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.1) !important;
+}
+
+/* ERROR MESSAGE STYLING */
+.admin-content-form .form-error {
+    color: #e53e3e !important;
+    font-size: 0.875rem !important;
+    margin-top: 0.5rem !important;
+    font-weight: 500 !important;
+    display: block !important;
+}
+
+/* SUCCESS MESSAGE STYLING */
+.admin-content-form .form-success {
+    color: #38a169 !important;
+    font-size: 0.875rem !important;
+    margin-top: 0.5rem !important;
+    font-weight: 500 !important;
+    display: block !important;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+    .admin-content-form {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .admin-content-form .form-input input,
+    .admin-content-form .form-input select,
+    .admin-content-form .form-input textarea {
+        padding: 0.875rem 1rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .admin-content-form fieldset {
+        padding: 1rem !important;
+    }
+    
+    .admin-content-form legend {
+        font-size: 1rem !important;
+    }
+    
+    .admin-content-form .form-input input[type="submit"],
+    .admin-content-form .form-input input[type="button"] {
+        padding: 0.75rem 1.5rem !important;
+        font-size: 0.875rem !important;
+    }
+}
+</style>
+
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">{{ page_title }}</h2>
+        <p class="admin-page-description">
+            Create a new {{ content_type.label|lower }}
+            {% if content_type.description %} - {{ content_type.description }}{% endif %}
+        </p>
+        <div class="admin-page-actions">
+            <a href="/admin/content/create" class="admin-button admin-button-outline">
+                <i class="admin-icon-arrow-left"></i> Back to Types
+            </a>
+            <a href="/admin/content" class="admin-button admin-button-outline">
+                <i class="admin-icon-list"></i> All Content
+            </a>
+        </div>
+    </div>
+
+    <!-- Content Form - Two Column Layout -->
+    <form method="POST" enctype="multipart/form-data" class="admin-content-form">
+        <input type="hidden" name="entity_type" value="{{ entity.nodeType }}">
+        <input type="hidden" name="id" value="{{ entity.id }}">
+        
+        <!-- LEFT COLUMN - Large Fields (2fr) -->
+        <div class="left-column">
+            <!-- Basic Content Fieldset -->
+            <fieldset>
+                <legend>Basic Content</legend>
+                
+                <div class="form-field">
+                    <label class="form-label" for="title">Title</label>
+                    <div class="form-input">
+                        <input type="text" id="title" name="title" value="{{ entity.getValue('title') }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="slug">Slug</label>
+                    <div class="form-input">
+                        <input type="text" id="slug" name="slug" value="{{ entity.getValue('slug') }}">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="excerpt">Excerpt</label>
+                    <div class="form-input">
+                        <textarea id="excerpt" name="excerpt" rows="3">{{ entity.getValue('excerpt') }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="content">Content</label>
+                    <div class="form-input">
+                        <textarea id="content" name="content" rows="10" class="rich-editor">{{ entity.getValue('content') }}</textarea>
+                    </div>
+                </div>
+            </fieldset>
+            
+            <!-- Dynamic Fields Block -->
+            <details>
+                <summary>{{ content_type }} Fields</summary>
+                <p>{{ description }}</p>
+                {% block form_html %}{% endblock %}
+            </details>
+        </div>
+        
+        <!-- RIGHT COLUMN - Publication & SEO (1fr) -->
+        <div class="right-column">
+            <!-- Publication Settings Fieldset -->
+            <fieldset>
+                <legend>Publication Settings</legend>
+                
+                <div class="form-field">
+                    <label class="form-label" for="status">Status</label>
+                    <div class="form-input">
+                        <select id="status" name="status" required>
+                            <option value="draft" {{ entity.getValue('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="published" {{ entity.getValue('status') == 'published' ? 'selected' : '' }}>Published</option>
+                            <option value="archived" {{ entity.getValue('status') == 'archived' ? 'selected' : '' }}>Archived</option>
+                            <option value="trash" {{ entity.getValue('status') == 'trash' ? 'selected' : '' }}>Trash</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="is_published">Published</label>
+                    <div class="form-input">
+                        <input type="checkbox" id="is_published" name="is_published" value="1" {{ entity.isPublished() ? 'checked' : '' }}>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="featured">Featured</label>
+                    <div class="form-input">
+                        <input type="checkbox" id="featured" name="featured" value="1" {{ entity.getValue('featured') ? 'checked' : '' }}>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="sticky">Sticky</label>
+                    <div class="form-input">
+                        <input type="checkbox" id="sticky" name="sticky" value="1" {{ entity.getValue('sticky') ? 'checked' : '' }}>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="allow_comments">Allow Comments</label>
+                    <div class="form-input">
+                        <input type="checkbox" id="allow_comments" name="allow_comments" value="1" {{ entity.getValue('allow_comments') ? 'checked' : '' }}>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="language">Language</label>
+                    <div class="form-input">
+                        <select id="language" name="language">
+                            <option value="en" {{ entity.getValue('language') == 'en' ? 'selected' : '' }}>English</option>
+                            <option value="es" {{ entity.getValue('language') == 'es' ? 'selected' : '' }}>Spanish</option>
+                            <option value="fr" {{ entity.getValue('language') == 'fr' ? 'selected' : '' }}>French</option>
+                            <option value="de" {{ entity.getValue('language') == 'de' ? 'selected' : '' }}>German</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="template">Template</label>
+                    <div class="form-input">
+                        <input type="text" id="template" name="template" value="{{ entity.getValue('template') }}">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="form-input">
+                        <input type="password" id="password" name="password" value="{{ entity.getValue('password') }}">
+                    </div>
+                </div>
+            </fieldset>
+            
+            <!-- SEO Information Fieldset -->
+            <fieldset>
+                <legend>SEO Information</legend>
+                
+                <div class="form-field">
+                    <label class="form-label" for="meta_title">Meta Title</label>
+                    <div class="form-input">
+                        <input type="text" id="meta_title" name="meta_title" value="{{ entity.getValue('meta_title') }}">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="meta_description">Meta Description</label>
+                    <div class="form-input">
+                        <textarea id="meta_description" name="meta_description" rows="3">{{ entity.getValue('meta_description') }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="meta_keywords">Meta Keywords</label>
+                    <div class="form-input">
+                        <input type="text" id="meta_keywords" name="meta_keywords" value="{{ entity.getValue('meta_keywords') }}">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="canonical_url">Canonical URL</label>
+                    <div class="form-input">
+                        <input type="url" id="canonical_url" name="canonical_url" value="{{ entity.getValue('canonical_url') }}">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label class="form-label" for="redirect_url">Redirect URL</label>
+                    <div class="form-input">
+                        <input type="url" id="redirect_url" name="redirect_url" value="{{ entity.getValue('redirect_url') }}">
+                    </div>
+                </div>
+            </fieldset>
+            
+            <!-- Actions Fieldset -->
+            <fieldset>
+                <legend>Actions</legend>
+                
+                <div class="form-field">
+                    <div class="form-input button-group">
+                        <input type="submit" name="submit" value="Save {{ entity.nodeType|capitalize }}" class="btn-primary">
+                        <input type="button" name="cancel" value="Cancel" class="btn-secondary" onclick="window.history.back();">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Content{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Content</h2>
+        <p class="admin-page-description">Manage your website content and pages</p>
+        <div class="admin-page-actions">
+            <a href="/admin/content/create" class="admin-button admin-button-primary">
+                <i class="admin-icon-plus"></i> Create Content
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <form method="GET" class="admin-filters">
+        <div class="admin-search">
+            <input type="text" name="search" placeholder="Search content..." value="{{ filters.search }}" class="admin-search-input">
+            <button type="submit" class="admin-search-button">
+                <i class="admin-icon-search"></i>
+            </button>
+        </div>
+        
+        <div class="admin-filter-group">
+            <select name="type" class="admin-filter-select">
+                <option value="">All Types</option>
+                {% for content_type in content_types %}
+                <option value="{{ content_type.name }}" {% if filters.type == content_type.name %}selected{% endif %}>
+                    {{ content_type.label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="admin-filter-group">
+            <select name="status" class="admin-filter-select">
+                <option value="">All Status</option>
+                <option value="published" {% if filters.status == 'published' %}selected{% endif %}>Published</option>
+                <option value="draft" {% if filters.status == 'draft' %}selected{% endif %}>Draft</option>
+                <option value="archived" {% if filters.status == 'archived' %}selected{% endif %}>Archived</option>
+            </select>
+        </div>
+
+        <div class="admin-filter-group">
+            <select name="limit" class="admin-filter-select">
+                <option value="10" {% if filters.limit == 10 %}selected{% endif %}>10 per page</option>
+                <option value="20" {% if filters.limit == 20 %}selected{% endif %}>20 per page</option>
+                <option value="50" {% if filters.limit == 50 %}selected{% endif %}>50 per page</option>
+                <option value="100" {% if filters.limit == 100 %}selected{% endif %}>100 per page</option>
+            </select>
+        </div>
+
+        <button type="submit" class="admin-button admin-button-secondary">Apply Filters</button>
+        <a href="/admin/content" class="admin-button admin-button-outline">Clear</a>
+    </form>
+
+    <!-- Content Grid -->
+    <div class="admin-content-grid">
+        {% for item in content %}
+        <div class="admin-content-card">
+            <div class="admin-content-header">
+                <h3 class="admin-content-title">{{ item.title }}</h3>
+                <div class="admin-content-actions">
+                    <button class="admin-content-action">⋮</button>
+                </div>
+            </div>
+            
+            <div class="admin-content-meta">
+                <span class="admin-content-type">{{ item.type }}</span>
+                <span class="admin-content-status admin-status-{{ item.status|lower }}">
+                    {{ item.status }}
+                </span>
+                <span class="admin-content-published">{{ item.published }}</span>
+            </div>
+
+            <div class="admin-content-description">
+                <p>{{ item.excerpt }}</p>
+            </div>
+
+            <div class="admin-content-footer">
+                <div class="admin-content-info">
+                    <span class="admin-content-author">By {{ item.author }}</span>
+                    <span class="admin-content-date">Created {{ item.created_at|date("M j, Y") }}</span>
+                </div>
+                <div class="admin-content-links">
+                    <a href="/admin/content/{{ item.id }}/edit" class="admin-link">Edit</a>
+                    <a href="/content/{{ item.slug|default(item.id) }}" class="admin-link">View</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty State -->
+    {% if content|length == 0 %}
+    <div class="admin-empty-state">
+        <div class="admin-empty-icon">
+            <i class="admin-icon-content"></i>
+        </div>
+        <h3 class="admin-empty-title">No content found</h3>
+        <p class="admin-empty-description">
+            {% if filters.search or filters.type or filters.status %}
+                Try adjusting your filters or search terms.
+            {% else %}
+                Get started by creating your first piece of content.
+            {% endif %}
+        </p>
+        {% if not filters.search and not filters.type and not filters.status %}
+        <a href="/admin/content/create" class="admin-button admin-button-primary">
+            <i class="admin-icon-plus"></i> Create Content
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if pagination.total_items > 0 %}
+    <div class="admin-pagination">
+        <div class="admin-pagination-info">
+            Showing {{ pagination.showing_start }}-{{ pagination.showing_end }} of {{ pagination.total_items }} items
+        </div>
+        <div class="admin-pagination-controls">
+            {% if pagination.has_previous %}
+                <a href="?page={{ pagination.previous_page }}&type={{ filters.type }}&status={{ filters.status }}&search={{ filters.search }}&limit={{ filters.limit }}" class="admin-pagination-button">Previous</a>
+            {% else %}
+                <button class="admin-pagination-button" disabled>Previous</button>
+            {% endif %}
+            
+            {# Generate page numbers #}
+            {% set start_page = max(1, pagination.current_page - 2) %}
+            {% set end_page = min(pagination.total_pages, pagination.current_page + 2) %}
+            
+            {% if start_page > 1 %}
+                <a href="?page=1&type={{ filters.type }}&status={{ filters.status }}&search={{ filters.search }}&limit={{ filters.limit }}" class="admin-pagination-button">1</a>
+                {% if start_page > 2 %}
+                    <span class="admin-pagination-ellipsis">...</span>
+                {% endif %}
+            {% endif %}
+            
+            {% for page in range(start_page, end_page) %}
+                {% if page == pagination.current_page %}
+                    <button class="admin-pagination-button admin-pagination-active">{{ page }}</button>
+                {% else %}
+                    <a href="?page={{ page }}&type={{ filters.type }}&status={{ filters.status }}&search={{ filters.search }}&limit={{ filters.limit }}" class="admin-pagination-button">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if end_page < pagination.total_pages %}
+                {% if end_page < pagination.total_pages - 1 %}
+                    <span class="admin-pagination-ellipsis">...</span>
+                {% endif %}
+                <a href="?page={{ pagination.total_pages }}&type={{ filters.type }}&status={{ filters.status }}&search={{ filters.search }}&limit={{ filters.limit }}" class="admin-pagination-button">{{ pagination.total_pages }}</a>
+            {% endif %}
+            
+            {% if pagination.has_next %}
+                <a href="?page={{ pagination.next_page }}&type={{ filters.type }}&status={{ filters.status }}&search={{ filters.search }}&limit={{ filters.limit }}" class="admin-pagination-button">Next</a>
+            {% else %}
+                <button class="admin-pagination-button" disabled>Next</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "templates/auth/base.twig" %}
+
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join us today! Create your account to get started.</p>
+        </div>
+
+        {% if error %}
+            <div class="admin-alert admin-alert-danger">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="/user/register" class="auth-form">
+            <div class="auth-form-row">
+                <div class="admin-form-group">
+                    <label for="username" class="admin-form-label">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        class="admin-form-control" 
+                        value="{{ old_input.username|default('') }}"
+                        required 
+                        autocomplete="username"
+                        placeholder="Choose a username"
+                        minlength="3"
+                        maxlength="50"
+                    >
+                    <small class="admin-form-help">3-50 characters, letters, numbers, and underscores only</small>
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <label for="email" class="admin-form-label">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="admin-form-control" 
+                    value="{{ old_input.email|default('') }}"
+                    required 
+                    autocomplete="email"
+                    placeholder="Enter your email address"
+                >
+                <small class="admin-form-help">We'll send you a verification email</small>
+            </div>
+
+            <div class="auth-form-row">
+                <div class="admin-form-group">
+                    <label for="password" class="admin-form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="admin-form-control" 
+                        required 
+                        autocomplete="new-password"
+                        placeholder="Create a strong password"
+                        minlength="8"
+                    >
+                    <small class="admin-form-help">At least 8 characters</small>
+                </div>
+
+                <div class="admin-form-group">
+                    <label for="password_confirm" class="admin-form-label">Confirm Password</label>
+                    <input 
+                        type="password" 
+                        id="password_confirm" 
+                        name="password_confirm" 
+                        class="admin-form-control" 
+                        required 
+                        autocomplete="new-password"
+                        placeholder="Confirm your password"
+                    >
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <div class="admin-form-check">
+                    <input type="checkbox" id="terms" name="terms" class="admin-form-check-input" required>
+                    <label for="terms" class="admin-form-check-label">
+                        I agree to the <a href="/terms" class="admin-link">Terms of Service</a> and <a href="/privacy" class="admin-link">Privacy Policy</a>
+                    </label>
+                </div>
+            </div>
+
+            <div class="admin-form-group">
+                <div class="admin-form-check">
+                    <input type="checkbox" id="newsletter" name="newsletter" class="admin-form-check-input">
+                    <label for="newsletter" class="admin-form-check-label">
+                        Send me occasional updates and announcements
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="admin-button admin-button-primary admin-button-full">
+                Create Account
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <div class="auth-login">
+                <span>Already have an account?</span>
+                <a href="/user/login" class="admin-link admin-link-primary">Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.auth-login {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.auth-login .admin-link-primary {
+    margin-left: 0.25rem;
+}
+
+@media (min-width: 768px) {
+    .auth-form-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.auth-form');
+    const password = document.getElementById('password');
+    const passwordConfirm = document.getElementById('password_confirm');
+    const username = document.getElementById('username');
+    
+    // Username validation
+    username.addEventListener('input', function() {
+        const value = this.value;
+        const valid = /^[a-zA-Z0-9_]{3,50}$/.test(value);
+        
+        if (value.length > 0 && !valid) {
+            this.style.borderColor = '#ef4444';
+        } else {
+            this.style.borderColor = '';
+        }
+    });
+    
+    // Password confirmation validation
+    passwordConfirm.addEventListener('input', function() {
+        if (this.value !== password.value) {
+            this.style.borderColor = '#ef4444';
+        } else {
+            this.style.borderColor = '#10b981';
+        }
+    });
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        const errors = [];
+        
+        if (!/^[a-zA-Z0-9_]{3,50}$/.test(username.value)) {
+            errors.push('Username must be 3-50 characters and contain only letters, numbers, and underscores');
+        }
+        
+        if (password.value !== passwordConfirm.value) {
+            errors.push('Passwords do not match');
+        }
+        
+        if (password.value.length < 8) {
+            errors.push('Password must be at least 8 characters long');
+        }
+        
+        if (errors.length > 0) {
+            e.preventDefault();
+            alert('Please fix the following errors:\n\n' + errors.join('\n'));
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

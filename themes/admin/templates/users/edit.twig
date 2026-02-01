@@ -1,0 +1,177 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Edit User</h2>
+        <p class="admin-page-description">Modify user account information</p>
+        <div class="admin-page-actions">
+            <a href="/admin/users" class="admin-button admin-button-secondary">
+                <i class="admin-icon-arrow-left"></i> Back to Users
+            </a>
+            <a href="/admin/users/{{ user.id }}" class="admin-button admin-button-secondary">
+                <i class="admin-icon-eye"></i> View User
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-form-container">
+        {% if error %}
+        <div class="admin-alert admin-alert-error">
+            <i class="admin-icon-alert"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" class="admin-form">
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="username" class="admin-form-label">Username *</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        value="{{ data.username|default(user.username) }}"
+                        class="admin-form-input" 
+                        required 
+                        pattern="[a-zA-Z0-9_]{3,20}">
+                    <p class="admin-form-help">Username must be 3-20 characters</p>
+                </div>
+
+                <div class="admin-form-group">
+                    <label for="email" class="admin-form-label">Email Address *</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        value="{{ data.email|default(user.email) }}"
+                        class="admin-form-input" 
+                        required>
+                    <p class="admin-form-help">User's email address</p>
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="password" class="admin-form-label">New Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="admin-form-input" 
+                        minlength="8"
+                        placeholder="Leave blank to keep current password">
+                    <p class="admin-form-help">Enter new password or leave blank to keep current</p>
+                </div>
+
+                <div class="admin-form-group">
+                    <label for="confirm_password" class="admin-form-label">Confirm New Password</label>
+                    <input 
+                        type="password" 
+                        id="confirm_password" 
+                        name="confirm_password" 
+                        class="admin-form-input"
+                        placeholder="Confirm new password">
+                    <p class="admin-form-help">Re-enter new password to confirm</p>
+                </div>
+            </div>
+
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="role" class="admin-form-label">Role</label>
+                    <select id="role" name="role" class="admin-form-select">
+                        {% for role_value, role_label in roles %}
+                        <option value="{{ role_value }}" {% if (data.role|default(user.role)) == role_value %}selected{% endif %}>
+                            {{ role_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="admin-form-help">User's permission level</p>
+                </div>
+
+                <div class="admin-form-group">
+                    <label for="status" class="admin-form-label">Status</label>
+                    <select id="status" name="status" class="admin-form-select">
+                        {% for status_value, status_label in statuses %}
+                        <option value="{{ status_value }}" {% if (data.status|default(user.status)) == status_value %}selected{% endif %}>
+                            {{ status_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="admin-form-help">Account activation status</p>
+                </div>
+            </div>
+
+            <!-- User Information Display -->
+            <div class="admin-section">
+                <h3 class="admin-section-title">User Information</h3>
+                <div class="admin-info-grid">
+                    <div class="admin-info-item">
+                        <label class="admin-info-label">User ID:</label>
+                        <span class="admin-info-value">{{ user.id }}</span>
+                    </div>
+                    <div class="admin-info-item">
+                        <label class="admin-info-label">Created:</label>
+                        <span class="admin-info-value">{{ user.createdAt.format('d-m-y')|default('Unknown') }}</span>
+                    </div>
+                    <div class="admin-info-item">
+                        <label class="admin-info-label">Last Login:</label>
+                        <span class="admin-info-value">{{ user.lastLoginAt|default('Never') }}</span>
+                    </div>
+                    <div class="admin-info-item">
+                        <label class="admin-info-label">Email Verified:</label>
+                        <span class="admin-info-value">
+                            {% if user.emailVerified %}
+                                <span class="admin-status admin-status-active">Verified</span>
+                            {% else %}
+                                <span class="admin-status admin-status-disabled">Not Verified</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-form-actions">
+                <button type="submit" class="admin-button admin-button-primary">
+                    <i class="admin-icon-save"></i> Update User
+                </button>
+                <a href="/admin/users" class="admin-button admin-button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.admin-form');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    
+    form.addEventListener('submit', function(e) {
+        // Only validate passwords if a new password is being set
+        if (password.value) {
+            if (password.value !== confirmPassword.value) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                confirmPassword.focus();
+                return false;
+            }
+        }
+    });
+    
+    // Toggle password confirmation visibility based on password field
+    password.addEventListener('input', function() {
+        if (this.value) {
+            confirmPassword.required = true;
+        } else {
+            confirmPassword.required = false;
+            confirmPassword.value = '';
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

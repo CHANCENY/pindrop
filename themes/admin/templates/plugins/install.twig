@@ -1,0 +1,266 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Install Plugin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Install Plugin</h2>
+        <p class="admin-page-description">Browse and install new plugins for your application</p>
+        <div class="admin-page-actions">
+            <a href="/admin/plugins" class="admin-button admin-button-secondary">
+                <i class="admin-icon-arrow-left"></i> Back to Plugins
+            </a>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="admin-filters">
+        <div class="admin-search">
+            <input type="text" placeholder="Search available plugins..." class="admin-search-input">
+            <button class="admin-search-button">
+                <i class="admin-icon-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Available Plugins -->
+    <div class="admin-plugins-grid">
+        {% for plugin in available_plugins %}
+        <div class="admin-plugin-card">
+            <div class="admin-plugin-header">
+                <div class="admin-plugin-info">
+                    <h3 class="admin-plugin-name">{{ plugin.id }}</h3>
+                    <span class="admin-plugin-version">v{{ plugin.version|default('unknown') }}</span>
+                </div>
+                <div class="admin-plugin-status">
+                    {% if plugin.installed %}
+                        <span class="admin-status admin-status-installed">Installed</span>
+                    {% else %}
+                        <span class="admin-status admin-status-available">Available</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="admin-plugin-description">
+                <p>Plugin ID: {{ plugin.id }}</p>
+                <p>Path: {{ plugin.path }}</p>
+                <p>Info File: {{ plugin.info_file }}</p>
+                {% if plugin.installed %}
+                    <p>This plugin is already installed</p>
+                {% else %}
+                    <p>This plugin is available for installation</p>
+                {% endif %}
+            </div>
+
+            <div class="admin-plugin-meta">
+                <div class="admin-plugin-author">
+                    <span>Location: {{ plugin.path }}</span>
+                </div>
+            </div>
+
+            <div class="admin-plugin-actions">
+                {% if not plugin.installed %}
+                    <button 
+                        onclick="AdminTheme.installPlugin('{{ plugin.id }}')"
+                        class="admin-button admin-button-primary">
+                        <i class="admin-icon-download"></i> Install
+                    </button>
+                {% else %}
+                    <button disabled class="admin-button admin-button-secondary">
+                        <i class="admin-icon-check"></i> Already Installed
+                    </button>
+                {% endif %}
+                
+                <a href="{{ plugin.path }}" target="_blank" class="admin-button admin-button-secondary">
+                    <i class="admin-icon-folder"></i> View Files
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Scan for New Plugins -->
+    <div class="admin-section">
+        <h3 class="admin-section-title">Scan for Plugins</h3>
+        <p class="admin-section-description">Scan the modules directory for new plugins that haven't been registered yet.</p>
+        
+        <div class="admin-actions">
+            <button 
+                onclick="AdminTheme.scanForPlugins()"
+                class="admin-button admin-button-primary">
+                <i class="admin-icon-search"></i> Scan for Plugins
+            </button>
+            <button 
+                onclick="AdminTheme.refreshPluginList()"
+                class="admin-button admin-button-secondary">
+                <i class="admin-icon-refresh"></i> Refresh List
+            </button>
+        </div>
+    </div>
+
+    <!-- Manual Installation -->
+    <div class="admin-section">
+        <h3 class="admin-section-title">Manual Installation</h3>
+        <p class="admin-section-description">Upload a plugin package file (.zip) to install manually.</p>
+        
+        <form id="upload-form" action="/admin/plugins/upload" method="POST" enctype="multipart/form-data" class="admin-form">
+            <div class="admin-form-group">
+                <label for="plugin_file" class="admin-form-label">Plugin Package</label>
+                <input type="file" id="plugin_file" name="plugin_file" accept=".zip" class="admin-form-input" required>
+                <p class="admin-form-help">Select a plugin package file (.zip format)</p>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-button admin-button-primary">
+                    <i class="admin-icon-upload"></i> Upload and Install
+                </button>
+                <a href="/admin/plugins" class="admin-button admin-button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Wait for everything to load before defining functions
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if AdminTheme exists
+    if (typeof AdminTheme === 'undefined') {
+        console.error('AdminTheme is not defined!');
+        return;
+    }
+    
+    console.log('AdminTheme is available:', AdminTheme);
+    
+    // Add install plugin functionality
+    AdminTheme.installPlugin = function(pluginId) {
+        AdminTheme.confirmAction('Install ' + pluginId + '? This will install the plugin.', function() {
+            fetch('/admin/plugins/install', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    plugin_name: pluginId
+                })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    AdminTheme.showNotification(data.message, 'success');
+                    setTimeout(function() {
+                        window.location.href = '/admin/plugins';
+                    }, 1500);
+                } else {
+                    AdminTheme.showNotification(data.message, 'error');
+                }
+            })
+            .catch(function(error) {
+                AdminTheme.showNotification('Error installing plugin', 'error');
+            });
+        });
+    };
+
+    // Scan for new plugins
+    AdminTheme.scanForPlugins = function() {
+        AdminTheme.showNotification('Scanning for plugins...', 'info');
+        
+        fetch('/admin/plugins/scan', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                AdminTheme.showNotification('Scan completed. Found ' + data.found + ' new plugins.', 'success');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                AdminTheme.showNotification(data.message, 'error');
+            }
+        })
+        .catch(function(error) {
+            AdminTheme.showNotification('Error scanning for plugins', 'error');
+        });
+    };
+
+    // Refresh plugin list
+    AdminTheme.refreshPluginList = function() {
+        AdminTheme.showNotification('Refreshing plugin list...', 'info');
+        setTimeout(function() {
+            window.location.reload();
+        }, 500);
+    };
+
+    // Upload plugin functionality
+    AdminTheme.uploadPlugin = function(event) {
+        console.log('Upload plugin called');
+        
+        // Prevent default form submission
+        if (event) {
+            event.preventDefault();
+        }
+        
+        const form = document.getElementById('upload-form');
+        const formData = new FormData(form);
+        const submitButton = form.querySelector('button[type="submit"]');
+        
+        // Show loading state
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="admin-icon-loading"></i> Uploading...';
+        
+        AdminTheme.showNotification('Uploading plugin...', 'info');
+        
+        fetch('/admin/plugins/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                AdminTheme.showNotification(data.message, 'success');
+                setTimeout(function() {
+                    window.location.href = '/admin/plugins';
+                }, 1500);
+            } else {
+                AdminTheme.showNotification(data.message, 'error');
+            }
+        })
+        .catch(function(error) {
+            console.error('Upload error:', error);
+            AdminTheme.showNotification('Error uploading plugin', 'error');
+        })
+        .finally(function() {
+            // Reset button state
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="admin-icon-upload"></i> Upload and Install';
+        });
+    };
+
+    // Initialize upload form handler
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            console.log('Form submit event triggered');
+            e.preventDefault();
+            AdminTheme.uploadPlugin(e);
+        });
+    }
+    
+    console.log('Install page JavaScript initialized');
+});
+</script>
+{% endblock %}
+{% endblock %}

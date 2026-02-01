@@ -1,0 +1,165 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Delete User{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Delete User</h2>
+        <p class="admin-page-description">Permanently remove this user account from the system</p>
+        <div class="admin-page-actions">
+            <a href="/admin/users" class="admin-button admin-button-secondary">
+                <i class="admin-icon-arrow-left"></i> Back to Users
+            </a>
+            <a href="/admin/users/{{ user.id }}" class="admin-button admin-button-secondary">
+                <i class="admin-icon-eye"></i> View User
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-delete-container">
+        {% if error %}
+        <div class="admin-alert admin-alert-error">
+            <i class="admin-icon-alert"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Warning Message -->
+        <div class="admin-alert admin-alert-warning">
+            <i class="admin-icon-warning"></i>
+            <strong>Warning:</strong> This action cannot be undone. Deleting this user will:
+            <ul>
+                <li>Remove the user account permanently</li>
+                <li>Delete all associated data and records</li>
+                <li>Revoke all access permissions</li>
+                <li>Log the user out from all sessions</li>
+            </ul>
+        </div>
+
+        <!-- User Information -->
+        <div class="admin-delete-user-info">
+            <h3 class="admin-section-title">User to Delete</h3>
+            <div class="admin-user-card">
+                <div class="admin-user-avatar">
+                    {{ user.username|first|upper }}
+                </div>
+                <div class="admin-user-details">
+                    <h4 class="admin-user-name">{{ user.displayName|default(user.username) }}</h4>
+                    <p class="admin-user-email">{{ user.email }}</p>
+                    <div class="admin-user-meta">
+                        <span class="admin-badge admin-badge-{{ user.role|lower }}">
+                            {{ user.role|replace({'_': ' '})|title }}
+                        </span>
+                        <span class="admin-status admin-status-{{ user.status|lower }}">
+                            {{ user.status|title }}
+                        </span>
+                        <span class="admin-user-id">ID: {{ user.id }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="admin-delete-details">
+            <h3 class="admin-section-title">Account Details</h3>
+            <div class="admin-details-grid">
+                <div class="admin-detail-item">
+                    <label class="admin-detail-label">Created:</label>
+                    <span class="admin-detail-value">{{ user.createdAt.format('d-m-y')|default('Unknown') }}</span>
+                </div>
+                <div class="admin-detail-item">
+                    <label class="admin-detail-label">Last Login:</label>
+                    <span class="admin-detail-value">{{ user.lastLoginAt|default('Never') }}</span>
+                </div>
+                <div class="admin-detail-item">
+                    <label class="admin-detail-label">Email Verified:</label>
+                    <span class="admin-detail-value">
+                        {% if user.emailVerified %}
+                            <span class="admin-status admin-status-active">Verified</span>
+                        {% else %}
+                            <span class="admin-status admin-status-disabled">Not Verified</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="admin-detail-item">
+                    <label class="admin-detail-label">Account Status:</label>
+                    <span class="admin-detail-value">
+                        <span class="admin-status admin-status-{{ user.status|lower }}">
+                            {{ user.status|title }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Form -->
+        <form method="POST" class="admin-delete-form">
+            <div class="admin-form-group">
+                <label class="admin-form-label">Type "DELETE" to confirm:</label>
+                <input 
+                    type="text" 
+                    name="confirm_delete" 
+                    class="admin-form-input" 
+                    placeholder="Type DELETE in all caps"
+                    pattern="DELETE"
+                    required>
+                <p class="admin-form-help">This is required to prevent accidental deletion</p>
+            </div>
+
+            <div class="admin-form-group">
+                <label class="admin-checkbox-label">
+                    <input type="checkbox" name="confirm_understand" required>
+                    I understand that this action cannot be undone and will permanently delete this user account.
+                </label>
+            </div>
+
+            <div class="admin-delete-actions">
+                <button type="submit" class="admin-button admin-button-danger">
+                    <i class="admin-icon-trash"></i> Delete User Permanently
+                </button>
+                <a href="/admin/users" class="admin-button admin-button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.admin-delete-form');
+    const confirmInput = document.querySelector('input[name="confirm_delete"]');
+    const confirmCheckbox = document.querySelector('input[name="confirm_understand"]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    function validateForm() {
+        const isValid = confirmInput.value === 'DELETE' && confirmCheckbox.checked;
+        submitButton.disabled = !isValid;
+        
+        if (isValid) {
+            submitButton.classList.remove('admin-button-disabled');
+        } else {
+            submitButton.classList.add('admin-button-disabled');
+        }
+    }
+    
+    confirmInput.addEventListener('input', validateForm);
+    confirmCheckbox.addEventListener('change', validateForm);
+    
+    // Initial validation
+    validateForm();
+    
+    // Add confirmation before final submission
+    form.addEventListener('submit', function(e) {
+        const userName = '{{ user.displayName|default(user.username) }}';
+        const confirmation = `Are you absolutely sure you want to delete the user "${userName}"? This action cannot be undone.`;
+        
+        if (!confirm(confirmation)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

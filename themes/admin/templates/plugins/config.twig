@@ -1,0 +1,205 @@
+{% extends "templates/base.twig" %}
+
+{% block title %}Configure Plugin{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-page-header">
+        <h2 class="admin-page-title">Configure {{ plugin|capitalize }}</h2>
+        <p class="admin-page-description">Manage plugin settings and configuration</p>
+        <div class="admin-page-actions">
+            <a href="/admin/plugins" class="admin-button admin-button-secondary">
+                <i class="admin-icon-arrow-left"></i> Back to Plugins
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" class="admin-form">
+        <div class="admin-section">
+            <h3 class="admin-section-title">General Settings</h3>
+            
+            <div class="admin-form-group">
+                <label class="admin-form-label">
+                    <input type="checkbox" name="config[enabled]" {{ config.enabled ? 'checked' : '' }} class="admin-form-checkbox">
+                    Enable Plugin
+                </label>
+                <p class="admin-form-help">Enable or disable the plugin functionality</p>
+            </div>
+
+            <div class="admin-form-group">
+                <label class="admin-form-label">
+                    <input type="checkbox" name="config[settings][debug_mode]" {{ config.settings.debug_mode ? 'checked' : '' }} class="admin-form-checkbox">
+                    Debug Mode
+                </label>
+                <p class="admin-form-help">Enable debug logging and error reporting</p>
+            </div>
+
+            <div class="admin-form-group">
+                <label class="admin-form-label">
+                    <input type="checkbox" name="config[settings][cache_enabled]" {{ config.settings.cache_enabled ? 'checked' : '' }} class="admin-form-checkbox">
+                    Enable Caching
+                </label>
+                <p class="admin-form-help">Cache plugin data for better performance</p>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h3 class="admin-section-title">Performance Settings</h3>
+            
+            <div class="admin-form-group">
+                <label for="timeout" class="admin-form-label">Timeout (seconds)</label>
+                <input type="number" id="timeout" name="config[settings][timeout]" value="{{ config.settings.timeout }}" min="1" max="300" class="admin-form-input">
+                <p class="admin-form-help">Maximum time for plugin operations (1-300 seconds)</p>
+            </div>
+
+            <div class="admin-form-group">
+                <label for="max_connections" class="admin-form-label">Max Connections</label>
+                <input type="number" id="max_connections" name="config[settings][max_connections]" value="{{ config.settings.max_connections|default(10) }}" min="1" max="100" class="admin-form-input">
+                <p class="admin-form-help">Maximum concurrent connections (1-100)</p>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h3 class="admin-section-title">API Settings</h3>
+            
+            <div class="admin-form-group">
+                <label for="api_key" class="admin-form-label">API Key</label>
+                <input type="text" id="api_key" name="config[settings][api_key]" value="{{ config.settings.api_key|default('') }}" class="admin-form-input">
+                <p class="admin-form-help">API key for external service integration</p>
+            </div>
+
+            <div class="admin-form-group">
+                <label for="api_endpoint" class="admin-form-label">API Endpoint</label>
+                <input type="url" id="api_endpoint" name="config[settings][api_endpoint]" value="{{ config.settings.api_endpoint|default('') }}" class="admin-form-input">
+                <p class="admin-form-help">URL for external API endpoint</p>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h3 class="admin-section-title">Logging</h3>
+            
+            <div class="admin-form-group">
+                <label for="log_level" class="admin-form-label">Log Level</label>
+                <select id="log_level" name="config[settings][log_level]" class="admin-form-select">
+                    <option value="debug" {{ config.settings.log_level == 'debug' ? 'selected' : '' }}>Debug</option>
+                    <option value="info" {{ config.settings.log_level == 'info' ? 'selected' : '' }}>Info</option>
+                    <option value="warning" {{ config.settings.log_level == 'warning' ? 'selected' : '' }}>Warning</option>
+                    <option value="error" {{ config.settings.log_level == 'error' ? 'selected' : '' }}>Error</option>
+                </select>
+                <p class="admin-form-help">Minimum level of messages to log</p>
+            </div>
+
+            <div class="admin-form-group">
+                <label for="log_file" class="admin-form-label">Log File</label>
+                <input type="text" id="log_file" name="config[settings][log_file]" value="{{ config.settings.log_file|default('logs/' ~ plugin ~ '.log') }}" class="admin-form-input">
+                <p class="admin-form-help">Path to log file relative to application root</p>
+            </div>
+        </div>
+
+        <div class="admin-actions">
+            <button type="submit" class="admin-button admin-button-primary">
+                <i class="admin-icon-save"></i> Save Configuration
+            </button>
+            <button type="button" onclick="AdminTheme.resetPluginConfig('{{ plugin }}')" class="admin-button admin-button-secondary">
+                <i class="admin-icon-refresh"></i> Reset to Defaults
+            </button>
+            <a href="/admin/plugins" class="admin-button admin-button-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Add reset configuration functionality
+AdminTheme.resetPluginConfig = function(pluginName) {
+    AdminTheme.confirmAction('Reset {{ plugin|capitalize }} configuration to default values?', function() {
+        fetch('/admin/plugins/config/' + pluginName + '/reset', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                AdminTheme.showNotification(data.message, 'success');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                AdminTheme.showNotification(data.message, 'error');
+            }
+        })
+        .catch(function(error) {
+            AdminTheme.showNotification('Error resetting configuration', 'error');
+        });
+    });
+};
+
+// Auto-save functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.admin-form');
+    if (form) {
+        let saveTimeout;
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(function(input) {
+            input.addEventListener('change', function() {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(function() {
+                    // Show auto-save indicator
+                    AdminTheme.showNotification('Auto-saving...', 'info');
+                    
+                    fetch('/admin/plugins/config/{{ plugin }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            config: getFormData(form)
+                        })
+                    })
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.success) {
+                            AdminTheme.showNotification('Configuration auto-saved', 'success');
+                        }
+                    })
+                    .catch(function(error) {
+                        AdminTheme.showNotification('Auto-save failed', 'error');
+                    });
+                }, 2000);
+            });
+        });
+    }
+});
+
+function getFormData(form) {
+    const formData = new FormData(form);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        // Handle nested keys like "config[settings][debug_mode]"
+        const keys = key.match(/([^\[\]]+)|\]/g);
+        if (keys) {
+            let current = data;
+            for (let i = 0; i < keys.length - 1; i++) {
+                const key = keys[i];
+                if (!current[key]) {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            current[keys[keys.length - 1]] = value;
+        }
+    }
+    
+    return data;
+}
+</script>
+{% endblock %}
