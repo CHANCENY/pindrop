@@ -27,7 +27,10 @@ class PluginManager
     private array $pluginServices = [];
     private array $pluginRoutes = [];
     private array $pluginMiddleware = [];
+    private array $pluginMysqlSchemas = [];
     private array $pluginMenus = [];
+
+    private array $pluginTemplatesSources = [];
     private ?Container $container = null;
     
     public function __construct(
@@ -326,6 +329,23 @@ class PluginManager
                 if (is_array($middleware)) {
                     $this->pluginMiddleware[$pluginId] = $middleware;
                 }
+            }
+
+            // Load plugin mysql schemas if mysql directory exists
+            $mysqlDirectory = $plugin['path'] . '/mysql';
+            if (is_dir($mysqlDirectory)) {
+                $list = array_diff(scandir($mysqlDirectory), ['.', '..']);
+                foreach ($list as $file) {
+                    $fullPath = $mysqlDirectory . '/' . $file;
+                    if (is_file($fullPath) && file_exists($fullPath) && str_ends_with($file, '.sql')) {
+                        $this->pluginMysqlSchemas[] = $fullPath;
+                    }
+                }
+            }
+
+            $templateDirectory = $plugin['path'] . '/templates';
+            if (is_dir($templateDirectory)) {
+                $this->pluginTemplatesSources[] = $templateDirectory;
             }
             
         } catch (Exception $e) {
@@ -750,5 +770,15 @@ class PluginManager
     public function getPluginRoot()
     {
         return $this->pluginRoot;
+    }
+
+    public function getPluginMysqlSchemas(): array
+    {
+        return $this->pluginMysqlSchemas;
+    }
+
+    public function getPluginTemplateSources(): array
+    {
+        return $this->pluginTemplatesSources;
     }
 }

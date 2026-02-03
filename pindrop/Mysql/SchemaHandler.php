@@ -237,7 +237,10 @@ class SchemaHandler
                 $files[] = $file->getPathname();
             }
         }
-        
+
+        $schemaFiles = \getAppContainer()->get('plugin.manager')->getPluginMysqlSchemas();
+        $files = array_merge($files, array_values($schemaFiles));
+
         sort($files);
         return $files;
     }

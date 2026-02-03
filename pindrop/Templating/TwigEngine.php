@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Templating;
 
+use DI\DependencyException;
+use DI\NotFoundException;
+use Simp\Pindrop\Plugin\PluginManager;
+use Simp\Pindrop\Routing\Url;
 use Simp\Pindrop\Theme\ThemeManager;
 use Simp\Pindrop\Services\EnvServiceProvider;
 use DI\Container;
@@ -72,10 +76,19 @@ class TwigEngine
                 // Add theme namespace
                 $this->loader->addPath($templatesPath, $themeName);
                 
-                // Also add to main namespace for fallback
+                // Also add to the main namespace for fallback
                 $this->loader->addPath($templatesPath);
             }
         }
+
+       $otherSources = \getAppContainer()->get('plugin.manager')->getPluginTemplateSources();
+       foreach ($otherSources as $source) {
+           if (str_ends_with($source, '/templates')) {
+               // remove templates from path
+               $source = substr($source, 0, -10);
+               $this->loader->addPath($source);
+           }
+       }
     }
     
     /**
@@ -144,6 +157,7 @@ class TwigEngine
             try {
                 $menuRenderer = $this->container->get('menu.renderer');
                 $menus = $menuRenderer->getMenuData();
+
                 $this->twig->addGlobal('menus', $menus);
                 
                 // Add menu functions
@@ -162,12 +176,19 @@ class TwigEngine
                     $method->setAccessible(true);
                     return $method->invoke($menuRenderer, $menu);
                 }));
+                $this->addFunction(new \Twig\TwigFunction('url', function(?string $id, array $options = []){
+                    return Url::routeByName($id, $options);
+                }));
             } catch (\Exception $e) {
                 // Menu service not available, skip
             }
         }
     }
 
+    /**
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     private function resolveThemeName(string $templateName): string
     {
         $list = explode('/', $templateName);
@@ -175,16 +196,38 @@ class TwigEngine
 
         $theme = $this->themeManager->getTheme($first);
 
-        if (empty($theme)) return $templateName;
+        /**@var PluginManager $pluginManager */
+        $pluginManager = \getAppContainer()->get('plugin.manager');
+        $otherSources = $pluginManager->getPluginTemplateSources();
 
-        $templatePath = $theme['templates_path'] ?? null;
+        // If the template name start with @ means the template is in plugins,
+        // therefore, the first element after split "/" will be plugin id
+        if (!str_starts_with($templateName, "@")) {
+            if (empty($theme)) return $templateName;
 
-        if (empty($templatePath)) return $templateName;
+            $templatePath = $theme['templates_path'] ?? null;
 
-        $templatePathRoot = substr($templatePath, strlen($theme['path']), strlen($templatePath));
+            if (empty($templatePath)) return $templateName;
+
+            $templatePathRoot = substr($templatePath, strlen($theme['path']), strlen($templatePath));
+
+            $newTemplatePath = [trim($templatePathRoot, '/'), ...$list];
+            $newTemplatePath = array_filter($newTemplatePath);
+
+            if (empty($newTemplatePath)) return $templateName;
+            return implode('/', $newTemplatePath);
+        }
+
+        $plugin = $pluginManager->getPlugin(trim($first, "@"));
+
+        if (empty($plugin)) return $templateName;
+
+        $templatePath = $plugin['path'] . '/templates';
+        $templatePathRoot = substr($templatePath, strlen($plugin['path']), strlen($templatePath));
 
         $newTemplatePath = [trim($templatePathRoot, '/'), ...$list];
         $newTemplatePath = array_filter($newTemplatePath);
+
         if (empty($newTemplatePath)) return $templateName;
         return implode('/', $newTemplatePath);
     }

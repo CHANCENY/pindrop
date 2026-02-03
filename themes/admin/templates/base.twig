@@ -56,6 +56,28 @@
                         {% endif %}
                     </ul>
                 </nav>
+
+                <!-- Sidebar Custom menus -->
+                <nav class="admin-nav">
+                    <ul class="admin-nav-list">
+                        {% if menus is defined %}
+                            {% for index, menuInners in menus %}
+                                {% if index != 'admin' %}
+                                    {% for menu in menuInners %}
+                                        <li class="admin-nav-item" data-weight="{{ menu.attributes.weight|default(999) }}">
+                                            <a href="{{ menu_url(menu) }}" class="admin-nav-link {% if app.request.path_info starts with menu_url(menu) %}active{% endif %}">
+                                                {% if menu.attributes.class is defined and menu.attributes.class %}
+                                                    <i class="{{ menu.attributes.class }}"></i>
+                                                {% endif %}
+                                                {{ menu.title }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </nav>
             </aside>
 
             <!-- Main Content -->
