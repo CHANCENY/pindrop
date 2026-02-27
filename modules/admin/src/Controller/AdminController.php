@@ -22,9 +22,12 @@ use Simp\Pindrop\Entity\User\CurrentUser;
 use Simp\Pindrop\Entity\User\UserVerification;
 use Simp\Pindrop\Form\FormBuilder;
 use Simp\Pindrop\Form\FormState;
+use Simp\Pindrop\Modules\admin\src\Address\AddressFormatter;
 use Simp\Pindrop\Modules\admin\src\Form\ContentEntityForm;
+use Simp\Pindrop\Modules\admin\src\Services\AutoCompleteService;
 use Simp\Pindrop\Routing\Url;
 use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -1977,5 +1980,60 @@ Generated: " . date('Y-m-d H:i:s') . "
             
             return new RedirectResponse('/admin/users');
         }
+    }
+
+    /**
+     * Handle autocomplete requests
+     */
+    public function autocomplete(Request $request, string $route_name, array $options): JsonResponse
+    {
+        $source = $request->query->get('source');
+        $query = $request->query->get('q', '');
+        $limit = intval($request->query->get('limit', 10));
+        $sort = $request->query->get('sort', 'DESC');
+        $sort_by = $request->query->get('sort_by', null);
+
+        try {
+            $results = [];
+
+            /**@var AutoCompleteService $autocompleteService **/
+            $autocompleteService = \getAppContainer()->get('internal.autocomplete');
+
+            $configs = [
+                'source' => $source,
+                'limit'  => $limit,
+                'sort'   => $sort,
+                'sort_by' => $sort_by
+            ];
+
+            $autocompleteService->setConfig($configs);
+
+            $results = $autocompleteService->matches($query);
+
+
+            return new JsonResponse([
+                'results' => $results
+            ]);
+
+        } catch (Exception $e) {
+            return new JsonResponse([
+                'error' => $e->getMessage(),
+                'results' => []
+            ], 400);
+        }
+    }
+
+
+    public function addressFieldBuild(Request $request, string $route_name, array $options): JsonResponse
+    {
+        $code = $request->query->get('code');
+        $name = $request->query->get('name');
+        if (empty($name) || empty($code)) {
+            return new JsonResponse(['status' => false]);
+        }
+
+        $addressFormatter = new AddressFormatter($code);
+
+        return new JsonResponse(['status' => true, 'address' => $addressFormatter->getAddressTemplate($name)]);
     }
 }

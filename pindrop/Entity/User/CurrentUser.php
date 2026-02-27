@@ -32,7 +32,12 @@ class CurrentUser
     // Getters and Setters
     public function getId(): ?int
     {
-        return $this->id;
+        return $this->user?->getId() ?? 0;
+    }
+
+    public function id()
+    {
+        return $this->getId();
     }
 
     public function getSessionId(): ?string

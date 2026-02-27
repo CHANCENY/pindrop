@@ -260,3 +260,18 @@ admin.users.import:
     _controller: 'Simp\Pindrop\Modules\admin\src\Controller\AdminController::import'
   requirements:
     _permission: ['admin', 'super_admin']
+commerce_store.autocomplete:
+  path: '/internal/autocomplete'
+  methods: ['GET']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\admin\src\Controller\AdminController::autocomplete'
+  requirements:
+    _permission:  ['user', 'moderator', 'admin', 'super_admin']
+
+commerce_store.address:
+  path: '/internal/address/[code:string]/[name:string]'
+  methods: ['GET']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\admin\src\Controller\AdminController::addressFieldBuild'
+  requirements:
+    _permission:  ['user', 'moderator', 'admin', 'super_admin','guest']

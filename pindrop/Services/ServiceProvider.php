@@ -116,7 +116,7 @@ class ServiceProvider
         if (getenv('APP_ENV') === 'production') {
             $builder->enableCompilation(__DIR__ . '/../../var/cache');
         }
-        
+
         return $container;
     }
     

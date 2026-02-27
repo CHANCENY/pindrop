@@ -395,10 +395,12 @@ class FileSystem implements FileSystemInterface
 
     public function getPublicUrl(string $uri): string
     {
+        /**@var ConfigurableStreamWrapper $publicWrapper **/
+        $publicWrapper = getAppContainer()->get('filesystem.public_stream');
+
         // Convert public:// URI to web-accessible URL
-        if (str_starts_with($uri, 'public://')) {
-            $publicPath = str_replace('public://', '', $uri);
-            return '/files/' . ltrim($publicPath, '/');
+        if (str_starts_with($uri, "public://")) {
+            return str_replace("public://", $_ENV['PUBLIC_WEB_FILE_ROOT'], $uri);
         }
         
         // For other protocols, return as-is or handle accordingly

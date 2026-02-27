@@ -6,6 +6,8 @@ namespace Simp\Pindrop\Templating;
 
 use DI\DependencyException;
 use DI\NotFoundException;
+use Simp\Pindrop\FileSystem\FileSystem;
+use Simp\Pindrop\Modules\commerce_store\src\Autocomplete\AutocompleteOrderNumber;
 use Simp\Pindrop\Plugin\PluginManager;
 use Simp\Pindrop\Routing\Url;
 use Simp\Pindrop\Theme\ThemeManager;
@@ -15,6 +17,8 @@ use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 use Twig\Extension\DebugExtension;
 use Twig\Extension\StringLoaderExtension;
+use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 /**
  * Twig Engine
@@ -177,8 +181,46 @@ class TwigEngine
                     return $method->invoke($menuRenderer, $menu);
                 }));
                 $this->addFunction(new \Twig\TwigFunction('url', function(?string $id, array $options = []){
+                    if (empty($id)) return '';
                     return Url::routeByName($id, $options);
                 }));
+                $this->twig->addFunction(new TwigFunction('create_url', function (?string $uri){
+                    if (empty($uri)) return $uri;
+
+                    return $this->container->get('filesystem')->getPublicUrl($uri);
+
+                }));
+                $this->twig->addFunction(new TwigFunction('dump', function (...$value){
+                    dump(...$value);
+                }));
+                $this->twig->addFunction(new TwigFunction('json_decode', function (?string $value){
+                    if (empty($value)) return [];
+                    return json_decode($value, true);
+                }));
+                $this->twig->addFilter(new TwigFilter('json_decode', function (?string $value){
+                    if (empty($value)) return [];
+                    return json_decode($value, true);
+                }));
+                $this->twig->addFilter(new TwigFilter('min', function ($value){
+                    return min($value);
+                }));
+                $this->twig->addFilter(new TwigFilter('max', function ($value){
+                    return max($value);
+                }));
+
+                $this->twig->addFilter(new TwigFilter('auto_complete_order_item', function (array $item){
+                    $orderAutoComplete = $this->container->get(AutocompleteOrderNumber::class);
+
+                    return $orderAutoComplete->generateAutoCompleteString($item, $this->container);
+                }));
+
+                $this->twig->addFunction(new TwigFunction('base64encode', function ($value){
+                    return \base64_encode($value);
+                }));
+                $this->twig->addFunction(new TwigFunction('base64decode', function ($value){
+                    return \base64_decode($value);
+                }));
+
             } catch (\Exception $e) {
                 // Menu service not available, skip
             }

@@ -781,4 +781,33 @@ class PluginManager
     {
         return $this->pluginTemplatesSources;
     }
+
+    public function getPluginYamlContent(string $pluginId, string $fileName): array
+    {
+        $plugin = array_find($this->plugins, fn($plugin) => $plugin['id'] === $pluginId);
+
+        if (!$plugin) {
+            return [];
+        }
+
+        $configFile = $plugin['path'] . '/' . $fileName . ".yml";
+
+        if (!file_exists($configFile)) {
+            return [];
+        }
+
+        return Yaml::parseFile($configFile);
+    }
+
+    public function getPluginsYamlContent(string $filename): array
+    {
+        $plugins = $this->getEnabledPlugins();
+        $content = [];
+
+        foreach ($plugins as $plugin) {
+            $content[$plugin['id']] = $this->getPluginYamlContent($plugin['id'], $filename);
+        }
+
+        return $content;
+    }
 }

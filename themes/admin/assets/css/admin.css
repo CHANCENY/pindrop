@@ -36,6 +36,10 @@
     flex-direction: column;
 }
 
+.autocomplete-item {
+    color: var(--admin-shadow-sm);
+}
+
 /* Header */
 .admin-header {
     background: var(--admin-background);
@@ -899,6 +903,115 @@
 .admin-icon-save::before { content: "💾"; }
 .admin-icon-check::before { content: "✅"; }
 .admin-icon-folder::before { content: "📁"; }
+
+/* Scoped Drupal-like Address Grid Layout */
+
+.drupal-address-container {
+    --drupal-border-color: #d3d3d3;
+    --drupal-bg-header: #f1f1f1;
+    --drupal-bg-stripe: #f9f9f9;
+    --drupal-label-weight: 700;
+    --drupal-primary-color: #007bff;
+    --drupal-text-color: #333;
+    --drupal-input-bg: #fff;
+    --drupal-input-border: #ccc;
+    --drupal-input-focus: #007bff;
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--drupal-text-color);
+    max-width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.drupal-address-container *,
+.drupal-address-container *::before,
+.drupal-address-container *::after {
+    box-sizing: inherit;
+}
+
+/* SEAMLESS GRID ENGINE */
+.drupal-address-container .address-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+    border: 1px solid var(--drupal-border-color);
+    background: #fff;
+}
+
+.drupal-address-container .form-item {
+    padding: 15px;
+    border-right: 1px solid var(--drupal-border-color);
+    border-bottom: 1px solid var(--drupal-border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Grid logic for 4-columns */
+.drupal-address-container .address-grid > .form-item:nth-child(4n) {
+    border-right: none;
+}
+
+/* Width variations */
+.drupal-address-container .full-width { grid-column: span 4; border-right: none; }
+.drupal-address-container .half-width { grid-column: span 2; }
+.drupal-address-container .third-width { grid-column: span 1.33; }
+.drupal-address-container .quarter-width { grid-column: span 1; }
+
+/* Special logic for last items in row */
+.drupal-address-container .address-grid > .form-item:last-child {
+    border-bottom: none;
+}
+
+/* INPUT STYLING */
+.drupal-address-container label {
+    display: block;
+    font-weight: var(--drupal-label-weight);
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.drupal-address-container input[type="text"],
+.drupal-address-container input[type="email"],
+.drupal-address-container select,
+.drupal-address-container textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--drupal-input-border);
+    background-color: var(--drupal-input-bg);
+    border-radius: 2px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--drupal-text-color);
+}
+
+.drupal-address-container input:focus,
+.drupal-address-container select:focus,
+.drupal-address-container textarea:focus {
+    outline: none;
+    border-color: var(--drupal-input-focus);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .drupal-address-container .address-grid { grid-template-columns: repeat(2, 1fr); }
+    .drupal-address-container .form-item { border-right: 1px solid var(--drupal-border-color) !important; }
+    .drupal-address-container .address-grid > .form-item:nth-child(2n) { border-right: none !important; }
+    .drupal-address-container .full-width,
+    .drupal-address-container .half-width,
+    .drupal-address-container .third-width { grid-column: span 2; }
+}
+
+@media (max-width: 576px) {
+    .drupal-address-container .address-grid { grid-template-columns: 1fr; }
+    .drupal-address-container .form-item { border-right: none !important; }
+    .drupal-address-container .full-width,
+    .drupal-address-container .half-width,
+    .drupal-address-container .third-width { grid-column: span 1; }
+}
 
 /* Responsive design for plugin grid */
 @media (max-width: 768px) {
