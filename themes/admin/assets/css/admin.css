@@ -61,6 +61,9 @@
     color: var(--admin-primary-color);
     text-decoration: none;
 }
+.admin-header-right{
+    display: flex;
+}
 
 .admin-user-menu {
     display: flex;

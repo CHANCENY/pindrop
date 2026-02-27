@@ -13,6 +13,7 @@ use Simp\Pindrop\Routing\Url;
 use Simp\Pindrop\Theme\ThemeManager;
 use Simp\Pindrop\Services\EnvServiceProvider;
 use DI\Container;
+use Symfony\Component\HttpFoundation\Request;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 use Twig\Extension\DebugExtension;
@@ -155,6 +156,13 @@ class TwigEngine
         $this->twig->addGlobal('app_name', $this->envProvider->get('APP_NAME', 'Pindrop CMS'));
         $this->twig->addGlobal('app_version', $this->envProvider->get('APP_VERSION', '1.0.0'));
         $this->twig->addGlobal('app_env', $this->envProvider->get('APP_ENV', 'development'));
+
+        $this->twig->addFunction(new TwigFunction("supportLanguages", function (){
+            return $this->supportLanguage();
+        }));
+        $this->twig->addFunction(new TwigFunction("language", function (){
+            return $this->defaultLanguage();
+        }));
         
         // Add menus if container is available
         if ($this->container && $this->container->has('menu.renderer')) {
@@ -225,6 +233,7 @@ class TwigEngine
                 // Menu service not available, skip
             }
         }
+
     }
 
     /**
@@ -426,5 +435,34 @@ class TwigEngine
     public function addExtension(\Twig\Extension\ExtensionInterface $extension): void
     {
         $this->twig->addExtension($extension);
+    }
+
+    public function supportLanguage()
+    {
+        if ($this->container->has('language.support.service')) return $this->container->get('language.support.service')->languages;
+        return [];
+    }
+
+    /**
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
+    public function defaultLanguage(): string
+    {
+        $request = $this->container->get(Request::class);
+        $lang = $request->query->get('lang');
+        if (empty($lang)) {
+            $lang = $this->container->get('language.support.service')->getDefaultLanguage();
+        }
+        if (empty($lang)) return $lang;
+        return $lang;
+    }
+
+    private function translate(string $string): string
+    {
+        if ($this->container->has('language.support.service')) {
+            return $this->container->get('language.support.service')->translate($string,'en', $this->defaultLanguage());
+        }
+        return $string;
     }
 }

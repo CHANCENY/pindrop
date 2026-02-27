@@ -35,6 +35,9 @@
     "shuchkin/simplexlsx": "^1.1",
     "shuchkin/simplexls": "^1.0",
     "shuchkin/simplecsv": "^1.0",
-    "filp/whoops": "^2.18"
+    "filp/whoops": "^2.18",
+    "simp/translate": "^1.0",
+    "ext-dom": "*",
+    "ext-libxml": "*"
   }
 }

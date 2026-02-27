@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "077480b5f8fddb3f4999da3a06ff2c3b",
+    "content-hash": "b7382a094b6135feeb18bbf52983f05d",
     "packages": [
         {
             "name": "filp/whoops",
@@ -1298,6 +1298,119 @@
                 "source": "https://github.com/CHANCENY/stream-wrapper/tree/v1.0.3"
             },
             "time": "2025-02-13T10:26:44+00:00"
+        },
+        {
+            "name": "simp/translate",
+            "version": "v1.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/CHANCENY/translate.git",
+                "reference": "8df8831e2fd4879870a77d527d9e270361e7c381"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/CHANCENY/translate/zipball/8df8831e2fd4879870a77d527d9e270361e7c381",
+                "reference": "8df8831e2fd4879870a77d527d9e270361e7c381",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "statickidz/php-google-translate-free": "^1.2",
+                "symfony/yaml": "^7.2"
+            },
+            "require-dev": {
+                "symfony/var-dumper": "^7.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Simp\\Translate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "CHANCENY",
+                    "email": "nyasuluchance6@gmail.com"
+                }
+            ],
+            "description": "This is packages of simp content manager for translation",
+            "support": {
+                "issues": "https://github.com/CHANCENY/translate/issues",
+                "source": "https://github.com/CHANCENY/translate/tree/v1.0.3"
+            },
+            "time": "2025-08-16T16:08:53+00:00"
+        },
+        {
+            "name": "statickidz/php-google-translate-free",
+            "version": "1.2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/statickidz/php-google-translate-free.git",
+                "reference": "0fa2c4aa72336ed52d2bd21a31f80f7b76f69ea5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/statickidz/php-google-translate-free/zipball/0fa2c4aa72336ed52d2bd21a31f80f7b76f69ea5",
+                "reference": "0fa2c4aa72336ed52d2bd21a31f80f7b76f69ea5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=11.3.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Statickidz\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Adrián Barrio Andrés",
+                    "email": "statickidz@gmail.com",
+                    "homepage": "https://statickidz.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Paris Niarfe Baltazar Salguero",
+                    "email": "sieg.sb@gmail.com",
+                    "homepage": "http://www.pbaltazar.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Google Translate Free library for PHP",
+            "homepage": "https://github.com/statickidz/php-google-translate-free/",
+            "keywords": [
+                "api",
+                "free",
+                "google",
+                "siegsb",
+                "statickidz",
+                "translate",
+                "translator"
+            ],
+            "support": {
+                "issues": "https://github.com/statickidz/php-google-translate-free/issues",
+                "source": "https://github.com/statickidz/php-google-translate-free/releases"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/statickidz",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-08-22T10:28:31+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",

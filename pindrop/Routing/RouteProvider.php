@@ -152,6 +152,19 @@ class RouteProvider
      */
     public function dispatch(): Response|JsonResponse|RedirectResponse|null
     {
+        if (\getAppContainer()->has('language.support.service')) {
+            $sLanguages = \getAppContainer()->get('language.support.service')->languages;
+            foreach ($this->routes as $k=>$route) {
+
+                foreach ($sLanguages as $lang=>$sLanguage) {
+                    $cloneRoute =  $route;
+                    $cloneRoute['path'] = "/{$lang}{$route['path']}";
+                    $this->routes["{$k}{$lang}"] = $cloneRoute;
+                }
+
+            }
+        }
+
         // Register all routes with the router immediately
         foreach ($this->routes as $route) {
             $method = strtolower($route['method']);
