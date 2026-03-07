@@ -7,6 +7,7 @@ namespace Simp\Pindrop\Templating;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Simp\Pindrop\FileSystem\FileSystem;
+use Simp\Pindrop\Message\Message;
 use Simp\Pindrop\Modules\commerce_store\src\Autocomplete\AutocompleteOrderNumber;
 use Simp\Pindrop\Plugin\PluginManager;
 use Simp\Pindrop\Routing\Url;
@@ -156,6 +157,7 @@ class TwigEngine
         $this->twig->addGlobal('app_name', $this->envProvider->get('APP_NAME', 'Pindrop CMS'));
         $this->twig->addGlobal('app_version', $this->envProvider->get('APP_VERSION', '1.0.0'));
         $this->twig->addGlobal('app_env', $this->envProvider->get('APP_ENV', 'development'));
+        $this->twig->addGlobal('request', Request::createFromGlobals());
 
         $this->twig->addFunction(new TwigFunction("supportLanguages", function (){
             return $this->supportLanguage();
@@ -227,6 +229,20 @@ class TwigEngine
                 }));
                 $this->twig->addFunction(new TwigFunction('base64decode', function ($value){
                     return \base64_decode($value);
+                }));
+
+                $this->twig->addFunction(new TwigFunction("_config", function ($plugin, $yml_filename){
+                    if (empty($plugin) || empty($yml_filename)) return '';
+                    if (is_array($plugin) || is_array($yml_filename)) return '';
+                    return $this->container->get('plugin.manager')->getPluginYamlContent($plugin, $yml_filename);
+                }));
+
+                $this->twig->addFunction(new TwigFunction("_get_session", function ($key){
+                    return $_SESSION[$key] ?? null;
+                }));
+
+                $this->twig->addFunction(new TwigFunction("get_messages", function (){
+                    return Message::send();
                 }));
 
             } catch (\Exception $e) {

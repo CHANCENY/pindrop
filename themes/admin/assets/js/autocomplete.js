@@ -305,8 +305,6 @@ class Autocomplete {
             const formValue = item[this.config.valueField] || item.value || '';
             this.hiddenInput.value = formValue;
 
-            console.log(this.input, this.hiddenInput)
-
             // Hide dropdown
             this.hideDropdown();
 

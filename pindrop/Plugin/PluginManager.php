@@ -137,7 +137,7 @@ class PluginManager
         foreach ($arguments as $argument) {
             if (is_string($argument) && str_starts_with($argument, '@')) {
                 $dependencyName = substr($argument, 1);
-                
+
                 // Check if dependency is a core service or plugin service
                 if (!$this->isValidDependency($dependencyName)) {
                     throw new \RuntimeException(
@@ -171,9 +171,18 @@ class PluginManager
         if (in_array($dependencyName, $coreServices)) {
             return true;
         }
-        
+
+        $flag = false;
         // Check if it's a registered plugin service
-        return isset($this->pluginServices[$dependencyName]);
+        foreach ($this->pluginServices as $pluginService) {
+            foreach ($pluginService as $name=>$service) {
+                if ($dependencyName === $name) {
+                    $flag = true;
+                    break;
+                }
+            }
+        }
+        return $flag;
     }
     
     /**

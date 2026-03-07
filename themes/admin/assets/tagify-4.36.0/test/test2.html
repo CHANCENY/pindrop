@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Tagify - pupetteer tests</title>
+        <meta name="description" content="Converts HTML input/textarea into Tags component">
+        <meta name="author" content="Yair Even-Or">
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="../dist/tagify.css">
+        <script src="../dist/tagify.js"></script>
+
+        <style>
+            body{ font: 16px Arial; }
+            form{
+                max-width:600px;
+            }
+
+            form > section{ margin-bottom: 2em; }
+
+            .tags-look .tagify__dropdown__item{
+                display: inline-block;
+                vertical-align: middle;
+                border-radius: 3px;
+                padding: .3em .5em;
+                border: 1px solid #CCC;
+                background: #F3F3F3;
+                margin: .2em;
+                font-size: .85em;
+                color: black;
+                transition: 0s;
+            }
+
+            .tags-look .tagify__dropdown__item--active{
+                border-color: black;
+            }
+
+            .tags-look .tagify__dropdown__item:hover{
+                background: lightyellow;
+                border-color: gold;
+            }
+
+            .tags-look .tagify__dropdown__item--hidden {
+                max-width: 0;
+                max-height: initial;
+                padding: .3em 0;
+                margin: .2em 0;
+                white-space: nowrap;
+                text-indent: -20px;
+                border: 0;
+            }
+
+            .tagify {
+                --tag-hide-transition: 0s;
+            }
+        </style>
+    </head>
+
+    <body>
+    <section>
+        <form>
+            <input name="tags" classname='tags-look' value='1,2,3' readonly>
+            <br/><br/>
+            <button type="submit">Submit</button>
+        </form>
+    </section>
+
+<script>
+    // generate random whilist items (for the demo)
+    var input = document.querySelector('input')
+
+    // init Tagify script on the above inputs
+    window.xxx = new Tagify(input, {
+      whitelist: ["A# .NET", "A# (Axiom)", "A-0 System", "A+", "A++", "ABAP", "ABC", "ABC ALGOL", "ABSET", "ABSYS", "ACC", "Accent", "Ace DASL", "ACL2", "Avicsoft", "ACT-III", "Action!", "ActionScript", "Ada", "Adenine", "Agda", "Agilent VEE", "Agora", "AIMMS", "Alef", "ALF", "ALGOL 58", "ALGOL 60", "ALGOL 68", "ALGOL W", "Alice", "Alma-0", "AmbientTalk", "Amiga E", "AMOS", "AMPL", "Apex (Salesforce.com)", "APL", "AppleScript", "Arc", "ARexx", "Argus", "AspectJ", "Assembly language", "ATS", "Ateji PX", "AutoHotkey", "Autocoder", "AutoIt", "AutoLISP / Visual LISP", "Averest", "AWK", "Axum", "Active Server Pages", "ASP.NET", "B", "Babbage", "Bash", "BASIC", "bc", "BCPL", "BeanShell", "Batch (Windows/Dos)", "Bertrand", "BETA", "Bigwig", "Bistro", "BitC", "BLISS", "Blockly", "BlooP", "Blue", "Boo", "Boomerang", "Bourne shell (including bash and ksh)", "BREW", "BPEL", "B", "C--", "C++ – ISO/IEC 14882", "C# – ISO/IEC 23270", "C/AL", "Caché ObjectScript", "C Shell", "Caml", "Cayenne", "CDuce", "Cecil", "Cesil", "Céu", "Ceylon", "CFEngine", "CFML", "Cg", "Ch", "Chapel", "Charity", "Charm", "Chef", "CHILL", "CHIP-8", "chomski", "ChucK", "CICS", "Cilk", "Citrine (programming language)", "CL (IBM)", "Claire", "Clarion", "Clean", "Clipper", "CLIPS", "CLIST", "Clojure", "CLU", "CMS-2", "COBOL – ISO/IEC 1989", "CobolScript – COBOL Scripting language", "Cobra", "CODE", "CoffeeScript", "ColdFusion", "COMAL", "Combined Programming Language (CPL)", "COMIT", "Common Intermediate Language (CIL)", "Common Lisp (also known as CL)", "COMPASS", "Component Pascal", "Constraint Handling Rules (CHR)", "COMTRAN", "Converge", "Cool", "Coq", "Coral 66", "Corn", "CorVision", "COWSEL", "CPL", "CPL", "Cryptol", "csh", "Csound", "CSP", "CUDA", "Curl", "Curry", "Cybil", "Cyclone", "Cython", "Java", "Javascript", "M2001", "M4", "M#", "Machine code", "MAD (Michigan Algorithm Decoder)", "MAD/I", "Magik", "Magma", "make", "Maple", "MAPPER now part of BIS", "MARK-IV now VISION:BUILDER", "Mary", "MASM Microsoft Assembly x86", "MATH-MATIC", "Mathematica", "MATLAB", "Maxima (see also Macsyma)", "Max (Max Msp – Graphical Programming Environment)", "Maya (MEL)", "MDL", "Mercury", "Mesa", "Metafont", "Microcode", "MicroScript", "MIIS", "Milk (programming language)", "MIMIC", "Mirah", "Miranda", "MIVA Script", "ML", "Model 204", "Modelica", "Modula", "Modula-2", "Modula-3", "Mohol", "MOO", "Mortran", "Mouse", "MPD", "Mathcad", "MSIL – deprecated name for CIL", "MSL", "MUMPS", "Mystic Programming L"],
+      maxTags: 10,
+      dropdown: {
+        maxItems: 20,           // <- mixumum allowed rendered suggestions
+        classname: "tags-look", // <- custom classname for this dropdown, so it could be targeted
+        enabled: 0,             // <- show suggestions on focus
+        closeOnSelect: false    // <- do not hide the suggestions dropdown once an item has been selected
+      }
+    })
+
+    xxx.setReadonly(false);
+
+
+    document.forms[0].addEventListener('submit', function(e) {
+        e.preventDefault()
+        // FormData allows you to easily get all form values as key-value pairs.
+        // "get" retrieves the value of a specific field by its "name" attribute.
+        // Here, we print all form values as an object:
+        const formData = new FormData(this);
+        const entries = Object.fromEntries(formData.entries());
+        console.log(entries);
+    })
+
+    xxx.on('remove', function(e) {
+        console.log(e.detail.data.value, xxx.value.length );
+    });
+</script>
+</body>
+</html>

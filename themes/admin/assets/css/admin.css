@@ -906,6 +906,17 @@
 .admin-icon-save::before { content: "💾"; }
 .admin-icon-check::before { content: "✅"; }
 .admin-icon-folder::before { content: "📁"; }
+.alert {
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.alert-info { background: #e7f3ff; color: #084298; }
+.alert-warning { background: #fff3cd; color: #664d03; }
+.alert-error { background: #f8d7da; color: #842029; }
+.alert-debug { background: #eee; color: #333; }
 
 /* Scoped Drupal-like Address Grid Layout */
 
