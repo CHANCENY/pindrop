@@ -27,3 +27,9 @@ groups:
       icon: fa fa-plug
       weight: 4
       roles: [admin, super_admin]
+    settings:
+      title: Settings
+      route: admin.settings
+      icon: fa fa-gear
+      weight: 5
+      roles: [ admin, super_admin ]

@@ -15,7 +15,7 @@ admin.dashboard:
 
 admin.settings:
   path: '/admin/settings'
-  methods: ['GET']
+  methods: ['GET', 'POST']
   defaults:
     _controller: 'Simp\Pindrop\Modules\admin\src\Controller\AdminController::settings'
   requirements:

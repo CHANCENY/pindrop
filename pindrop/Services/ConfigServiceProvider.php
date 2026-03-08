@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Simp\Pindrop\Services;
 
 use DI\ContainerBuilder;
+use Simp\Pindrop\Settings\Settings;
 
 class ConfigServiceProvider
 {
@@ -33,6 +34,7 @@ class ConfigServiceProvider
             'paths.plugins' => fn() => $this->envProvider->get('PLUGIN_ROOT'),
             'paths.storage' => fn() => $this->envProvider->get('ROOT') . '/storage',
             'paths.cache' => fn() => $this->envProvider->get('ROOT') . '/cache',
+            'site.settings' => fn() => new Settings(\getAppContainer()->get('database')),
         ];
         
         $builder->addDefinitions($definitions);

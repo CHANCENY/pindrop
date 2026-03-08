@@ -7,6 +7,7 @@ use DI\DependencyException;
 use DI\NotFoundException;
 use Simp\Pindrop\Database\DatabaseException;
 use Simp\Pindrop\Database\DatabaseService;
+use Simp\Pindrop\Routing\RouteManager;
 
 class AutocompleteInternal
 {
@@ -37,5 +38,20 @@ class AutocompleteInternal
                 'label' => "{$result['email']} ({$result['id']})"
             ];
         }, $results);
+    }
+
+    public function matchRoutes(string $query, int $limit = 10, $sort = 'DESC', $sort_by = null): array
+    {
+        $listedRoutes = RouteManager::getAllRoutes();
+        $routes = array_filter($listedRoutes, function ($route) use ($query) {
+            return !str_contains($route['path'], "[") && str_contains($route['route_name'], $query);
+        });
+
+        return array_map(function ($result) {
+            return [
+                'value' => "{$result['path']} ({$result['route_name']})",
+                'label' => "{$result['path']} ({$result['route_name']})"
+            ];
+        }, array_slice($routes, 0, $limit));
     }
 }

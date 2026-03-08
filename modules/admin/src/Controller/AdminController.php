@@ -6,6 +6,8 @@ namespace Simp\Pindrop\Modules\admin\src\Controller;
 
 use DateInterval;
 use DateTime;
+use DI\DependencyException;
+use DI\NotFoundException;
 use Exception;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
@@ -15,6 +17,7 @@ use Shuchkin\SimpleXLS;
 use Shuchkin\SimpleXLSX;
 use Simp\Pindrop\Content\Storage\StorageEntity;
 use Simp\Pindrop\Controller\ControllerBase;
+use Simp\Pindrop\Database\DatabaseException;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Entity\File\File;
 use Simp\Pindrop\Entity\User\User;
@@ -22,10 +25,15 @@ use Simp\Pindrop\Entity\User\CurrentUser;
 use Simp\Pindrop\Entity\User\UserVerification;
 use Simp\Pindrop\Form\FormBuilder;
 use Simp\Pindrop\Form\FormState;
+use Simp\Pindrop\Message\Message;
 use Simp\Pindrop\Modules\admin\src\Address\AddressFormatter;
 use Simp\Pindrop\Modules\admin\src\Form\ContentEntityForm;
 use Simp\Pindrop\Modules\admin\src\Services\AutoCompleteService;
+use Simp\Pindrop\Plugin\PluginManager;
+use Simp\Pindrop\Routing\RouteManager;
 use Simp\Pindrop\Routing\Url;
+use Simp\Pindrop\Settings\Settings;
+use Simp\Pindrop\Settings\SettingsInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -53,10 +61,26 @@ class AdminController extends ControllerBase
         return new self($container->get('database'));
     }
 
+    /**
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function home(Request $request, string $route_name, array $options): Response
     {
         // This is the public home page - accessible to anonymous users only
         // Authenticated users will be redirected by middleware
+        $homeRoute = \getAppContainer()->get('site.settings')->getSetting('site.home.route')?->get('site_home') ?? "";
+
+        /**@var RouteManager $routeProvider**/
+        $homeRouteArray = RouteManager::getRoute($homeRoute);
+        if (!empty($homeRouteArray)) {
+            $controller = $homeRouteArray['controller'];
+            $method = $homeRouteArray['options']['controller_method'] ?? null;
+
+            if (!empty($method) && !empty($controller)) {
+                return call_user_func_array([$controller, $method], [$request, $route_name, $options]);
+            }
+        }
         
         return $this->renderTwig('admin/admin/home.twig', [
             'page_title' => 'Welcome',
@@ -78,15 +102,66 @@ class AdminController extends ControllerBase
     
     /**
      * Admin settings
+     * @throws DatabaseException
      */
     public function settings(Request $request, string $route_name, array $options): Response
     {
+        /**@var PluginManager $pluginManager**/
+        $pluginManager = \getAppContainer()->get('plugin.manager');
+        $settingsHandlers = $pluginManager->getPluginsYamlContent('settings.config');
+        /**@var Settings $settings **/
+        $settings = \getAppContainer()->get('site.settings');
+
+        $handlersValidated = [];
+        foreach ($settingsHandlers as $handler) {
+            foreach ($handler as $handlerName => $handlerConfig) {
+                if (isset($handlerConfig['class']) && isset($handlerConfig['name'])) {
+                    $handlerClass = $handlerConfig['class'];
+                    $handlerClassObject = new $handlerClass();
+                    if ($handlerClassObject instanceof SettingsInterface) {
+                        $handlersValidated[] = [
+                            'name' => $handlerConfig['name'],
+                            'key' => $handlerName,
+                            'object' => $handlerClassObject,
+                            'setting' => $settings->getSetting($handlerClassObject->settingKey()),
+                        ];
+                    }
+                }
+            }
+        }
+
+        $site_home = $settings->getSetting('site.home.route')?->get('actual') ?? "";
+
+        if ($request->isMethod('POST')) {
+            $site_home = $request->request->get('site_home');
+            $site_home = substr($site_home, strrpos($site_home, '(') + 1, strlen($site_home));
+            $site_home = trim($site_home, ')');
+
+            $savable = [
+                'site.home.route' => ['site_home'=> $site_home, 'actual' => $request->request->get('site_home')],
+            ];
+
+            foreach ($handlersValidated as $handler) {
+                if (!empty($handler['object']) && $handler['object'] instanceof SettingsInterface) {
+                    $savable[$handler['object']->settingKey()] = $handler['object']->savableValues($request);
+                }
+            }
+
+            foreach ($savable as $key=>$value) {
+                $settings->createSetting($key, $value);
+            }
+            Message::info("Settings saved");
+            return $this->redirect(Url::routeByName('admin.settings'));
+        }
+
         return $this->renderTwig('admin/settings.twig', [
             'page_title' => 'Admin Settings',
-            'settings' => $this->getAdminSettings()
+            'settings' => $this->getAdminSettings(),
+            'site_home' => $site_home,
+            'handlersValidateds' => $handlersValidated,
         ]);
     }
-    
+
     /**
      * Users management
      */
