@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Routing;
 
+use Simp\Pindrop\Plugin\PluginManager;
 use Simp\Pindrop\Routing\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -152,6 +153,10 @@ class RouteProvider
      */
     public function dispatch(): Response|JsonResponse|RedirectResponse|null
     {
+        /**@var PluginManager $pluginManager **/
+        $pluginManager = \getAppContainer()->get('plugin.manager');
+        $pluginManager->requireModulesFile();
+
         if (\getAppContainer()->has('language.support.service')) {
             $sLanguages = \getAppContainer()->get('language.support.service')->languages;
             foreach ($this->routes as $k=>$route) {

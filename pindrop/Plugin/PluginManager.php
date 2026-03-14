@@ -819,4 +819,21 @@ class PluginManager
 
         return $content;
     }
+
+    public function requireModulesFile(): void
+    {
+        $list = [];
+        foreach ($this->plugins as $pluginId => $plugin) {
+            if (!empty($plugin['path'])) {
+                $fullPath = $plugin['path'] . '/' . $plugin['id'] . '.module';
+                if (file_exists($fullPath)) {
+                    $list[] = $fullPath;
+                }
+            }
+        }
+
+        foreach ($list as $path) {
+            require_once $path;
+        }
+    }
 }

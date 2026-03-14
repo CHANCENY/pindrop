@@ -245,6 +245,14 @@ class TwigEngine
                     return Message::send();
                 }));
 
+                $this->twig->addFunction(new TwigFunction("is_route", function (string $route_name){
+                    if (!empty($GLOBALS['_SERVER']['ROUTE_ATTRIBUTES']['route_name'])) {
+                        $current_route_name = $GLOBALS['_SERVER']['ROUTE_ATTRIBUTES']['route_name'];
+                        return $route_name === $current_route_name;
+                    }
+                    return false;
+                }));
+
             } catch (\Exception $e) {
                 // Menu service not available, skip
             }

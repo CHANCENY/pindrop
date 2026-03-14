@@ -28,11 +28,11 @@ class AuthMiddleware implements Middleware
         // Handle case where CurrentUser service is not available
         if ($currentUser === null) {
             // If no permissions are required, allow anonymous access
-            if (empty($permitted_roles)) {
+            if (empty($permitted_roles) || in_array('guest', $permitted_roles)) {
                 $access_interface->access_granted = true;
                 return $next($request, $access_interface);
             }
-            
+
             // If permissions are required but no CurrentUser service, deny access
             $access_interface->access_granted = false;
             $access_interface->redirect = new RedirectResponse('/user/login');
@@ -77,7 +77,6 @@ class AuthMiddleware implements Middleware
             if (!$has_permission) {
                 $access_interface->access_granted = false;
                 $access_interface->redirect = new RedirectResponse('/user/login');
-
                 return $next($request, $access_interface);
             }
         }
