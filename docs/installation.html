@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Installation - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 40px;
+            color: #2563eb;
+        }
+
+        p {
+            color: #334155;
+        }
+
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Installation</h1>
+
+<p>
+    This guide will walk you through installing and setting up <strong>Pindrop CMS</strong>.
+</p>
+
+---
+
+<h2>1. Download Pindrop</h2>
+
+<p>
+    Download the latest release from the official repository:
+</p>
+
+<div class="highlight">
+    <a href="https://github.com/CHANCENY/pindrop" target="_blank">
+        https://github.com/CHANCENY/pindrop
+    </a>
+</div>
+
+---
+
+<h2>2. Install Dependencies</h2>
+
+<p>Run Composer to install required packages:</p>
+
+<pre><code>composer install</code></pre>
+
+---
+
+<h2>3. (Optional) Lando Setup</h2>
+
+<p>
+    If you are using <code>lando</code>, update your project name inside:
+</p>
+
+<div class="highlight">
+    <code>.lando.yml</code>
+</div>
+
+---
+
+<h2>4. Environment Configuration</h2>
+
+<p>
+    Copy the example environment file and rename it:
+</p>
+
+<pre><code>cp .env.example .env</code></pre>
+
+<p>Then edit <code>.env</code> and configure:</p>
+
+<ul>
+    <li>Database credentials</li>
+    <li><code>ROOT</code> → Root path of your project</li>
+</ul>
+
+---
+
+<h2>5. Make CLI Executable</h2>
+
+<pre><code>chmod +x pindro</code></pre>
+
+---
+
+<h2>6. Run Installation Command</h2>
+
+<p>If using Lando:</p>
+
+<pre><code>lando ssh</code></pre>
+
+<p>Then inside the container:</p>
+
+<pre><code>./pindro db:schema:create</code></pre>
+
+<p>
+    You will be prompted with a question. Enter:
+</p>
+
+<div class="highlight">
+    <code>0</code>
+</div>
+
+<p>
+    Then press <strong>Enter</strong>.
+</p>
+
+---
+
+<h2>7. Access Your Application</h2>
+
+<p>
+    Once installation is complete, open your application in the browser.
+</p>
+
+---
+
+<h2>Important Notes</h2>
+
+<div class="box">
+    <ul>
+        <li>
+            To fully use the application, you must install and enable the <strong>admin plugin</strong>.
+        </li>
+        <li>
+            See the plugins documentation:
+            <br>
+            <a href="/docs?doc=plugins.html">Plugins Guide</a>
+        </li>
+        <li>
+            For <code>./pindro db:schema:create</code> to work, you must install and enable the <strong>terminal_command plugin</strong>.
+        </li>
+    </ul>
+</div>
+
+---
+
+<h2>You're Ready</h2>
+
+<p>
+    Your Pindrop CMS installation is now complete. You can proceed with installing plugins and building your system.
+</p>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ use DateInterval;
 use DateTime;
 use Exception;
 use Simp\Pindrop\Database\DatabaseService;
+use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Logger\LoggerInterface;
 
 class CurrentUser
@@ -139,15 +140,17 @@ class CurrentUser
             $this->id = $this->db->insert('user_session', $data);
 
             if ($this->id) {
+                \appEvents()->invokeEvents(Events::AUTH_LOGIN, ['session_id' => $this->id]);
                 $this->logger->info('User session created successfully', [
                     'session_id' => $this->id,
                     'user_id' => $this->userId
                 ]);
                 return true;
             }
-
+            \appEvents()->invokeEvents(Events::AUTH_LOGIN_FAILED);
             return false;
         } catch (Exception $e) {
+            \appEvents()->invokeEvents(Events::AUTH_LOGIN_FAILED);
             $this->logger->error('Failed to create user session', [
                 'error' => $e->getMessage(),
                 'user_id' => $this->userId
@@ -207,6 +210,7 @@ class CurrentUser
             $affected = $this->db->query('delete from user_session where id = :id', id: $this->id)->rowCount();
 
             if ($affected > 0) {
+                \appEvents()->invokeEvents(Events::AUTH_LOGOUT, ['user_id' => $this->userId]);
                 $this->logger->info('User session deleted successfully', [
                     'session_id' => $this->id
                 ]);
@@ -215,7 +219,6 @@ class CurrentUser
 
             return false;
         } catch (Exception $e) {
-            dd($e);
             $this->logger->error('Failed to delete user session', [
                 'error' => $e->getMessage(),
                 'session_id' => $this->id

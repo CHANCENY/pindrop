@@ -1,5 +1,5 @@
 -- Create user_session table for managing user sessions
-CREATE TABLE IF NOT EXISTS `user_session` (
+CREATE TABLE `user_session` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `session_id` VARCHAR(128) NOT NULL UNIQUE,
     `user_id` INT(11) NOT NULL,

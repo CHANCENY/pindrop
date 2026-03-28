@@ -38,8 +38,8 @@
         <div class="admin-plugin-card">
             <div class="admin-plugin-header">
                 <div class="admin-plugin-info">
-                    <h3 class="admin-plugin-name">{{ plugin.id }}</h3>
-                    <span class="admin-plugin-version">v{{ plugin.version|default('unknown') }}</span>
+                    <h3 class="admin-plugin-name">{{ plugin.name }}</h3>
+                    <span class="admin-plugin-version">{{ plugin.version|default('unknown') }}</span>
                 </div>
                 <div class="admin-plugin-status">
                     {% if plugin.enabled %}
@@ -63,6 +63,19 @@
             <div class="admin-plugin-meta">
                 <div class="admin-plugin-author">
                     <span>Location: {{ plugin.path }}</span>
+                </div>
+                <div class="admin-plugin-author">
+                    <span>Author: {{ plugin.author }}</span>
+                </div>
+                <div class="admin-plugin-author">
+                    <span>Website: {{ plugin.website }}</span>
+                </div>
+                <div class="admin-plugin-author">
+                    <span>License: {{ plugin.license }}</span>
+                </div>
+                <div></div>
+                <div class="admin-plugin-author">
+                    <span>Description: {{ plugin.description }}</span>
                 </div>
             </div>
 

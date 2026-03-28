@@ -8,6 +8,7 @@ use DI\NotFoundException;
 use Simp\Pindrop\Database\DatabaseException;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Entity\User\User;
+use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Logger\LoggerInterface;
 
 abstract class StorageEntity implements ContentEntityInterface
@@ -137,7 +138,6 @@ abstract class StorageEntity implements ContentEntityInterface
     public function setPublished(bool $published): void
     {
         $this->isPublished = $published;
-        $this->status = $published ? 'published' : 'draft';
     }
 
     public function setStatus(string $status): void
@@ -308,9 +308,10 @@ abstract class StorageEntity implements ContentEntityInterface
             $this->saveDynamicFields($nodeId);
 
             $this->database->commit();
+            \appEvents()->invokeEvents(Events::ENTITY_SAVED, ['entity' => $this]);
             return true;
         } catch (\Exception $e) {
-            dd($e);
+
             $this->database->rollBack();
             $this->logger->error('Failed to save content entity', [
                 'error' => $e->getMessage(),
@@ -367,11 +368,16 @@ abstract class StorageEntity implements ContentEntityInterface
                 'deleted_at' => $this->deletedAt?->format("Y-m-d H:i:s") ?? null,
                 'id' => $this->id
             ];
+
+            \appEvents()->invokeEvents(Events::ENTITY_UPDATING, ['entity' => &$values]);
             
             $this->database->query($sql, ...$values);
-            
+
+            \appEvents()->invokeEvents(Events::ENTITY_UPDATED, ['entity' => $values]);
+
             return $this->id;
-        } else {
+        }
+        else {
             // Insert new record
             $sql = "INSERT INTO node_data (
                 uuid, title, slug, content, excerpt, author_id,
@@ -418,7 +424,9 @@ abstract class StorageEntity implements ContentEntityInterface
                 'published_at' => $this->publishedAt?->format("Y-m-d H:i:s") ?? null,
             ];
 
+            \appEvents()->invokeEvents(Events::ENTITY_CREATING, ['entity' => &$values]);
             $this->database->query($sql, ...$values);
+            \appEvents()->invokeEvents(Events::ENTITY_CREATED, ['entity' => $values]);
             
             return $this->database->lastInsertId();
         }
@@ -443,11 +451,15 @@ abstract class StorageEntity implements ContentEntityInterface
         if ($existing) {
             // Update existing record
             $sql = "UPDATE {$tableName} SET {$dataField} = ? WHERE {$referenceField} = ?";
+            \appEvents()->invokeEvents(Events::ENTITY_UPDATING_DYN_FIELDS, ['fields' => &$dynamicData]);
             $this->database->query($sql, ...$values = [json_encode($dynamicData), $nodeId]);
+            \appEvents()->invokeEvents(Events::ENTITY_UPDATED_DYN_FIELDS, ['fields' => $dynamicData]);
         } else {
             // Insert new record
             $sql = "INSERT INTO {$tableName} ({$referenceField}, {$dataField}) VALUES (?, ?)";
+            \appEvents()->invokeEvents(Events::ENTITY_CREATING_DYN_FIELDS, ['fields' => &$dynamicData]);
             $this->database->query($sql,...$values =  [$nodeId, json_encode($dynamicData)]);
+            \appEvents()->invokeEvents(Events::ENTITY_CREATED_DYN_FIELDS, ['fields' => $dynamicData]);
         }
     }
 
@@ -686,7 +698,8 @@ abstract class StorageEntity implements ContentEntityInterface
         
         try {
             $database->beginTransaction();
-            
+
+            \appEvents()->invokeEvents(Events::ENTITY_DELETING, ['entity_id'=> $id]);
             // Soft delete from node_data
             $sql = "UPDATE node_data SET deleted_at = NOW() WHERE id = ?";
             $database->query($sql, $id);
@@ -701,6 +714,10 @@ abstract class StorageEntity implements ContentEntityInterface
             $database->query($sql, $id);
             
             $database->commit();
+
+            \appEvents()->invokeEvents(Events::ENTITY_DELETED, ['entity_id'=> $id]);
+
+            \appEvents()->invokeEvents(Events::ENTITY_REMOVED, ['entity_id'=> $id]);
             
             $logger->info('Content entity deleted', [
                 'id' => $id,

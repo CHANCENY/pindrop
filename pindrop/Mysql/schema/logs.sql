@@ -1,7 +1,7 @@
 -- Logs Table Schema
 -- Stores application logs from the logger system
 
-CREATE TABLE IF NOT EXISTS `logs` (
+CREATE TABLE `logs` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `level` VARCHAR(20) NOT NULL COMMENT 'Log level (emergency, alert, critical, error, warning, notice, info, debug)',
     `message` TEXT NOT NULL COMMENT 'Log message',

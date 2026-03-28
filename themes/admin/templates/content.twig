@@ -2,6 +2,102 @@
 
 {% block title %}Content{% endblock %}
 
+{% block head %}
+
+    <style>
+        .admin-content-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .admin-content-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+            font-size: 14px;
+        }
+
+        .admin-content-table thead {
+            background: #f5f7fa;
+        }
+
+        .admin-content-table th {
+            text-align: left;
+            padding: 14px 16px;
+            font-weight: 600;
+            color: #444;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .admin-content-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        .admin-content-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .admin-content-excerpt {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* Status badges */
+        .admin-content-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .admin-status-published {
+            background: #e6f7ee;
+            color: #1f9d55;
+        }
+
+        .admin-status-draft {
+            background: #fff4e5;
+            color: #d9822b;
+        }
+
+        .admin-status-archived {
+            background: #f1f1f1;
+            color: #666;
+        }
+
+        /* Links */
+        .admin-link {
+            margin-right: 10px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: 500;
+        }
+
+        .admin-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 768px) {
+            .admin-content-table {
+                font-size: 13px;
+            }
+
+            .admin-content-excerpt {
+                display: none; /* hide excerpt on small screens */
+            }
+        }
+    </style>
+
+{% endblock %}
+
 {% block content %}
 <div class="admin-page">
     <div class="admin-page-header">
@@ -56,41 +152,44 @@
         <a href="/admin/content" class="admin-button admin-button-outline">Clear</a>
     </form>
 
-    <!-- Content Grid -->
-    <div class="admin-content-grid">
-        {% for item in content %}
-        <div class="admin-content-card">
-            <div class="admin-content-header">
-                <h3 class="admin-content-title">{{ item.title }}</h3>
-                <div class="admin-content-actions">
-                    <button class="admin-content-action">⋮</button>
-                </div>
-            </div>
-            
-            <div class="admin-content-meta">
-                <span class="admin-content-type">{{ item.type }}</span>
-                <span class="admin-content-status admin-status-{{ item.status|lower }}">
-                    {{ item.status }}
-                </span>
-                <span class="admin-content-published">{{ item.published }}</span>
-            </div>
-
-            <div class="admin-content-description">
-                <p>{{ item.excerpt }}</p>
-            </div>
-
-            <div class="admin-content-footer">
-                <div class="admin-content-info">
-                    <span class="admin-content-author">By {{ item.author }}</span>
-                    <span class="admin-content-date">Created {{ item.created_at|date("M j, Y") }}</span>
-                </div>
-                <div class="admin-content-links">
-                    <a href="/admin/content/{{ item.id }}/edit" class="admin-link">Edit</a>
-                    <a href="/content/{{ item.slug|default(item.id) }}" class="admin-link">View</a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+    <!-- Content Table -->
+    <div class="admin-content-table-wrapper">
+        <table class="admin-content-table">
+            <thead>
+            <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Published</th>
+                <th>Author</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in content %}
+                <tr>
+                    <td>
+                        <strong>{{ item.title }}</strong>
+                        <p class="admin-content-excerpt">{{ item.excerpt }}</p>
+                    </td>
+                    <td>{{ item.type }}</td>
+                    <td>
+                    <span class="admin-content-status admin-status-{{ item.status|lower }}">
+                        {{ item.status }}
+                    </span>
+                    </td>
+                    <td>{{ item.published }}</td>
+                    <td>{{ item.author }}</td>
+                    <td>{{ item.created_at|date("M j, Y") }}</td>
+                    <td>
+                        <a href="/admin/content/{{ item.id }}/edit" class="admin-link">Edit</a>
+                        <a href="/content/{{ item.slug|default(item.id) }}" class="admin-link">View</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <!-- Empty State -->

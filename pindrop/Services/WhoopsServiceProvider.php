@@ -29,9 +29,9 @@ class WhoopsServiceProvider
         $containerBuilder->addDefinitions([
             'whoops' => function (Container $container) {
                 $environment = getenv('APP_ENV') ?: 'development';
-                $debug = getenv('DEBUG') ?: 'true';
+                $debug =(bool) getenv('DEBUG') ?: 'true';
                 
-                if ($environment === 'production' || $debug !== 'true') {
+                if ($environment === 'production' || $debug !== true) {
                     return null; // Don't register Whoops in production
                 }
                 
@@ -42,7 +42,7 @@ class WhoopsServiceProvider
                 $prettyPageHandler->setPageTitle('Pindrop - Something went wrong!');
                 $prettyPageHandler->addDataTable('Pindrop Environment', [
                     'Environment' => $environment,
-                    'Debug Mode' => $debug,
+                    'Debug Mode' => true,
                     'Timezone' => date_default_timezone_get(),
                     'PHP Version' => PHP_VERSION,
                     'App Directory' => dirname(__DIR__, 2),
@@ -50,8 +50,10 @@ class WhoopsServiceProvider
                 
                 // Add JSON handler for AJAX requests
                 $jsonHandler = new JsonResponseHandler();
-                $jsonHandler->setJsonApi(true);
-                
+                if (!empty($_ENV['APP_REST_API'])) {
+                    $jsonHandler->setJsonApi(true);
+                }
+
                 $whoops->pushHandler($prettyPageHandler);
                 $whoops->pushHandler($jsonHandler);
                 

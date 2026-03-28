@@ -18,6 +18,7 @@ use Simp\Pindrop\Services\UserServiceProvider;
 use Simp\Pindrop\Content\ContentServiceProvider;
 use Simp\Pindrop\Services\WhoopsServiceProvider;
 use Simp\Pindrop\Services\MenuServiceProvider;
+use Throwable;
 
 class ServiceProvider
 {
@@ -101,23 +102,7 @@ class ServiceProvider
                 $provider->configureContainer($builder);
             }
         }
-        
-        // Build container
-        $container = $builder->build();
-        
-        // Boot providers that need it
-        foreach ($this->providers as $provider) {
-            if ($provider instanceof WhoopsServiceProvider) {
-               // $provider->boot($container);
-            }
-        }
-        
-        // Enable compilation for production
-        if (getenv('APP_ENV') === 'production') {
-            $builder->enableCompilation(__DIR__ . '/../../var/cache');
-        }
-
-        return $container;
+        return $builder->build();
     }
     
     /**

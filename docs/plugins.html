@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plugins - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 40px;
+            color: #2563eb;
+        }
+
+        p {
+            color: #334155;
+        }
+
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Plugins</h1>
+
+<p>
+    Plugins are the core building blocks of Pindrop CMS. Every feature in the system is delivered as a plugin.
+</p>
+
+<div class="box">
+    <strong>Key Concept:</strong><br>
+    Each plugin is stored as a separate branch in the official repository.
+</div>
+
+<h2>📦 Plugin Repository</h2>
+
+<p>
+    All plugins are available in the official repository:
+</p>
+
+<div class="highlight">
+    <a href="https://github.com/CHANCENY/pindrop-features" target="_blank">
+        https://github.com/CHANCENY/pindrop-features
+    </a>
+</div>
+
+<p>
+    Each branch represents a standalone plugin.
+</p>
+
+<h2>🌿 Branch = Plugin</h2>
+
+<p>
+    The repository follows a strict convention:
+</p>
+
+<ul>
+    <li>Each <strong>branch</strong> contains one plugin</li>
+    <li>The <strong>branch name is the plugin name</strong></li>
+</ul>
+
+<div class="highlight">
+    <code>admin → Admin plugin</code><br>
+    <code>payments → Payments plugin</code><br>
+    <code>analytics → Analytics plugin</code>
+</div>
+
+<h2>⬇️ Downloading a Plugin</h2>
+
+<p>
+    To download a plugin, clone its branch:
+</p>
+
+<pre><code>git clone -b &lt;plugin-name&gt; --single-branch https://github.com/CHANCENY/pindrop-features.git</code></pre>
+
+<p>Example:</p>
+
+<pre><code>git clone -b admin --single-branch https://github.com/CHANCENY/pindrop-features.git</code></pre>
+
+<div class="box">
+    This will download only the selected plugin.
+</div>
+
+<h2>📁 Installing a Plugin</h2>
+
+<p>
+    After downloading, move the plugin into your project’s <code>modules</code> directory:
+</p>
+
+<pre><code>your-project/
+  modules/
+    admin/
+</code></pre>
+
+<p>
+    The folder name <strong>must match the branch name</strong>.
+</p>
+
+<h2>⚙️ Enabling & Disabling Plugins</h2>
+
+<p>
+    Plugins are managed via configuration:
+</p>
+
+<div class="highlight">
+    <code>config/sync/core.plugin.yml</code>
+</div>
+
+<p>Example:</p>
+
+<pre><code>admin: 1
+payments: 0</code></pre>
+
+<ul>
+    <li><code>1</code> → Installed and enabled</li>
+    <li><code>0</code> → Installed but disabled</li>
+</ul>
+
+<p>
+    The key must match the plugin name (branch name and folder name).
+</p>
+
+<h2>📏 Naming Rules</h2>
+
+<ul>
+    <li>Use lowercase names</li>
+    <li>No spaces (use <code>-</code> or <code>_</code> if needed)</li>
+    <li>Branch name = Folder name = Config key</li>
+</ul>
+
+<h2>🚀 Best Practices</h2>
+
+<ul>
+    <li>Keep plugins independent</li>
+    <li>Do not modify core system files</li>
+    <li>Use clear and consistent naming</li>
+    <li>Version plugins through Git branches</li>
+</ul>
+
+<div class="box">
+    Plugins should be self-contained and not depend on internal core changes.
+</div>
+
+<h2>🧠 Summary</h2>
+
+<ul>
+    <li>Plugins live in Git branches</li>
+    <li>Clone the branch to download</li>
+    <li>Place in <code>modules/</code></li>
+    <li>Enable via configuration</li>
+</ul>
+
+</body>
+</html>

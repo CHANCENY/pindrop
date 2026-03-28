@@ -381,7 +381,7 @@
                                 <span>{{ content.created_at|date('M j, Y') }}</span>
                                 <span class="status {{ content.status }}">{{ content.status|title }}</span>
                             </div>
-                            <a href="{{ content.url }}">Edit Content</a>
+                            <a href="{{ url("admin.content.edit",{id: content.id}) }}">Edit Content</a>
                         </li>
                     {% endfor %}
                 </ul>

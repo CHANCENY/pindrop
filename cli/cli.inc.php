@@ -3,6 +3,7 @@
 use Simp\Pindrop\Services\ServiceProvider;
 
 require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . "/colors.php";
 
 $serviceProvider = new ServiceProvider();
 $container = $serviceProvider->buildContainer();
@@ -82,7 +83,7 @@ class CLIPrinter
     public function printLine(string $text, ?string $color = null): void
     {
         $colorCode = $color && isset($this->colorsCodes[$color]) ? $this->colorsCodes[$color] : '';
-        echo $colorCode . $text . $this->colorsCodes['reset'] . PHP_EOL;
+        echo trim($colorCode) . trim($text) . $this->colorsCodes['reset'] . PHP_EOL;
     }
 
     // Print multiple lines (array) with optional color
@@ -109,7 +110,7 @@ class CLIPrinter
             foreach ($row as $i => $cell) {
                 $color = $colors[$i] ?? null;
                 $colorCode = $color && isset($this->colorsCodes[$color]) ? $this->colorsCodes[$color] : '';
-                $padding = str_repeat(' ', $colWidths[$i] - strlen((string)$cell));
+                $padding = str_repeat('', $colWidths[$i] - strlen((string)$cell));
                 echo $colorCode . $cell . $padding . $this->colorsCodes['reset'] . "  ";
             }
             echo PHP_EOL;

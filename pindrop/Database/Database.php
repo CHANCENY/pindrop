@@ -38,6 +38,10 @@ class Database
                 PDO::ATTR_PERSISTENT => false,
             ]
         ], $config);
+
+        if (empty($this->config['database']) || empty($this->config['username']) || empty($this->config['password'])) {
+            die("Database configuration is missing.");
+        }
     }
     
     /**
@@ -338,14 +342,18 @@ class Database
             'driver' => 'mysql',
         ];
     }
-    
+
     /**
      * Execute raw SQL with error handling
+     * @throws DatabaseException
      */
     public function exec(string $sql): int
     {
         try {
-            return $this->getPdo()->exec($sql);
+            $this->getPdo()->exec("SET FOREIGN_KEY_CHECKS = 0;");
+            $results = $this->getPdo()->exec($sql);
+            $this->getPdo()->exec("SET FOREIGN_KEY_CHECKS = 1;");
+            return $results;
         } catch (PDOException $e) {
             throw new DatabaseException(
                 'Execution failed: ' . $e->getMessage(),

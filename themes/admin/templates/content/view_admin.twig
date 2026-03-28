@@ -1,0 +1,99 @@
+{% block title %} {{ entity.title }} {% endblock %}
+
+{% extends "templates/base.twig" %}
+
+{% block head %}
+
+    <style>
+        .wiki-layout {
+            max-width: 900px;
+            margin: 20px auto;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .wiki-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .wiki-table th,
+        .wiki-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eaecf0;
+            vertical-align: top;
+        }
+
+        /* Left column (labels) */
+        .wiki-label {
+            width: 220px;
+            text-align: left;
+            font-weight: 600;
+            color: #202122;
+            background: #f8f9fa;
+        }
+
+        /* Right column (values) */
+        .wiki-value {
+            color: #202122;
+        }
+
+        /* Links */
+        .wiki-value a {
+            color: #3366cc;
+            text-decoration: none;
+        }
+
+        .wiki-value a:hover {
+            text-decoration: underline;
+        }
+
+        /* Lists */
+        .wiki-value ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        /* Images */
+        .wiki-value img {
+            max-width: 250px;
+            border: 1px solid #c8ccd1;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        /* Zebra rows (like wiki tables) */
+        .wiki-table tr:nth-child(even) {
+            background: #fbfbfb;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wiki-table,
+            .wiki-table tbody,
+            .wiki-table tr,
+            .wiki-table th,
+            .wiki-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .wiki-label {
+                background: transparent;
+                border-bottom: none;
+                padding-bottom: 4px;
+            }
+
+            .wiki-value {
+                padding-top: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+
+{% endblock %}
+
+ {% block content %}
+     {{ entity.getView()|raw }}
+ {% endblock %}
+

@@ -471,11 +471,11 @@ class TwigEngine
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public function defaultLanguage(): string
+    public function defaultLanguage(): ?string
     {
         $request = $this->container->get(Request::class);
         $lang = $request->query->get('lang');
-        if (empty($lang)) {
+        if (empty($lang) && $this->container->has('language.support.service')) {
             $lang = $this->container->get('language.support.service')->getDefaultLanguage();
         }
         if (empty($lang)) return $lang;

@@ -1,0 +1,54 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+}
+
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    background: #020617;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.4);
+    position: fixed;
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #38bdf8;
+}
+
+.sidebar a {
+    display: block;
+    color: #cbd5f5;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+}
+
+.sidebar a:hover {
+    background: #1e293b;
+}
+
+.sidebar a.active {
+    background: #38bdf8;
+    color: #020617;
+    font-weight: bold;
+}
+
+.main-doc-section {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    height: 100vh;
+}
+
+.docu-iframe-sec {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}

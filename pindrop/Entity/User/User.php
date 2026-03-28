@@ -3,6 +3,7 @@
 namespace Simp\Pindrop\Entity\User;
 
 use Simp\Pindrop\Database\DatabaseService;
+use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Logger\LoggerInterface;
 
 
@@ -267,6 +268,7 @@ class User
         }
 
         $this->deletedAt = new \DateTime();
+        \appEvents()->invokeEvents(Events::USER_DELETING, ['uid' => $this->id, 'force'=>false]);
         return $this->update();
     }
 
@@ -277,6 +279,7 @@ class User
         }
 
         $sql = "DELETE FROM users WHERE id = ?";
+        \appEvents()->invokeEvents(Events::USER_DELETING, ['uid' => $this->id, 'force'=>true]);
         $result = $this->database->query($sql, $this->id);
         
         if ($this->logger) {
@@ -285,6 +288,10 @@ class User
                 'uuid' => $this->uuid,
                 'username' => $this->username
             ]);
+        }
+
+        if ($result) {
+            \appEvents()->invokeEvents(Events::USER_DELETED, ['uid' => $this->id]);
         }
         
         return $result !== false;
@@ -350,6 +357,8 @@ class User
             'updated_at' => $this->updatedAt->format('Y-m-d H:i:s')
         ];
 
+        \appEvents()->invokeEvents(Events::USER_CREATING, ['user' => &$data]);
+
         $this->id = $this->database->insert('users', $data);
         
         if ($this->id) {
@@ -361,6 +370,7 @@ class User
                     'email' => $this->email
                 ]);
             }
+            \appEvents()->invokeEvents(Events::USER_CREATED, ['user' => $data]);
             return true;
         }
 
@@ -428,6 +438,8 @@ class User
             'deleted_at' => $this->deletedAt?->format('Y-m-d H:i:s')
         ];
 
+        \appEvents()->invokeEvents(Events::USER_UPDATING, ['user' => &$data]);
+
         $result = $this->database->update('users', $data, 'id = ?', $this->id);
         
         if ($this->logger) {
@@ -437,7 +449,10 @@ class User
                 'username' => $this->username
             ]);
         }
-        
+
+        if ( $result > 0) {
+            \appEvents()->invokeEvents(Events::USER_UPDATED, ['user' => $data]);
+        }
         return $result > 0;
     }
 

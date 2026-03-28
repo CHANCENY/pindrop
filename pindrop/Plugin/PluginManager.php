@@ -226,7 +226,9 @@ class PluginManager
             if ($item->isDir() && !$item->isDot()) {
                 $pluginId = $item->getBasename();
                 $pluginPath = $item->getPathname();
-                
+
+                $data = Yaml::parseFile($pluginPath . '/info.yml');
+
                 $this->plugins[$pluginId] = [
                     'id' => $pluginId,
                     'path' => $pluginPath,
@@ -234,6 +236,7 @@ class PluginManager
                     'enabled' => false,
                     'installed' => false,
                     'config' => null,
+                    ...$data
                 ];
             }
         }

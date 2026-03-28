@@ -93,4 +93,6 @@ interface ContentEntityInterface
 
     public function getEntityForm(): string;
 
+    public function getView(): string;
+
 }

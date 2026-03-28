@@ -6,6 +6,7 @@ namespace Simp\Pindrop\Content;
 
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
+use Simp\Pindrop\Content\Storage\ContentEntityInterface;
 use Simp\Pindrop\Content\Storage\StorageEntity;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Services\EnvServiceProvider;
@@ -68,7 +69,7 @@ class ContentServiceProvider
                 return new class($container->get('database'), $container->get('logger'), $container) {
                     private array $entities;
 
-                    public function __construct(protected DatabaseService $database, protected $logger, ContainerInterface $container)
+                    public function __construct(protected DatabaseService $database, protected $logger, protected ContainerInterface $container)
                     {
                         // Get entity classes from PluginManager
                         $pluginManager = $container->get('plugin.manager');
@@ -147,12 +148,30 @@ class ContentServiceProvider
                                 $results[] = $row;
                             }
                             
-                            return $results;
+                            return array_map(function($row) {
+                                return $this->find($row['id']);
+                            }, $results);
                             
                         } catch (\Exception $e) {
                             $this->logger->error('Error in findBy: ' . $e->getMessage());
                             return [];
                         }
+                    }
+
+                    public function find(int $id): ?ContentEntityInterface
+                    {
+                        $sql = "SELECT node_type FROM node_data WHERE id = :id";
+                        $stmt = $this->database->query($sql, $id);
+                        $result = $stmt->fetchColumn();
+                        $entity = $this->getClass($result) ?? null;
+                        if (!empty($entity) && class_exists($entity)) {
+
+                            $entity = $this->container->get($entity);
+                            if ($entity instanceof ContentEntityInterface) {
+                                return $entity->find($id);
+                            }
+                        }
+                        return null;
                     }
                 };
             }

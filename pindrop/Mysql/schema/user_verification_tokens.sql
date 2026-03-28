@@ -1,5 +1,5 @@
 -- Create user_verification_tokens table for storing verification tokens
-CREATE TABLE IF NOT EXISTS `user_verification_tokens` (
+CREATE TABLE `user_verification_tokens` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT(11) NOT NULL,
     `token_type` ENUM('email_verification', 'password_reset') NOT NULL,
