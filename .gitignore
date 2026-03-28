@@ -2,4 +2,4 @@ vendor
 .idea
 sites
 .env
-reports.log
+.logs/reports.log

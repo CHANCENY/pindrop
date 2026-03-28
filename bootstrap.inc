@@ -7,6 +7,7 @@ require_once 'vendor/autoload.php';
 
 use DI\DependencyException;
 use DI\NotFoundException;
+use Simp\Pindrop\Events\EventsManager;
 use Simp\Pindrop\Routing\RouteProvider;
 use Simp\Pindrop\Services\ServiceProvider;
 use Simp\Pindrop\Routing\RouteManager;
@@ -42,6 +43,7 @@ if (file_exists(__DIR__ . '/.env')) {
 // Set error reporting based on environment
 $environment = getenv('APP_ENV') ?: 'development';
 $debug = getenv('DEBUG') ?: 'true';
+$debug = (bool)$debug;
 
 if ($environment === 'production') {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
@@ -55,38 +57,6 @@ else {
 // Set timezone and charset
 date_default_timezone_set(getenv('TIMEZONE') ?: 'UTC');
 ini_set('default_charset', 'UTF-8');
-
-// Initialize Whoops error handler for development
-if ($environment !== 'production' && $debug === 'true') {
-    $whoops = new Run();
-    
-    // Add pretty page handler for browser requests
-    $prettyPageHandler = new PrettyPageHandler();
-    $prettyPageHandler->setPageTitle('Pindrop - Something went wrong!');
-    $prettyPageHandler->addDataTable('Pindrop Environment', [
-        'Environment' => $environment,
-        'Debug Mode' => $debug,
-        'Timezone' => date_default_timezone_get(),
-        'PHP Version' => PHP_VERSION,
-        'App Directory' => __DIR__,
-    ]);
-    
-    // Add JSON handler for AJAX requests
-    $jsonHandler = new JsonResponseHandler();
-    $jsonHandler->setJsonApi(true);
-    
-    $whoops->pushHandler($prettyPageHandler);
-    $whoops->pushHandler($jsonHandler);
-    $whoops->register();
-    
-    // Store whoops instance in container for later use
-    if (!function_exists('getWhoops')) {
-        function getWhoops(): Run {
-            global $whoops;
-            return $whoops;
-        }
-    }
-}
 
 // Initialize service provider
 $serviceProvider = new ServiceProvider();
@@ -103,6 +73,42 @@ $middleware_list =  $container->get('plugin.middleware')->getMiddlewareClasses()
 $routeProvider = RouteManager::initialize($middleware_list);
 $pluginRoutes = new PluginRoutes($routeProvider, $container);
 $pluginRoutes->register($pluginManager->getPluginRoutes());
+
+// Initialize Whoops error handler for development
+if ($environment !== 'production' && $debug === true) {
+    $whoops = new Run();
+
+    // Add pretty page handler for browser requests
+    $prettyPageHandler = new PrettyPageHandler();
+    $prettyPageHandler->setPageTitle('Pindrop - Something went wrong!');
+    $prettyPageHandler->addDataTable('Pindrop Environment', [
+        'Environment' => $environment,
+        'Debug Mode' => $debug,
+        'Timezone' => date_default_timezone_get(),
+        'PHP Version' => PHP_VERSION,
+        'App Directory' => __DIR__,
+    ]);
+    
+    // Add JSON handler for AJAX requests
+    $jsonHandler = new JsonResponseHandler();
+    $jsonHandler->setJsonApi(true);
+    
+    $whoops->pushHandler($prettyPageHandler);
+
+    if (!empty($_ENV['APP_REST_API'])) {
+        $whoops->pushHandler($jsonHandler);
+    }
+
+    $whoops->register();
+    
+    // Store whoops instance in container for later use
+    if (!function_exists('getWhoops')) {
+        function getWhoops(): Run {
+            global $whoops;
+            return $whoops;
+        }
+    }
+}
 
 /**
  * Get the application container
@@ -137,4 +143,15 @@ function getRouteProvider(): RouteProvider
 function app(string $service)
 {
     return getAppContainer()->get($service);
+}
+
+/**
+ * Load all events registered.
+ */
+$eventsManager = $container->get(\Simp\Pindrop\Events\EventsManager::class);
+
+function appEvents(): EventsManager
+{
+    global $eventsManager;
+    return $eventsManager;
 }
