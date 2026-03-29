@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plugin System - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h2 { margin-top: 40px; color: #2563eb; }
+        h3 { margin-top: 24px; color: #1e40af; }
+        p { color: #334155; }
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            color: #9a3412;
+        }
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        a { color: #2563eb; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Plugin System</h1>
+
+<p>
+    Every feature in Pindrop is a plugin. Plugins live in the <code>modules/</code> directory and are
+    self-describing via YAML configuration files. The core framework stays minimal — plugins add routes,
+    services, entities, middleware, menus, and CLI commands.
+</p>
+
+---
+
+<h2>Plugin Structure</h2>
+
+<pre><code>modules/
+└── my_plugin/
+    ├── info.yml                 ← required: plugin identity
+    ├── routing.yml              ← HTTP routes
+    ├── services.yml             ← DI container services
+    ├── middleware.yml           ← request middleware
+    ├── menu.yml                 ← admin sidebar links
+    ├── entity.repository.yml   ← content entity registrations
+    ├── autocomplete.yml         ← autocomplete handler registrations
+    ├── settings.config.yml      ← settings panel handlers
+    ├── pindro.commands.yml      ← CLI command scripts
+    └── src/
+        ├── Controller/
+        ├── Entity/
+        ├── Form/
+        ├── Middleware/
+        └── Services/</code></pre>
+
+---
+
+<h2>Creating a Plugin</h2>
+
+<h3>Option A — CLI (recommended)</h3>
+
+<pre><code>./pindro plugin:create</code></pre>
+
+<p>
+    The CLI will ask for name, description, version, author, website, and license. It creates the plugin
+    directory and scaffolds all YAML files automatically.
+</p>
+
+<h3>Option B — Manually</h3>
+
+<p>
+    Create a folder in <code>modules/</code> with your plugin's machine name (lowercase, underscores only).
+    Add at least an <code>info.yml</code> file.
+</p>
+
+---
+
+<h2>Installing &amp; Enabling a Plugin</h2>
+
+<h3>Via CLI</h3>
+
+<pre><code># Install (registers in config)
+./pindro plugin:install my_plugin
+
+# Enable
+./pindro plugin:enable my_plugin
+
+# Disable
+./pindro plugin:disable my_plugin
+
+# Uninstall
+./pindro plugin:uninstall my_plugin
+
+# Download from the official repo (git must be installed)
+./pindro plugin:download admin</code></pre>
+
+<h3>Via Admin UI</h3>
+
+<p>
+    Navigate to <code>/admin/plugins</code> (requires <code>admin</code> or <code>super_admin</code> role).
+    From there you can install, enable, disable, configure, and upload plugin ZIPs.
+</p>
+
+<h3>Via config file (manual)</h3>
+
+<pre><code># config/sync/core.plugin.yml
+admin: 1              # installed and enabled
+terminal_command: 1   # installed and enabled
+my_plugin: 0          # installed but disabled</code></pre>
+
+<div class="highlight">
+    <strong>Values:</strong> <code>1</code> = installed + enabled &nbsp;|&nbsp; <code>0</code> = installed but disabled.
+    Remove the key entirely to unregister the plugin.
+</div>
+
+---
+
+<h2>YAML File Reference</h2>
+
+<h3>info.yml</h3>
+
+<p>Required in every plugin. Declares plugin identity and metadata.</p>
+
+<pre><code>name: "My Plugin"
+description: "Does something useful"
+version: 1.0.0
+author: "Your Name"
+website: "https://example.com"
+license: "MIT"</code></pre>
+
+---
+
+<h3>routing.yml</h3>
+
+<p>
+    Registers HTTP routes. Each route has a machine name (key), a path pattern, allowed HTTP methods,
+    a controller reference, and access permissions.
+</p>
+
+<pre><code>my_plugin.home:
+  path: '/my-page'
+  methods: ['GET']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\my_plugin\src\Controller\MyController::index'
+  requirements:
+    _permission: ['user', 'admin', 'super_admin']
+
+my_plugin.public:
+  path: '/public-page'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\my_plugin\src\Controller\MyController::publicPage'
+  requirements: {}    # empty = anonymous access only</code></pre>
+
+<p><strong>Path parameters:</strong></p>
+
+<pre><code>my_plugin.view:
+  path: '/items/[id:int]'       # integer segment → $id
+  # also: [slug:string], [token:string]</code></pre>
+
+<p><strong>Available permission values:</strong> <code>guest</code>, <code>user</code>, <code>moderator</code>, <code>admin</code>, <code>super_admin</code></p>
+
+---
+
+<h3>services.yml</h3>
+
+<p>
+    Registers services into the DI container. Arguments prefixed with <code>@</code> reference other
+    container services by name.
+</p>
+
+<pre><code>my_plugin.service:
+  class: Simp\Pindrop\Modules\my_plugin\src\Services\MyService
+  arguments:
+    - "@database"
+    - "@logger"
+  tags:
+    - "my_plugin"</code></pre>
+
+<p><strong>Core services available for injection:</strong></p>
+
+<table>
+    <tr><th>Service name</th><th>What it is</th></tr>
+    <tr><td><code>@database</code></td><td>DatabaseService — PDO wrapper</td></tr>
+    <tr><td><code>@logger</code></td><td>LoggerInterface — file or DB logger</td></tr>
+    <tr><td><code>@plugin.manager</code></td><td>PluginManager</td></tr>
+    <tr><td><code>@filesystem</code></td><td>FileSystem — stream wrapper file ops</td></tr>
+    <tr><td><code>@twig</code></td><td>TwigEngine</td></tr>
+    <tr><td><code>@current_user</code></td><td>CurrentUser — logged-in session</td></tr>
+    <tr><td><code>@content.factory</code></td><td>Content factory for entity instances</td></tr>
+    <tr><td><code>@content.repository</code></td><td>Content repository for queries</td></tr>
+    <tr><td><code>@site.settings</code></td><td>Settings service</td></tr>
+</table>
+
+---
+
+<h3>middleware.yml</h3>
+
+<p>
+    Registers middleware classes that run on every request. Your class must implement the
+    <code>Middleware</code> interface from <code>simp/router</code>.
+</p>
+
+<pre><code>my_plugin.auth.middleware:
+  class: Simp\Pindrop\Modules\my_plugin\src\Middleware\MyMiddleware</code></pre>
+
+<pre><code>&lt;?php
+
+namespace Simp\Pindrop\Modules\my_plugin\src\Middleware;
+
+use Simp\Router\middleware\access\Access;
+use Simp\Router\middleware\interface\Middleware;
+use Symfony\Component\HttpFoundation\Request;
+
+class MyMiddleware implements Middleware
+{
+    public function __invoke(Request $request, Access $access, $next)
+    {
+        // Inspect $access->options for route requirements
+        // Set $access->access_granted = true/false
+        // Optionally set $access->redirect = new RedirectResponse('/somewhere')
+        return $next($request, $access);
+    }
+}</code></pre>
+
+---
+
+<h3>menu.yml</h3>
+
+<p>
+    Adds links to the admin sidebar. Links are grouped under a named group key and assigned a weight
+    (lower = higher in the menu) and a role restriction.
+</p>
+
+<pre><code>groups:
+  admin:
+    my_section:
+      title: My Section
+      route: my_plugin.home
+      icon: fa fa-star
+      weight: 10
+      roles: [admin, super_admin]</code></pre>
+
+---
+
+<h3>entity.repository.yml</h3>
+
+<p>
+    Registers content entity classes with the content repository so they appear in the admin content UI
+    and are accessible via <code>content.factory</code>.
+</p>
+
+<pre><code>article:
+  class: Simp\Pindrop\Modules\my_plugin\src\Entity\Article
+  description: "Article content type"
+  category: "content"
+  version: "1.0"</code></pre>
+
+<p>The key (<code>article</code>) is the entity machine name. See the <a href="?doc=entities.html">Entities</a> guide for the full entity class API.</p>
+
+---
+
+<h3>autocomplete.yml</h3>
+
+<p>
+    Registers autocomplete handlers that serve results to the <code>/internal/autocomplete?source=...</code>
+    endpoint. The handler is a static method reference.
+</p>
+
+<pre><code>autocomplete.my_source:
+  handler: Simp\Pindrop\Modules\my_plugin\src\Plugin\MyAutocomplete::matchItems</code></pre>
+
+<pre><code>&lt;?php
+
+class MyAutocomplete
+{
+    public static function matchItems(string $query, array $config): array
+    {
+        // Return array of ['value' => ..., 'label' => ...] matches
+        return [];
+    }
+}</code></pre>
+
+---
+
+<h3>settings.config.yml</h3>
+
+<p>
+    Registers a settings handler that adds a section to the <code>/admin/settings</code> page.
+    Your class must implement <code>SettingsInterface</code>.
+</p>
+
+<pre><code>settings:
+  name: My Plugin Settings
+  class: Simp\Pindrop\Modules\my_plugin\src\Plugin\MySettings</code></pre>
+
+<pre><code>&lt;?php
+
+use Simp\Pindrop\Settings\SettingsInterface;
+use Symfony\Component\HttpFoundation\Request;
+
+class MySettings implements SettingsInterface
+{
+    public function settingKey(): string
+    {
+        return 'my_plugin.settings';
+    }
+
+    public function savableValues(Request $request): array
+    {
+        return ['some_key' => $request->request->get('some_key')];
+    }
+}</code></pre>
+
+---
+
+<h3>pindro.commands.yml</h3>
+
+<p>
+    Registers CLI command scripts for use with the <code>./pindro</code> CLI tool. Each entry points to a
+    PHP file that returns an associative array of command names to function names.
+</p>
+
+<pre><code>my_plugin.commands:
+  name: "My Plugin Commands"
+  script: "modules/my_plugin/cli/commands.php"
+  status: true</code></pre>
+
+<pre><code>&lt;?php
+// modules/my_plugin/cli/commands.php
+
+return [
+    'my_plugin:hello' => 'helloCommand',
+    'my_plugin:sync'  => 'syncCommand',
+];
+
+function helloCommand(CLIPrinter $printer, ...$values): void
+{
+    $printer->printLine("Hello from my plugin!", GREEN);
+}
+
+function syncCommand(CLIPrinter $printer, ...$values): void
+{
+    // $values[1] contains $argv
+    $printer->printLine("Syncing...", YELLOW);
+}</code></pre>
+
+---
+
+<h2>Mandatory Plugins</h2>
+
+<div class="warning">
+    Two plugins must always be installed and enabled. Without them the CMS will not function:
+</div>
+
+<table>
+    <tr>
+        <td><strong>admin</strong></td>
+        <td>Provides authentication, admin UI, user management, content management, plugin management UI, and the <code>AuthMiddleware</code>. Without it there is no login page and no admin interface.</td>
+    </tr>
+    <tr>
+        <td><strong>terminal_command</strong></td>
+        <td>Provides CLI commands including <code>db:schema:create</code>, which is required during installation to create all database tables.</td>
+    </tr>
+</table>
+
+<h3>Installing both via CLI</h3>
+
+<pre><code>./pindro plugin:install admin
+./pindro plugin:enable admin
+
+./pindro plugin:install terminal_command
+./pindro plugin:enable terminal_command
+
+./pindro db:schema:create   # then select ALL</code></pre>
+
+<p>Or download them directly from the official plugin repository:</p>
+
+<pre><code>./pindro plugin:download admin
+./pindro plugin:download terminal_command</code></pre>
+
+</body>
+</html>

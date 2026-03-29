@@ -1,7 +1,0 @@
-alert.service:
-  class: Simp\Pindrop\Modules\alert\src\Services\NotifyAlertService
-  arguments:
-    - "@logger"
-  tags:
-    - "alert"
-    - "notification"

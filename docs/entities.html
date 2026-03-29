@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Entities - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h2 { margin-top: 40px; color: #2563eb; }
+        h3 { margin-top: 24px; color: #1e40af; }
+        p { color: #334155; }
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            color: #9a3412;
+        }
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        a { color: #2563eb; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Content Entities</h1>
+
+<p>
+    Content entities are the data objects you store in Pindrop — articles, pages, products, and any custom
+    content type you define. Each entity type is a PHP class that extends <code>StorageEntity</code> and
+    is registered with the system via <code>entity.repository.yml</code> inside a plugin.
+</p>
+
+<div class="box">
+    <strong>Two-table design:</strong> Every entity type uses two database tables.
+    The <code>node_data</code> core table stores universal fields (title, status, author, timestamps, etc.).
+    Your entity's custom <code>table</code> (defined in <code>fieldDefinitions()</code>) stores entity-specific
+    fields as serialised JSON in a <code>field_data</code> column.
+</div>
+
+---
+
+<h2>Creating an Entity Class</h2>
+
+<p>
+    Place your entity class inside your plugin's <code>src/Entity/</code> directory and extend
+    <code>StorageEntity</code>. You only need to implement two methods: <code>fieldDefinitions()</code>
+    and <code>getView()</code>.
+</p>
+
+<pre><code>&lt;?php
+
+namespace Simp\Pindrop\Modules\my_plugin\src\Entity;
+
+use Simp\Pindrop\Content\Storage\StorageEntity;
+
+class Article extends StorageEntity
+{
+    public function fieldDefinitions(): array
+    {
+        return [
+            'table'            => 'content_articles',   // your custom table name
+            'reference_field'  => 'entity_id',          // FK column linking to node_data
+            'data_field'       => 'field_data',          // JSON column for your fields
+            'fields' => [
+                'category' => [
+                    'type'     => 'string',
+                    'required' => false,
+                    'default'  => 'general',
+                ],
+                'tags' => [
+                    'type'     => 'array',
+                    'required' => false,
+                    'default'  => [],
+                ],
+                'featured_image' => [
+                    'type'     => 'string',
+                    'required' => false,
+                ],
+                'reading_time' => [
+                    'type'     => 'integer',
+                    'required' => false,
+                    'default'  => 0,
+                ],
+            ],
+        ];
+    }
+
+    public function getView(): string
+    {
+        return getAppContainer()->get('twig')
+            ->render('@my_plugin/content/article.twig', ['entity' => $this]);
+    }
+}</code></pre>
+
+<h3>Supported field types</h3>
+
+<table>
+    <tr><th>Type</th><th>PHP storage</th></tr>
+    <tr><td><code>string</code></td><td>Stored as-is in JSON</td></tr>
+    <tr><td><code>integer</code></td><td>Cast to int on read</td></tr>
+    <tr><td><code>boolean</code></td><td>Cast to bool on read</td></tr>
+    <tr><td><code>array</code></td><td>JSON-encoded/decoded automatically</td></tr>
+</table>
+
+---
+
+<h2>Registering an Entity</h2>
+
+<p>
+    After creating the class, register it in your plugin's <code>entity.repository.yml</code>:
+</p>
+
+<pre><code>article:
+  class: Simp\Pindrop\Modules\my_plugin\src\Entity\Article
+  description: "Article content entity"
+  category: "content"
+  version: "1.0"</code></pre>
+
+<p>
+    The key (<code>article</code>) becomes the entity's machine name used across the system — in routes,
+    the content factory, and the admin UI.
+</p>
+
+---
+
+<h2>Creating Schema</h2>
+
+<p>
+    Your entity needs its custom table created in the database. Define a MySQL schema file in your plugin
+    (e.g. <code>modules/my_plugin/mysql/content_articles.sql</code>) and run:
+</p>
+
+<pre><code>./pindro db:schema:create</code></pre>
+
+<p>
+    Select your table from the list or choose <code>ALL</code> to create every registered schema.
+</p>
+
+---
+
+<h2>Creating Content (PHP)</h2>
+
+<pre><code>$factory = getAppContainer()->get('content.factory');
+
+// Get an entity instance by machine name
+$article = $factory->storage('article');
+
+$article->setTitle('My First Article');
+$article->setContent('&lt;p&gt;Article body here.&lt;/p&gt;');
+$article->setStatus('published');
+$article->setPublished(true);
+$article->setPublishedAt(new DateTime());
+$article->setAuthorId(getAppContainer()->get('current_user')->getId());
+
+// Set entity-specific custom fields
+$article->setValue('category', 'technology');
+$article->setValue('tags', ['php', 'cms']);
+$article->setValue('reading_time', 5);
+
+// Timestamps
+$article->setCreatedAt(new DateTime());
+$article->setUpdatedAt(new DateTime());
+
+if ($article->save()) {
+    echo 'Created with ID: ' . $article->getId();
+}</code></pre>
+
+---
+
+<h2>Loading Content (PHP)</h2>
+
+<pre><code>// By ID (auto-detects type)
+$repository = getAppContainer()->get('content.repository');
+$entity = $repository->find(42);
+
+// By type — static method on entity class
+use Simp\Pindrop\Modules\my_plugin\src\Entity\Article;
+
+$article = Article::load(42);         // single by ID
+$articles = Article::all();           // all records
+$count = Article::count();            // total count
+
+// Filter
+$results = Article::filter([
+    'status' => 'published',
+], ['limit' => 10, 'page' => 1]);</code></pre>
+
+---
+
+<h2>Updating Content (PHP)</h2>
+
+<pre><code>$repository = getAppContainer()->get('content.repository');
+$entity = $repository->find(42);
+
+$entity->setTitle('Updated Title');
+$entity->setStatus('draft');
+$entity->setValue('category', 'news');
+$entity->setUpdatedAt(new DateTime());
+
+$entity->save();</code></pre>
+
+---
+
+<h2>Deleting Content (PHP)</h2>
+
+<pre><code>$article = Article::load(42);
+Article::delete(42);</code></pre>
+
+---
+
+<h2>Core Fields (always available)</h2>
+
+<p>These fields are on every entity — you do not need to declare them in <code>fieldDefinitions()</code>.</p>
+
+<table>
+    <tr><th>Field</th><th>Setter</th><th>Notes</th></tr>
+    <tr><td><code>title</code></td><td><code>setTitle()</code></td><td>Required for most content types</td></tr>
+    <tr><td><code>content</code></td><td><code>setContent()</code></td><td>Main body / HTML</td></tr>
+    <tr><td><code>slug</code></td><td><code>setValue('slug', ...)</code></td><td>URL-friendly identifier</td></tr>
+    <tr><td><code>excerpt</code></td><td><code>setValue('excerpt', ...)</code></td><td>Short summary</td></tr>
+    <tr><td><code>status</code></td><td><code>setStatus()</code></td><td>draft, published, archived</td></tr>
+    <tr><td><code>is_published</code></td><td><code>setPublished(bool)</code></td><td></td></tr>
+    <tr><td><code>published_at</code></td><td><code>setPublishedAt(DateTime)</code></td><td></td></tr>
+    <tr><td><code>author</code></td><td><code>setAuthorId(int)</code></td><td>Links to a User</td></tr>
+    <tr><td><code>featured</code></td><td><code>setValue('featured', bool)</code></td><td></td></tr>
+    <tr><td><code>sticky</code></td><td><code>setValue('sticky', bool)</code></td><td></td></tr>
+    <tr><td><code>language</code></td><td><code>setValue('language', 'en')</code></td><td>Default <code>en</code></td></tr>
+    <tr><td><code>meta_title</code></td><td><code>setValue('meta_title', ...)</code></td><td>SEO</td></tr>
+    <tr><td><code>meta_description</code></td><td><code>setValue('meta_description', ...)</code></td><td>SEO</td></tr>
+    <tr><td><code>created_at</code></td><td><code>setCreatedAt(DateTime)</code></td><td></td></tr>
+    <tr><td><code>updated_at</code></td><td><code>setUpdatedAt(DateTime)</code></td><td></td></tr>
+</table>
+
+---
+
+<h2>Admin UI — Content Management</h2>
+
+<table>
+    <tr><th>URL</th><th>What it does</th></tr>
+    <tr><td><code>/admin/content</code></td><td>List all content across all registered entity types</td></tr>
+    <tr><td><code>/admin/content/create</code></td><td>Pick a content type to create</td></tr>
+    <tr><td><code>/admin/content/{type}/add</code></td><td>Create content of a given type using the entity's auto-generated form</td></tr>
+    <tr><td><code>/admin/content/{id}/edit</code></td><td>Edit an existing content item</td></tr>
+    <tr><td><code>/content/{id}</code></td><td>Public/admin view of a single content item (renders <code>getView()</code>)</td></tr>
+</table>
+
+<div class="highlight">
+    The add/edit form is auto-generated from <code>fieldDefinitions()</code> via <code>getEntityForm()</code>
+    on <code>StorageEntity</code>. You do not need to write a Twig form manually — the framework builds
+    it from your field declarations.
+</div>
+
+</body>
+</html>

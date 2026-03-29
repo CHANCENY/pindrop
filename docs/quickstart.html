@@ -1,0 +1,181 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Quick Start - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}.callout.info strong{color:#1d4ed8;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}
+.steps{list-style:none;margin:18px 0;}
+.steps li{display:flex;gap:16px;margin-bottom:22px;align-items:flex-start;}
+.step-num{min-width:30px;height:30px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;flex-shrink:0;margin-top:1px;}
+.step-body{flex:1;}.step-body strong{display:block;font-size:1rem;font-weight:600;margin-bottom:4px;}
+.step-body p{margin:0;color:var(--muted);font-size:.9rem;}
+.next-steps{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0;}
+.ns-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s;display:block;}
+.ns-card:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.08);}
+.ns-card h4{font-size:.88rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.ns-card p{font-size:.82rem;color:var(--muted);margin:0;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+a{color:var(--accent);}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Getting Started</div>
+<h1>Quick Start</h1>
+<p class="doc-intro">From zero to a running Pindrop CMS in under 10 minutes. This guide covers installation, database setup, mandatory plugins, and creating your first custom plugin.</p>
+
+<h2>Prerequisites</h2>
+<p>Make sure you have these available before starting:</p>
+<ul style="color:#374151;padding-left:20px;margin-bottom:14px;line-height:2;">
+  <li>PHP 8.1 or higher with extensions: <code>pdo</code>, <code>pdo_mysql</code>, <code>zip</code>, <code>dom</code>, <code>libxml</code></li>
+  <li>MySQL 5.7+ or MariaDB 10.3+</li>
+  <li>Composer 2.x</li>
+  <li>Apache with <code>mod_rewrite</code> enabled (or Nginx with equivalent rewrite rules)</li>
+  <li>Git (for downloading plugins)</li>
+</ul>
+
+<h2>Step-by-Step Installation</h2>
+<ul class="steps">
+  <li>
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <strong>Clone or download the repository</strong>
+      <p>Get the Pindrop source from <a href="https://github.com/CHANCENY/pindrop" target="_blank">github.com/CHANCENY/pindrop</a></p>
+    </div>
+  </li>
+  <li>
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <strong>Install Composer dependencies</strong>
+    </div>
+  </li>
+</ul>
+<pre><code>composer install</code></pre>
+<ul class="steps">
+  <li>
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <strong>Create and configure your .env file</strong>
+    </div>
+  </li>
+</ul>
+<pre><code>cp .env.example .env</code></pre>
+<p>Edit <code>.env</code> and set at minimum:</p>
+<pre><code>ROOT="/absolute/path/to/your/project"
+DB_HOST=127.0.0.1
+DB_DATABASE=my_database
+DB_USERNAME=my_user
+DB_PASSWORD=secret
+APP_ENV=development
+DEBUG=TRUE</code></pre>
+<ul class="steps">
+  <li>
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <strong>Create the database</strong>
+    </div>
+  </li>
+</ul>
+<pre><code>mysql -u root -p -e "CREATE DATABASE my_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"</code></pre>
+<ul class="steps">
+  <li>
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <strong>Download and enable mandatory plugins</strong>
+    </div>
+  </li>
+</ul>
+<pre><code>chmod +x pindro
+
+# Download both mandatory plugins
+./pindro plugin:download terminal_command
+./pindro plugin:download admin
+
+# Install and enable them
+./pindro plugin:install terminal_command
+./pindro plugin:enable terminal_command
+./pindro plugin:install admin
+./pindro plugin:enable admin</code></pre>
+<ul class="steps">
+  <li>
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <strong>Create all database tables</strong>
+    </div>
+  </li>
+</ul>
+<pre><code>./pindro db:schema:create
+# When prompted, enter 0 (or select ALL) and press Enter</code></pre>
+<ul class="steps">
+  <li>
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <strong>Open the app in your browser</strong>
+      <p>Navigate to your site URL. You should see the Pindrop home page. Go to <code>/user/register</code> to create the first admin account, then visit <code>/admin</code>.</p>
+    </div>
+  </li>
+</ul>
+
+<div class="callout tip"><strong>First admin account</strong><p>Register via <code>/user/register</code>. The first user will have role <code>user</code> by default. Manually update the role to <code>super_admin</code> in the database: <code>UPDATE users SET role='super_admin' WHERE id=1;</code> — then log in and manage all future roles from the admin UI.</p></div>
+
+<h2>Your First Plugin</h2>
+<p>Create a new plugin interactively:</p>
+<pre><code>./pindro plugin:create
+# Enter: name, description, version, author, website, license</code></pre>
+<p>This scaffolds the plugin directory with all YAML files. Then install and enable it:</p>
+<pre><code>./pindro plugin:install my_plugin
+./pindro plugin:enable my_plugin</code></pre>
+
+<h3>Add a route</h3>
+<pre><code># modules/my_plugin/routing.yml
+my_plugin.hello:
+  path: '/hello'
+  methods: ['GET']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\my_plugin\src\Controller\HelloController::index'
+  requirements: {}</code></pre>
+
+<h3>Add a controller</h3>
+<pre><code>&lt;?php
+// modules/my_plugin/src/Controller/HelloController.php
+
+namespace Simp\Pindrop\Modules\my_plugin\src\Controller;
+
+use Simp\Pindrop\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class HelloController extends ControllerBase
+{
+    public function index(Request $request, string $route_name, array $options): Response
+    {
+        return $this->render('&lt;h1 style="font-family:sans-serif;padding:40px"&gt;Hello from my plugin!&lt;/h1&gt;');
+    }
+}</code></pre>
+
+<p>Visit <code>/hello</code> in your browser. You should see your message.</p>
+
+<h2>Next Steps</h2>
+<div class="next-steps">
+  <a class="ns-card" href="?doc=controllers.html"><h4>Controllers →</h4><p>Render templates, return JSON, handle forms</p></a>
+  <a class="ns-card" href="?doc=entities.html"><h4>Entities →</h4><p>Create content types with custom fields</p></a>
+  <a class="ns-card" href="?doc=theming.html"><h4>Theming →</h4><p>Build Twig templates and override admin UI</p></a>
+  <a class="ns-card" href="?doc=plugin-system.html"><h4>Plugin System →</h4><p>Full YAML reference for all plugin files</p></a>
+  <a class="ns-card" href="?doc=database.html"><h4>Database →</h4><p>Write queries, transactions, and schema files</p></a>
+  <a class="ns-card" href="?doc=events.html"><h4>Events →</h4><p>Subscribe to entity, user, and auth events</p></a>
+</div>
+
+<div class="callout info"><strong>Lando (optional)</strong><p>If you use Lando for local development, copy <code>.lando.yml.example</code> to <code>.lando.yml</code>, update the project name, then run <code>lando start</code>. The database credentials in <code>.env</code> should match your Lando service config. Run CLI commands as <code>lando ssh</code> then <code>./pindro</code>.</p></div>
+</div></body></html>

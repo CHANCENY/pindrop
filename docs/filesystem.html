@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>File System - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}.callout.warning strong{color:#78350f;}
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+thead tr{background:#f3f4f8;}th{text-align:left;padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f5;font-size:.9rem;color:#374151;vertical-align:top;}tr:last-child td{border-bottom:none;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Core</div>
+<h1>File System</h1>
+<p class="doc-intro">Pindrop uses stream wrappers for file operations. The <code>public://</code> protocol maps to your publicly accessible files directory. All upload, read, write, and delete operations go through <code>FileSystem</code> so path resolution is consistent across environments.</p>
+
+<h2>Configuration</h2>
+<pre><code>PUBLIC_STREAM=public://
+PUBLIC_STREAM_DIR=[ROOT]/sites/default/files</code></pre>
+<p>Any URI beginning with <code>public://</code> resolves to a real path under <code>PUBLIC_STREAM_DIR</code>. For example, <code>public://content/2024/06/photo.jpg</code> maps to <code>/app/sites/default/files/content/2024/06/photo.jpg</code>.</p>
+
+<h2>Accessing the Service</h2>
+<pre><code>$fs = getAppContainer()->get('filesystem');</code></pre>
+
+<h2>Core Operations</h2>
+<pre><code>// Check if a file exists
+if ($fs->exists('public://uploads/logo.png')) { ... }
+
+// Read file contents
+$content = $fs->read('public://templates/email.html');
+
+// Write / create a file (creates parent dirs automatically)
+$fs->write('public://exports/report.csv', $csvContent);
+
+// Append to a file
+$fs->write('public://logs/audit.log', $line, FILE_APPEND);
+
+// Delete a file
+$fs->delete('public://uploads/old-photo.jpg');
+
+// Copy
+$fs->copy('public://originals/img.jpg', 'public://thumbnails/img.jpg');
+
+// Move / rename
+$fs->move('public://tmp/upload_xyz', 'public://content/2024/06/photo.jpg');
+
+// List directory contents
+$files = $fs->listDirectory('public://content/2024/06/');
+
+// Resolve to real path (for use with PHP file functions)
+$realPath = $fs->resolvedRealPath('public://content/2024/06/');
+// → /app/sites/default/files/content/2024/06/</code></pre>
+
+<h2>Uploading Files</h2>
+<pre><code>$uploadedFile = $request->files->get('photo');
+
+if ($uploadedFile && $uploadedFile->isValid()) {
+
+    $ext  = $uploadedFile->getClientOriginalExtension();
+    $dest = 'public://content/' . date('Y/m') . '/' . uniqid() . '.' . $ext;
+
+    $result = $fs->uploadFile(
+        [
+            'name'     => $uploadedFile->getClientOriginalName(),
+            'tmp_name' => $uploadedFile->getPathname(),
+            'size'     => $uploadedFile->getSize(),
+            'error'    => $uploadedFile->getError(),
+        ],
+        $fs->resolvedRealPath($dest),
+        [
+            'unique'        => true,           // append suffix if name collides
+            'allowed_types' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
+        ]
+    );
+
+    if ($result['success']) {
+        $fileUri  = $dest;                          // store this
+        $mimeType = $result['data'][0]['mime_type'];
+        $size     = $result['data'][0]['size'];
+    } else {
+        // $result['message'] has the error
+    }
+}</code></pre>
+
+<h2>FileSystem Methods</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>read(string $uri)</code></td><td><code>string|false</code></td><td>Read file contents</td></tr>
+<tr><td><code>write(string $uri, string $content, int $flags)</code></td><td><code>bool|int</code></td><td>Write content to file (creates dirs)</td></tr>
+<tr><td><code>exists(string $uri)</code></td><td><code>bool</code></td><td>Check if path exists</td></tr>
+<tr><td><code>delete(string $uri)</code></td><td><code>bool</code></td><td>Delete a file</td></tr>
+<tr><td><code>copy(string $src, string $dest)</code></td><td><code>bool</code></td><td>Copy a file</td></tr>
+<tr><td><code>move(string $src, string $dest)</code></td><td><code>bool</code></td><td>Move / rename a file</td></tr>
+<tr><td><code>listDirectory(string $uri)</code></td><td><code>array</code></td><td>List files in a directory</td></tr>
+<tr><td><code>resolvedRealPath(string $uri)</code></td><td><code>string</code></td><td>Convert stream URI to real filesystem path</td></tr>
+<tr><td><code>uploadFile(array $file, string $dest, array $options)</code></td><td><code>array</code></td><td>Validate and store an uploaded file</td></tr>
+<tr><td><code>getMimeType(string $uri)</code></td><td><code>string</code></td><td>Detect MIME type</td></tr>
+<tr><td><code>getSize(string $uri)</code></td><td><code>int</code></td><td>File size in bytes</td></tr>
+</tbody>
+</table></div>
+
+<h2>The File Entity</h2>
+<p>When a file is uploaded as part of content management, a <code>File</code> entity record is created in the <code>files</code> database table. This links the file to its owning entity and tracks metadata.</p>
+<pre><code>use Simp\Pindrop\Entity\File\File;
+
+$db = getAppContainer()->get('database');
+
+// Load by ID
+$file = File::loadById(10, $db);
+
+// Load by URI
+$file = File::loadByUri('public://content/2024/06/photo.jpg', $db);
+
+echo $file->getFilename();   // original filename
+echo $file->getUri();        // public:// URI
+echo $file->getFilemime();   // MIME type
+echo $file->getFilesize();   // bytes
+echo $file->getStatus();     // permanent | temporary</code></pre>
+
+<div class="callout info"><strong>public:// is the only registered wrapper</strong><p>Only the <code>public://</code> stream wrapper is registered by default. All user-uploaded files must go through this wrapper. Private or protected file storage is not built in — implement it as a plugin if needed.</p></div>
+</div></body></html>

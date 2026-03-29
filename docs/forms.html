@@ -1,0 +1,201 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Forms - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;align-items:center;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}.callout.info strong{color:#1d4ed8;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+thead tr{background:#f3f4f8;}th{text-align:left;padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f5;font-size:.9rem;color:#374151;vertical-align:top;}tr:last-child td{border-bottom:none;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Core</div>
+<h1>Forms</h1>
+<p class="doc-intro">Pindrop's <code>FormBuilder</code> generates HTML forms from a PHP array definition. It handles field rendering, validation state, file uploads, and fieldset grouping without writing HTML manually.</p>
+
+<h2>Defining a Form</h2>
+<p>A form is a PHP array where each key is the field name and the value is its configuration:</p>
+<pre><code>$form = [
+    'title' => [
+        'type'        => 'text',
+        'title'       => 'Article Title',
+        'placeholder' => 'Enter title...',
+        'required'    => true,
+        'value'       => '',
+    ],
+    'body' => [
+        'type'        => 'textarea',
+        'title'       => 'Content',
+        'rows'        => 10,
+        'placeholder' => 'Write your content...',
+    ],
+    'category' => [
+        'type'    => 'select',
+        'title'   => 'Category',
+        'options' => [
+            ['value' => 'news',  'label' => 'News'],
+            ['value' => 'tech',  'label' => 'Technology'],
+            ['value' => 'other', 'label' => 'Other'],
+        ],
+    ],
+    'published' => [
+        'type'  => 'checkbox',
+        'title' => 'Publish immediately',
+        'value' => false,
+    ],
+    'cover_image' => [
+        'type'   => 'file',
+        'title'  => 'Cover Image',
+        'accept' => 'image/*',
+    ],
+];</code></pre>
+
+<h2>Supported Field Types</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Renders as</th><th>Notable options</th></tr></thead>
+<tbody>
+<tr><td><code>text</code></td><td><code>&lt;input type="text"&gt;</code></td><td><code>placeholder</code>, <code>maxlength</code></td></tr>
+<tr><td><code>textarea</code></td><td><code>&lt;textarea&gt;</code></td><td><code>rows</code>, <code>placeholder</code></td></tr>
+<tr><td><code>select</code></td><td><code>&lt;select&gt;</code></td><td><code>options</code> array of <code>{value, label}</code></td></tr>
+<tr><td><code>checkbox</code></td><td><code>&lt;input type="checkbox"&gt;</code></td><td><code>value</code> (bool)</td></tr>
+<tr><td><code>email</code></td><td><code>&lt;input type="email"&gt;</code></td><td><code>placeholder</code></td></tr>
+<tr><td><code>number</code></td><td><code>&lt;input type="number"&gt;</code></td><td><code>min</code>, <code>max</code>, <code>step</code></td></tr>
+<tr><td><code>date</code></td><td><code>&lt;input type="date"&gt;</code></td><td><code>min</code>, <code>max</code></td></tr>
+<tr><td><code>hidden</code></td><td><code>&lt;input type="hidden"&gt;</code></td><td><code>value</code></td></tr>
+<tr><td><code>file</code></td><td><code>&lt;input type="file"&gt;</code></td><td><code>accept</code>, <code>multiple</code>, <code>max_size</code>, <code>max_files</code></td></tr>
+<tr><td><code>image</code></td><td><code>&lt;input type="file" accept="image/*"&gt;</code></td><td>Same as file + <code>alt</code></td></tr>
+<tr><td><code>url</code></td><td><code>&lt;input type="url"&gt;</code></td><td><code>placeholder</code></td></tr>
+<tr><td><code>label</code></td><td>Static <code>&lt;label&gt;</code> text block</td><td>Display-only, no input</td></tr>
+<tr><td><code>button</code></td><td><code>&lt;button&gt;</code></td><td><code>label</code>, <code>variant</code></td></tr>
+</tbody>
+</table></div>
+
+<h2>Building and Rendering</h2>
+<pre><code>use Simp\Pindrop\Form\FormBuilder;
+use Simp\Pindrop\Form\FormState;
+
+$formState = new FormState();
+$formState->buildFormState($form, $request);
+
+$builder = new FormBuilder();
+$builder->buildFormRender($form, $formState, $request);
+
+// Cast to string to get the HTML
+$formHtml = (string) $builder;
+
+// Pass to Twig
+return $this->renderTwig('my_plugin/create.twig', [
+    'form_html' => $formHtml,
+]);</code></pre>
+
+<pre><code>{# In your Twig template #}
+{{ form_html|raw }}</code></pre>
+
+<h2>Handling Submission</h2>
+<pre><code>public function create(Request $request, string $route_name, array $options): Response
+{
+    $form = $this->buildMyForm();
+    $formState = new FormState();
+    $formState->buildFormState($form, $request);
+
+    if ($request->isMethod('POST')) {
+        $title = $formState->getValue('title');
+        $body  = $formState->getValue('body');
+
+        // Validate
+        if (empty($title)) {
+            $formState->setErrorByName('title', 'Title is required');
+        }
+
+        if ($formState->isValidated()) {
+            // Process the valid form
+            // ... save to DB etc.
+            return $this->redirect('/my-plugin/list');
+        }
+    }
+
+    $builder = new FormBuilder();
+    $builder->buildFormRender($form, $formState, $request);
+
+    return $this->renderTwig('my_plugin/create.twig', [
+        'form_html' => (string) $builder,
+    ]);
+}</code></pre>
+
+<h2>FormState Methods</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>getValue(string $field, $default)</code></td><td>Get a submitted field value</td></tr>
+<tr><td><code>getValues()</code></td><td>All submitted values as an array</td></tr>
+<tr><td><code>getFile(string $field)</code></td><td>Get an uploaded file</td></tr>
+<tr><td><code>getFiles()</code></td><td>All uploaded files</td></tr>
+<tr><td><code>setErrorByName(string $field, string $msg)</code></td><td>Attach a validation error to a field</td></tr>
+<tr><td><code>setError(string $msg)</code></td><td>Add a global form-level error</td></tr>
+<tr><td><code>getErrors()</code></td><td>Get all errors</td></tr>
+<tr><td><code>isValidated()</code></td><td>Returns <code>true</code> if there are no errors</td></tr>
+<tr><td><code>setMessage(string $msg)</code></td><td>Add a success/info message</td></tr>
+<tr><td><code>getMessages()</code></td><td>Get all messages</td></tr>
+</tbody>
+</table></div>
+
+<h2>Grouping with Fieldsets</h2>
+<pre><code>$form = [
+    'basic_info' => [
+        '#fieldset' => ['legend' => 'Basic Information'],
+        'fields' => [
+            'title'   => ['type' => 'text',  'title' => 'Title'],
+            'excerpt' => ['type' => 'textarea', 'title' => 'Excerpt', 'rows' => 3],
+        ],
+    ],
+    'seo' => [
+        '#details' => ['summary' => 'SEO Settings', 'open' => false],
+        'fields' => [
+            'meta_title'       => ['type' => 'text', 'title' => 'Meta Title'],
+            'meta_description' => ['type' => 'textarea', 'title' => 'Meta Description', 'rows' => 2],
+        ],
+    ],
+];</code></pre>
+
+<div class="callout tip"><strong>Auto-generated forms</strong><p>Entity forms are auto-generated by <code>StorageEntity::getEntityForm()</code> based on <code>fieldDefinitions()</code>. You only need to build forms manually for custom workflows that aren't content entities.</p></div>
+
+<h2>File Upload Handling</h2>
+<p>When a form contains a <code>file</code> or <code>image</code> field, <code>FormBuilder</code> automatically injects a JavaScript upload widget. The form must be rendered inside an HTML page that does <strong>not</strong> suppress scripts. The upload field posts as a standard multipart file.</p>
+<pre><code>// In controller after POST
+$file = $request->files->get('cover_image');
+
+if ($file && $file->isValid()) {
+    $fs = getAppContainer()->get('filesystem');
+    $dest = 'public://uploads/' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+    $result = $fs->uploadFile([
+        'name'     => $file->getClientOriginalName(),
+        'tmp_name' => $file->getPathname(),
+        'size'     => $file->getSize(),
+        'error'    => $file->getError(),
+    ], $fs->resolvedRealPath($dest), [
+        'unique'        => true,
+        'allowed_types' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    ]);
+
+    if ($result['success']) {
+        $fileUri = $dest; // store this in your entity
+    }
+}</code></pre>
+</div></body></html>

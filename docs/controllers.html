@@ -1,0 +1,186 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Controllers - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;align-items:center;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;margin-bottom:0;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;border:1px solid rgba(255,255,255,.06);}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}.callout.info strong{color:#1d4ed8;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}.callout.warning strong{color:#78350f;}
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+thead tr{background:#f3f4f8;}th{text-align:left;padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f5;font-size:.9rem;color:#374151;vertical-align:top;}tr:last-child td{border-bottom:none;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Core</div>
+<h1>Controllers</h1>
+<p class="doc-intro">Controllers are the bridge between routes and responses. Every HTTP route maps to a controller method that receives the request and returns a Symfony <code>Response</code> object.</p>
+
+<h2>Creating a Controller</h2>
+<p>Extend <code>ControllerBase</code> and place your class in your plugin's <code>src/Controller/</code> directory.</p>
+<pre><code>&lt;?php
+
+namespace Simp\Pindrop\Modules\my_plugin\src\Controller;
+
+use Simp\Pindrop\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class MyController extends ControllerBase
+{
+    public function index(Request $request, string $route_name, array $options): Response
+    {
+        return $this->renderTwig('my_plugin/home.twig', [
+            'page_title' => 'Home',
+        ]);
+    }
+
+    public function show(Request $request, string $route_name, array $options): Response
+    {
+        $id = $request->query->get('id');
+        return $this->renderTwig('my_plugin/show.twig', ['id' => $id]);
+    }
+}</code></pre>
+
+<div class="callout info"><strong>Method signature</strong><p>Every controller method receives exactly three arguments: <code>Request $request</code>, <code>string $route_name</code>, and <code>array $options</code>. Path parameters (e.g. <code>[id:int]</code>) arrive in <code>$options</code>.</p></div>
+
+<h2>Registering in routing.yml</h2>
+<pre><code>my_plugin.index:
+  path: '/items'
+  methods: ['GET']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\my_plugin\src\Controller\MyController::index'
+  requirements:
+    _permission: ['user', 'admin', 'super_admin']
+
+my_plugin.show:
+  path: '/items/[id:int]'
+  methods: ['GET']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\my_plugin\src\Controller\MyController::show'
+  requirements:
+    _permission: ['user', 'admin', 'super_admin']</code></pre>
+
+<h2>ControllerBase Methods</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>renderTwig(string $template, array $data, int $status)</code></td><td><code>Response</code></td><td>Render a Twig template and return a Response</td></tr>
+<tr><td><code>render(string $content, int $status)</code></td><td><code>Response</code></td><td>Return a raw HTML string response</td></tr>
+<tr><td><code>renderString(string $twigSrc, array $data)</code></td><td><code>Response</code></td><td>Render a Twig template from an inline string</td></tr>
+<tr><td><code>json(array $data, int $status)</code></td><td><code>Response</code></td><td>Return a JSON response with Content-Type header set</td></tr>
+<tr><td><code>redirect(string $url, int $status)</code></td><td><code>RedirectResponse</code></td><td>HTTP redirect (default 302)</td></tr>
+<tr><td><code>templateExists(string $template)</code></td><td><code>bool</code></td><td>Check if a Twig template exists</td></tr>
+</tbody>
+</table></div>
+
+<h2>Reading Request Data</h2>
+<pre><code>// Query string: /items?page=2&limit=10
+$page  = $request->query->get('page', 1);
+$limit = $request->query->get('limit', 20);
+
+// POST body
+$data = $request->request->all();
+$name = $request->request->get('name');
+
+// Uploaded files
+$file = $request->files->get('avatar');
+
+// Path params from route e.g. /items/[id:int]
+$id = $request->query->get('id');  // resolved by router
+
+// Headers
+$accept = $request->headers->get('Accept');
+
+// HTTP method check
+if ($request->isMethod('POST')) { /* ... */ }
+
+// Client IP
+$ip = $request->getClientIp();</code></pre>
+
+<h2>Returning Different Response Types</h2>
+<pre><code>use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+// HTML page
+return $this->renderTwig('my_plugin/page.twig', ['title' => 'Hello']);
+
+// JSON API
+return $this->json(['status' => 'ok', 'data' => $items]);
+
+// Redirect
+return $this->redirect('/dashboard');
+
+// Permanent redirect
+return $this->redirect('/new-url', 301);
+
+// Raw string
+return $this->render('&lt;h1&gt;Hello&lt;/h1&gt;', 200);
+
+// Custom response
+return new Response('Not Allowed', 405, ['Allow' => 'GET, POST']);</code></pre>
+
+<h2>Accessing Services</h2>
+<pre><code>// From anywhere in a controller
+$db       = getAppContainer()->get('database');
+$logger   = getAppContainer()->get('logger');
+$twig     = getAppContainer()->get('twig');
+$mailer   = getAppContainer()->get('mail');
+$user     = getAppContainer()->get('current_user');
+$fs       = getAppContainer()->get('filesystem');
+$settings = getAppContainer()->get('site.settings');
+$plugins  = getAppContainer()->get('plugin.manager');
+$factory  = getAppContainer()->get('content.factory');
+$repo     = getAppContainer()->get('content.repository');</code></pre>
+
+<h2>Flash Messages</h2>
+<p>Use <code>Message</code> to pass status messages across redirects. They are stored in <code>$_SESSION</code> and consumed on the next request.</p>
+<pre><code>use Simp\Pindrop\Message\Message;
+
+// Set messages before redirecting
+Message::info('Settings saved successfully');
+Message::warn('Some fields were skipped');
+Message::error('Failed to save — please try again');
+
+return $this->redirect('/admin/settings');</code></pre>
+<p>In your Twig template, call <code>Message::send()</code> to retrieve and clear them:</p>
+<pre><code>{% set messages = message_send() %}
+{% for msg in messages %}
+  &lt;div class="alert alert-{{ msg.type }}"&gt;{{ msg.text }}&lt;/div&gt;
+{% endfor %}</code></pre>
+
+<h2>Generating URLs</h2>
+<pre><code>use Simp\Pindrop\Routing\Url;
+
+// By route name
+$url = Url::routeByName('admin.users.edit', ['user_id' => 42]);
+// → /admin/users/42/edit
+
+// Absolute URL
+$abs = Url::routeByName('admin.dashboard', [], absolute: true);
+// → https://example.com/admin
+
+// Current URL with extra query params
+$cur = Url::current(['page' => 2]);
+
+// By raw path
+$path = Url::routeByUri('/user/[user_id:int]', ['user_id' => 5]);</code></pre>
+
+<hr>
+<div class="callout tip"><strong>Best practice</strong><p>Keep controllers thin. Move business logic into service classes registered in <code>services.yml</code> and injected through the DI container. Controllers should only orchestrate: read input → call service → return response.</p></div>
+</div></body></html>

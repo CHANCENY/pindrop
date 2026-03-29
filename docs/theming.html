@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Theming - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h2 { margin-top: 40px; color: #2563eb; }
+        h3 { margin-top: 24px; color: #1e40af; }
+        p { color: #334155; }
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            color: #9a3412;
+        }
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        a { color: #2563eb; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Theming</h1>
+
+<p>
+    Pindrop uses <strong>Twig 3</strong> for all HTML rendering. Templates can live in the global
+    <code>themes/</code> directory or inside individual plugins. Both locations are registered as
+    Twig namespaces and are available everywhere.
+</p>
+
+<div class="box">
+    <strong>Auto-escaping is on.</strong> Twig is configured with <code>autoescape: html</code> by default.
+    All variables are HTML-escaped unless you explicitly mark them safe with <code>|raw</code>.
+</div>
+
+---
+
+<h2>Where Templates Live</h2>
+
+<h3>Global themes directory</h3>
+
+<pre><code>themes/
+└── admin/
+    ├── info.yml
+    ├── assets/
+    └── templates/
+        ├── base.twig
+        ├── dashboard.twig
+        ├── settings.twig
+        ├── users.twig
+        ├── content.twig
+        ├── plugins.twig
+        ├── admin/
+        │   └── home.twig
+        ├── auth/
+        │   ├── base.twig
+        │   ├── login.twig
+        │   ├── register.twig
+        │   ├── forgot-password.twig
+        │   ├── reset-password.twig
+        │   └── verify-email.twig
+        ├── content/
+        │   ├── add.twig
+        │   ├── create.twig
+        │   ├── view.twig
+        │   └── view_admin.twig
+        └── users/
+            ├── create.twig
+            ├── edit.twig
+            ├── view.twig
+            ├── delete.twig
+            └── view_display.twig</code></pre>
+
+<h3>Plugin templates</h3>
+
+<p>
+    A plugin can ship its own templates in a <code>templates/</code> directory inside the plugin folder:
+</p>
+
+<pre><code>modules/
+└── my_plugin/
+    └── templates/
+        ├── content/
+        │   └── article.twig
+        └── error/
+            └── 404.html.twig</code></pre>
+
+---
+
+<h2>Twig Namespaces</h2>
+
+<p>
+    Each theme registered in the <code>themes/</code> directory gets its own Twig namespace matching its
+    folder name. Each plugin's <code>templates/</code> directory is also registered under the plugin's name.
+    This lets you reference templates from anywhere without path ambiguity.
+</p>
+
+<pre><code>{# From a global theme #}
+{% extends '@admin/base.twig' %}
+
+{# From a plugin template #}
+{{ include('@my_plugin/content/article.twig') }}
+
+{# Cross-referencing another plugin's template #}
+{% include '@admin/auth/base.twig' %}</code></pre>
+
+---
+
+<h2>Rendering Templates from a Controller</h2>
+
+<p>
+    All controllers extending <code>ControllerBase</code> have a <code>renderTwig()</code> helper
+    that renders a template and returns a Symfony <code>Response</code>:
+</p>
+
+<pre><code>&lt;?php
+
+use Simp\Pindrop\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class MyController extends ControllerBase
+{
+    public function index(Request $request, string $route_name, array $options): Response
+    {
+        return $this->renderTwig('my_plugin/content/article.twig', [
+            'page_title' => 'Hello World',
+            'items'      => [1, 2, 3],
+        ]);
+    }
+}</code></pre>
+
+<p>
+    The first argument is the template path relative to any registered namespace. You can also pass
+    a namespaced path: <code>'@admin/dashboard.twig'</code>.
+</p>
+
+---
+
+<h2>Rendering Templates from Entity::getView()</h2>
+
+<p>
+    Content entities render themselves via <code>getView()</code>. Use the Twig service directly:
+</p>
+
+<pre><code>public function getView(): string
+{
+    return getAppContainer()->get('twig')
+        ->render('@my_plugin/content/article.twig', ['entity' => $this]);
+}</code></pre>
+
+---
+
+<h2>Template Variables</h2>
+
+<p>
+    Variables you pass to <code>renderTwig()</code> are directly available in the template. The admin
+    theme also injects global variables automatically (current user, menu items, flash messages).
+</p>
+
+<h3>Common variables in admin templates</h3>
+
+<table>
+    <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+    <tr><td><code>page_title</code></td><td>string</td><td>Page &lt;title&gt; and heading</td></tr>
+    <tr><td><code>user</code></td><td>array</td><td>Current user data array</td></tr>
+    <tr><td><code>error</code></td><td>string|null</td><td>Form or page error message</td></tr>
+    <tr><td><code>entity</code></td><td>StorageEntity</td><td>Content entity object (content templates)</td></tr>
+    <tr><td><code>pagination</code></td><td>array</td><td>Pagination metadata for list pages</td></tr>
+</table>
+
+---
+
+<h2>Base Template Inheritance</h2>
+
+<p>
+    The admin theme uses a base layout that child templates extend:
+</p>
+
+<pre><code>{# themes/admin/templates/base.twig #}
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;{{ page_title }} — Pindrop&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    {% block sidebar %}...{% endblock %}
+    {% block content %}{% endblock %}
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<pre><code>{# Your plugin template #}
+{% extends '@admin/base.twig' %}
+
+{% block content %}
+    &lt;h1&gt;{{ page_title }}&lt;/h1&gt;
+    &lt;p&gt;My content here&lt;/p&gt;
+{% endblock %}</code></pre>
+
+---
+
+<h2>Theme info.yml</h2>
+
+<p>
+    Global themes in the <code>themes/</code> directory declare themselves with an <code>info.yml</code>:
+</p>
+
+<pre><code>name: "Admin Theme"
+description: "Default admin dashboard theme"
+version: "1.0.0"
+author: "Pindrop Team"</code></pre>
+
+---
+
+<h2>Assets</h2>
+
+<p>
+    Static assets (CSS, JS, images) for themes live in the theme's <code>assets/</code> directory.
+    The admin theme bundles Tagify (tag input), DataTables, and Font Awesome. Reference assets
+    using their web-accessible path from the document root.
+</p>
+
+<pre><code>&lt;link rel="stylesheet" href="/themes/admin/assets/style.css"&gt;
+&lt;script src="/themes/admin/assets/tagify-4.36.0/dist/tagify.min.js"&gt;&lt;/script&gt;</code></pre>
+
+---
+
+<h2>Plugin-Supplied Templates Override</h2>
+
+<p>
+    If a plugin registers a template with the same namespace path as an existing template, the last
+    registered plugin wins. To intentionally override an admin theme template from a plugin, mirror
+    the same path in your plugin's <code>templates/</code> directory:
+</p>
+
+<pre><code>modules/
+└── my_plugin/
+    └── templates/
+        └── admin/
+            └── dashboard.twig   ← overrides themes/admin/templates/dashboard.twig</code></pre>
+
+<div class="warning">
+    Override order depends on plugin load order. Use overrides carefully — they apply globally to
+    all requests once the plugin is enabled.
+</div>
+
+---
+
+<h2>Outputting Raw HTML</h2>
+
+<p>
+    Because auto-escaping is enabled, HTML stored in fields (like the body of an article) must be
+    marked safe when outputting:
+</p>
+
+<pre><code>{# Safe — auto-escaped (shows raw HTML tags) #}
+{{ entity.getContent() }}
+
+{# Raw — renders HTML as markup #}
+{{ entity.getContent()|raw }}</code></pre>
+
+<div class="highlight">
+    Only use <code>|raw</code> on content you control or have sanitised. Never apply it to
+    unfiltered user input.
+</div>
+
+</body>
+</html>

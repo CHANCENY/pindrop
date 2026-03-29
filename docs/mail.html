@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Mail - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}.callout.warning strong{color:#78350f;}
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+thead tr{background:#f3f4f8;}th{text-align:left;padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f5;font-size:.9rem;color:#374151;vertical-align:top;}tr:last-child td{border-bottom:none;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Core</div>
+<h1>Mail</h1>
+<p class="doc-intro">Pindrop's <code>MailManager</code> wraps <strong>PHPMailer</strong> and is configured via environment variables. It supports plain text, HTML, attachments, CC/BCC, reply-to, and batch sending out of the box.</p>
+
+<h2>SMTP Configuration</h2>
+<p>All mail settings are read from <code>.env</code>:</p>
+<pre><code>SMTP_HOST=smtp.example.com
+SMTP_PORT=465
+SMTP_USER=noreply@example.com
+SMTP_PASS=your-smtp-password
+SMTP_SECURE=ssl          # ssl or tls
+SMTP_DEBUG=0             # 0=off, 1=client, 2=server
+MAIL_FROM_EMAIL=noreply@example.com</code></pre>
+
+<h2>Accessing the Mail Service</h2>
+<pre><code>$mailer = getAppContainer()->get('mail');</code></pre>
+
+<h2>Sending Emails</h2>
+<h3>Plain text</h3>
+<pre><code>$mailer->sendText('user@example.com', 'Welcome!', 'Thanks for registering.');</code></pre>
+
+<h3>HTML email</h3>
+<pre><code>$html = '&lt;h1&gt;Welcome&lt;/h1&gt;&lt;p&gt;Thanks for joining &lt;strong&gt;Pindrop&lt;/strong&gt;.&lt;/p&gt;';
+$mailer->sendHtml('user@example.com', 'Welcome!', $html, strip_tags($html));</code></pre>
+
+<h3>With attachment</h3>
+<pre><code>$mailer->sendWithAttachment(
+    'user@example.com',
+    'Your Invoice',
+    '&lt;p&gt;Please find your invoice attached.&lt;/p&gt;',
+    '/path/to/invoice.pdf',
+    'invoice-2024.pdf'   // optional custom filename
+);</code></pre>
+
+<h3>Full options</h3>
+<pre><code>$mailer->send(
+    'recipient@example.com',
+    'Subject Line',
+    '&lt;p&gt;HTML body&lt;/p&gt;',
+    [
+        'html'     => true,
+        'cc'       => ['cc@example.com'],
+        'bcc'      => ['bcc@example.com'],
+        'reply_to' => 'support@example.com',
+        'headers'  => ['X-Custom-Header' => 'value'],
+        'attachments' => [
+            '/absolute/path/to/file.pdf',
+            ['path' => '/another/doc.xlsx', 'name' => 'report.xlsx'],
+        ],
+    ]
+);</code></pre>
+
+<h2>Batch Sending</h2>
+<pre><code>$messages = [
+    [
+        'to'      => 'alice@example.com',
+        'subject' => 'Hello Alice',
+        'body'    => '&lt;p&gt;Hi Alice!&lt;/p&gt;',
+        'options' => ['html' => true],
+    ],
+    [
+        'to'      => 'bob@example.com',
+        'subject' => 'Hello Bob',
+        'body'    => '&lt;p&gt;Hi Bob!&lt;/p&gt;',
+        'options' => ['html' => true],
+    ],
+];
+
+$results = $mailer->sendMultiple($messages);
+// $results is an array of ['to', 'subject', 'success'] per message</code></pre>
+
+<h2>Testing the Connection</h2>
+<pre><code>if ($mailer->testConnection()) {
+    echo 'SMTP is reachable';
+} else {
+    echo 'Error: ' . $mailer->getLastError();
+}</code></pre>
+
+<h2>MailManager Methods</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>send(to, subject, body, options)</code></td><td>Full-featured send with all options</td></tr>
+<tr><td><code>sendText(to, subject, message)</code></td><td>Plain text shortcut</td></tr>
+<tr><td><code>sendHtml(to, subject, html, text)</code></td><td>HTML with plain text fallback</td></tr>
+<tr><td><code>sendWithAttachment(to, subject, body, path, name)</code></td><td>Single attachment shortcut</td></tr>
+<tr><td><code>sendMultiple(array)</code></td><td>Batch send, returns per-message results</td></tr>
+<tr><td><code>testConnection()</code></td><td>Test SMTP connectivity</td></tr>
+<tr><td><code>validateEmail(string)</code></td><td>Validate an email address format</td></tr>
+<tr><td><code>setFrom(email, name)</code></td><td>Override the From address at runtime</td></tr>
+<tr><td><code>setDebug(bool)</code></td><td>Toggle SMTP debug output</td></tr>
+<tr><td><code>getLastError()</code></td><td>Get the most recent PHPMailer error string</td></tr>
+<tr><td><code>getStatistics()</code></td><td>Return config + status summary array</td></tr>
+<tr><td><code>getMailer()</code></td><td>Get raw <code>PHPMailer</code> instance for advanced use</td></tr>
+</tbody>
+</table></div>
+
+<h2>Using in a Plugin Service</h2>
+<pre><code># services.yml
+my_plugin.notifier:
+  class: Simp\Pindrop\Modules\my_plugin\src\Services\NotifierService
+  arguments:
+    - "@mail"
+    - "@logger"</code></pre>
+<pre><code>&lt;?php
+
+class NotifierService
+{
+    public function __construct(
+        private \Simp\Pindrop\Mail\MailManager $mailer,
+        private \Simp\Pindrop\Logger\LoggerInterface $logger
+    ) {}
+
+    public function welcomeEmail(string $to, string $name): bool
+    {
+        $html = "&lt;h1&gt;Welcome, {$name}!&lt;/h1&gt;&lt;p&gt;Your account is ready.&lt;/p&gt;";
+
+        $sent = $this->mailer->sendHtml($to, "Welcome to Pindrop", $html);
+
+        if (!$sent) {
+            $this->logger->error("Welcome email failed", ['to' => $to]);
+        }
+
+        return $sent;
+    }
+}</code></pre>
+
+<div class="callout warning"><strong>Localhost / development</strong><p>In development without a real SMTP server, use <a href="https://mailpit.axllent.org/" target="_blank">Mailpit</a> or <a href="https://mailtrap.io" target="_blank">Mailtrap</a>. Point <code>SMTP_HOST</code> and <code>SMTP_PORT</code> at your local mail catcher.</p></div>
+</div></body></html>

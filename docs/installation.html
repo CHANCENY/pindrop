@@ -1,193 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Installation - Pindrop CMS</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
-            line-height: 1.7;
-            padding: 40px;
-            background: #ffffff;
-            color: #0f172a;
-            max-width: 900px;
-            margin: auto;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            margin-top: 40px;
-            color: #2563eb;
-        }
-
-        p {
-            color: #334155;
-        }
-
-        .box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 20px;
-        }
-
-        .highlight {
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-
-        code {
-            background: #0f172a;
-            color: #38bdf8;
-            padding: 3px 6px;
-            border-radius: 6px;
-        }
-
-        pre {
-            background: #0f172a;
-            color: #38bdf8;
-            padding: 15px;
-            border-radius: 10px;
-            overflow-x: auto;
-        }
-
-        a {
-            color: #2563eb;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Installation - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}.callout.info strong{color:#1d4ed8;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}.callout.warning strong{color:#78350f;}
+.steps{list-style:none;margin:18px 0 32px;}
+.steps li{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start;}
+.step-num{min-width:30px;height:30px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;flex-shrink:0;margin-top:2px;}
+.step-body{flex:1;}.step-body strong{display:block;font-size:1rem;font-weight:600;margin-bottom:4px;}
+.step-body p{margin:0;color:var(--muted);font-size:.9rem;}
+a{color:var(--accent);}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Getting Started</div>
 <h1>Installation</h1>
+<p class="doc-intro">This guide walks through a complete Pindrop installation from source — dependencies, environment, database, and mandatory plugins.</p>
 
-<p>
-    This guide will walk you through installing and setting up <strong>Pindrop CMS</strong>.
-</p>
-
----
-
-<h2>1. Download Pindrop</h2>
-
-<p>
-    Download the latest release from the official repository:
-</p>
-
-<div class="highlight">
-    <a href="https://github.com/CHANCENY/pindrop" target="_blank">
-        https://github.com/CHANCENY/pindrop
-    </a>
-</div>
-
----
-
-<h2>2. Install Dependencies</h2>
-
-<p>Run Composer to install required packages:</p>
-
-<pre><code>composer install</code></pre>
-
----
-
-<h2>3. (Optional) Lando Setup</h2>
-
-<p>
-    If you are using <code>lando</code>, update your project name inside:
-</p>
-
-<div class="highlight">
-    <code>.lando.yml</code>
-</div>
-
----
-
-<h2>4. Environment Configuration</h2>
-
-<p>
-    Copy the example environment file and rename it:
-</p>
-
-<pre><code>cp .env.example .env</code></pre>
-
-<p>Then edit <code>.env</code> and configure:</p>
-
-<ul>
-    <li>Database credentials</li>
-    <li><code>ROOT</code> → Root path of your project</li>
+<h2>Prerequisites</h2>
+<ul style="color:#374151;padding-left:20px;line-height:2.2;margin-bottom:14px;">
+  <li>PHP 8.1+ with extensions: <code>pdo</code>, <code>pdo_mysql</code>, <code>zip</code>, <code>dom</code>, <code>libxml</code></li>
+  <li>MySQL 5.7+ or MariaDB 10.3+</li>
+  <li>Composer 2.x</li>
+  <li>Apache with <code>mod_rewrite</code>, or Nginx with equivalent rewrites</li>
+  <li>Git (for downloading plugins)</li>
 </ul>
 
----
+<h2>Steps</h2>
 
-<h2>5. Make CLI Executable</h2>
+<ol class="steps">
+  <li><div class="step-num">1</div><div class="step-body"><strong>Download Pindrop</strong><p>Clone or download from the official repository</p></div></li>
+</ol>
+<pre><code>git clone https://github.com/CHANCENY/pindrop.git my-site
+cd my-site</code></pre>
 
+<ol class="steps" start="2">
+  <li><div class="step-num">2</div><div class="step-body"><strong>Install Composer dependencies</strong></div></li>
+</ol>
+<pre><code>composer install</code></pre>
+
+<ol class="steps" start="3">
+  <li><div class="step-num">3</div><div class="step-body"><strong>Configure environment</strong><p>Copy and edit the example env file</p></div></li>
+</ol>
+<pre><code>cp .env.example .env</code></pre>
+<p>Open <code>.env</code> and set at minimum:</p>
+<pre><code>ROOT="/absolute/path/to/my-site"
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pindrop_db
+DB_USERNAME=db_user
+DB_PASSWORD=db_pass
+APP_ENV=development
+DEBUG=TRUE</code></pre>
+
+<ol class="steps" start="4">
+  <li><div class="step-num">4</div><div class="step-body"><strong>Optional: Lando setup</strong><p>If using Lando, edit the project name in <code>.lando.yml</code> then run <code>lando start</code></p></div></li>
+  <li><div class="step-num">5</div><div class="step-body"><strong>Make CLI executable</strong></div></li>
+</ol>
 <pre><code>chmod +x pindro</code></pre>
 
----
+<ol class="steps" start="6">
+  <li><div class="step-num">6</div><div class="step-body"><strong>Install mandatory plugins</strong></div></li>
+</ol>
+<pre><code># Download from official plugin repo
+./pindro plugin:download terminal_command
+./pindro plugin:download admin
 
-<h2>6. Run Installation Command</h2>
+# Register and enable both
+./pindro plugin:install terminal_command && ./pindro plugin:enable terminal_command
+./pindro plugin:install admin           && ./pindro plugin:enable admin</code></pre>
 
-<p>If using Lando:</p>
+<ol class="steps" start="7">
+  <li><div class="step-num">7</div><div class="step-body"><strong>Create database tables</strong><p>Run the schema creation command and enter <code>0</code> when prompted (creates ALL tables)</p></div></li>
+</ol>
+<pre><code>./pindro db:schema:create
+# When asked "Which schema do you wish to create?" → enter 0 → press Enter</code></pre>
 
-<pre><code>lando ssh</code></pre>
+<ol class="steps" start="8">
+  <li><div class="step-num">8</div><div class="step-body"><strong>Open in browser</strong><p>Navigate to your configured URL. Register at <code>/user/register</code> to create your first account.</p></div></li>
+</ol>
 
-<p>Then inside the container:</p>
-
-<pre><code>./pindro db:schema:create</code></pre>
-
-<p>
-    You will be prompted with a question. Enter:
-</p>
-
-<div class="highlight">
-    <code>0</code>
-</div>
-
-<p>
-    Then press <strong>Enter</strong>.
-</p>
-
----
-
-<h2>7. Access Your Application</h2>
-
-<p>
-    Once installation is complete, open your application in the browser.
-</p>
-
----
+<div class="callout tip"><strong>First super admin</strong><p>New accounts get role <code>user</code> by default. Manually set the first account to <code>super_admin</code> in the database:<br><code>UPDATE users SET role='super_admin' WHERE id=1;</code><br>Then log in and manage all future roles via the admin UI at <code>/admin/users</code>.</p></div>
 
 <h2>Important Notes</h2>
-
-<div class="box">
-    <ul>
-        <li>
-            To fully use the application, you must install and enable the <strong>admin plugin</strong>.
-        </li>
-        <li>
-            See the plugins documentation:
-            <br>
-            <a href="/docs?doc=plugins.html">Plugins Guide</a>
-        </li>
-        <li>
-            For <code>./pindro db:schema:create</code> to work, you must install and enable the <strong>terminal_command plugin</strong>.
-        </li>
-    </ul>
-</div>
-
----
+<div class="callout info"><strong>Admin plugin required</strong><p>The <code>admin</code> plugin provides the login page, admin dashboard, user management, and content management. Without it the CMS has no UI.</p></div>
+<div class="callout info"><strong>terminal_command plugin required</strong><p>The <code>terminal_command</code> plugin provides <code>db:schema:create</code> and other CLI commands. Without it you cannot create the database tables.</p></div>
 
 <h2>You're Ready</h2>
-
-<p>
-    Your Pindrop CMS installation is now complete. You can proceed with installing plugins and building your system.
-</p>
-
-</body>
-</html>
+<p>Your Pindrop installation is complete. Next steps:</p>
+<ul style="color:#374151;padding-left:20px;line-height:2.2;">
+  <li>Install additional plugins from <a href="https://github.com/CHANCENY/pindrop-features" target="_blank">github.com/CHANCENY/pindrop-features</a></li>
+  <li>Create your first custom plugin — see <a href="?doc=plugin-system.html">Plugin System</a></li>
+  <li>Build your first content type — see <a href="?doc=entities.html">Entities</a></li>
+</ul>
+</div></body></html>

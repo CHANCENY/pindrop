@@ -1,183 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Welcome - Pindrop CMS</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
-            line-height: 1.7;
-            padding: 40px;
-            background: #ffffff;
-            color: #0f172a;
-            max-width: 900px;
-            margin: auto;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            margin-top: 40px;
-            color: #2563eb;
-        }
-
-        p {
-            color: #334155;
-        }
-
-        .highlight {
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-
-        code {
-            background: #0f172a;
-            color: #38bdf8;
-            padding: 3px 6px;
-            border-radius: 6px;
-        }
-
-        .box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Welcome - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;margin-bottom:36px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.card-icon{font-size:1.4rem;margin-bottom:10px;}
+.card h4{font-size:.9rem;font-weight:600;margin-bottom:6px;}
+.card p{font-size:.85rem;color:var(--muted);margin:0;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Getting Started</div>
 <h1>Welcome to Pindrop CMS</h1>
+<p class="doc-intro">Pindrop is a modular, developer-first PHP CMS built around a plugin architecture. The core stays minimal — every feature from authentication to content management is delivered as a plugin you opt into.</p>
 
-<p>
-    <strong>Pindrop CMS</strong> is a modular, developer-first content management system designed for flexibility, scalability, and clean architecture.
-</p>
-
-<div class="box">
-    <strong>Core Idea:</strong><br>
-    The core system stays minimal, while features are added through independent plugins.
+<div class="grid2">
+  <div class="card"><div class="card-icon">🧩</div><h4>Plugin-based</h4><p>Every feature is a plugin. Enable what you need, ignore what you don't.</p></div>
+  <div class="card"><div class="card-icon">🔌</div><h4>YAML-driven</h4><p>Routes, services, menus, middleware — all declared in YAML, no code changes needed.</p></div>
+  <div class="card"><div class="card-icon">🎨</div><h4>Twig templates</h4><p>Auto-escaping Twig with theme and plugin namespaces. Override anything.</p></div>
+  <div class="card"><div class="card-icon">🗄️</div><h4>PDO + PreparedSQL</h4><p>All database access uses prepared statements through a lightweight PDO wrapper.</p></div>
+  <div class="card"><div class="card-icon">📡</div><h4>Event system</h4><p>Subscribe to entity, user, and auth lifecycle events from any plugin.</p></div>
+  <div class="card"><div class="card-icon">💻</div><h4>CLI tools</h4><p>Manage schemas, plugins, and site settings from the terminal via <code>./pindro</code>.</p></div>
 </div>
 
-<h2>🚀 What is Pindrop?</h2>
+<h2>Core Architecture</h2>
+<p>All HTTP requests enter through <code>index.php</code>, which bootstraps the application via <code>bootstrap.inc</code>. Bootstrap initialises the DI container, loads services, discovers plugins, registers routes, and hands off to the router.</p>
+<pre><code>Request → index.php → bootstrap.inc → ServiceProvider (DI)
+       → PluginManager (discover plugins)
+       → RouteManager (register routes + middleware)
+       → AuthMiddleware (check permissions)
+       → Controller::method()
+       → Twig template → Response</code></pre>
 
-<p>
-    Pindrop is built around a <strong>plugin-based architecture</strong> where functionality is not hardcoded into the core system.
-</p>
+<h2>Plugin Distribution</h2>
+<p>Plugins are distributed as Git branches in a central repository. Each branch is one plugin; the branch name is the plugin ID.</p>
+<pre><code># Download any plugin
+./pindro plugin:download &lt;plugin-name&gt;
 
-<p>
-    Instead of a monolithic CMS, Pindrop allows you to:
-</p>
+# Or clone manually
+git clone -b admin --single-branch https://github.com/CHANCENY/pindrop-features.git modules/admin</code></pre>
 
-<ul>
-    <li>Add features as plugins</li>
-    <li>Enable or disable functionality easily</li>
-    <li>Keep the core system clean and maintainable</li>
-    <li>Scale your application without complexity</li>
-</ul>
+<h2>Mandatory Plugins</h2>
+<div class="callout info"><strong>Required</strong><p>Two plugins must always be installed: <strong>admin</strong> (provides authentication and the admin UI) and <strong>terminal_command</strong> (provides CLI commands including <code>db:schema:create</code>). The CMS will not function without them.</p></div>
 
-<div class="highlight">
-    Think of Pindrop as a <strong>core engine + modular extensions</strong>.
+<h2>Documentation Map</h2>
+<div class="grid2">
+  <div class="card"><h4><a href="?doc=quickstart.html">🚀 Quick Start</a></h4><p>Install and run from scratch in 10 minutes</p></div>
+  <div class="card"><h4><a href="?doc=plugin-system.html">🧩 Plugin System</a></h4><p>Create, install, enable, all YAML files explained</p></div>
+  <div class="card"><h4><a href="?doc=controllers.html">🎮 Controllers</a></h4><p>Routes, responses, request handling</p></div>
+  <div class="card"><h4><a href="?doc=entities.html">📦 Entities</a></h4><p>Content types, CRUD, field definitions</p></div>
+  <div class="card"><h4><a href="?doc=auth.html">🔐 Authentication</a></h4><p>Login, logout, sessions, middleware</p></div>
+  <div class="card"><h4><a href="?doc=theming.html">🎨 Theming</a></h4><p>Twig templates, namespaces, assets</p></div>
+  <div class="card"><h4><a href="?doc=events.html">📡 Events</a></h4><p>Pub/sub event system, system events</p></div>
+  <div class="card"><h4><a href="?doc=cli.html">💻 CLI</a></h4><p>pindro commands, custom commands</p></div>
 </div>
-
-<h2>🧩 Plugin-Based Architecture</h2>
-
-<p>
-    Every feature in Pindrop is delivered as a plugin.
-</p>
-
-<ul>
-    <li>Admin panels</li>
-    <li>Payment systems</li>
-    <li>Analytics tools</li>
-    <li>Custom business logic</li>
-</ul>
-
-<p>
-    Plugins are:
-</p>
-
-<ul>
-    <li>Independent</li>
-    <li>Replaceable</li>
-    <li>Version-controlled via Git branches</li>
-</ul>
-
-<h2>🌿 How Plugins Work</h2>
-
-<p>
-    Plugins are stored in a central repository where:
-</p>
-
-<ul>
-    <li>Each <strong>branch</strong> represents one plugin</li>
-    <li>The <strong>branch name = plugin name</strong></li>
-</ul>
-
-<p>
-    After downloading, plugins are placed in:
-</p>
-
-<div class="highlight">
-    <code>modules/&lt;plugin-name&gt;</code>
-</div>
-
-<h2>⚙️ Enabling Plugins</h2>
-
-<p>
-    Plugins are controlled via configuration:
-</p>
-
-<div class="highlight">
-    <code>config/sync/core.plugin.yml</code>
-</div>
-
-<p>
-    Example:
-</p>
-
-<pre><code>admin: 1
-payments: 0</code></pre>
-
-<ul>
-    <li><code>1</code> → Installed and enabled</li>
-    <li><code>0</code> → Installed but disabled</li>
-</ul>
-
-<h2>🧠 Philosophy</h2>
-
-<p>
-    Pindrop follows modern development principles:
-</p>
-
-<ul>
-    <li><strong>Modularity</strong> — Everything is a plugin</li>
-    <li><strong>Separation of concerns</strong> — Core vs features</li>
-    <li><strong>Developer control</strong> — No hidden magic</li>
-    <li><strong>Scalability</strong> — Grow without rewriting</li>
-</ul>
-
-<div class="box">
-    Pindrop gives developers full control over system behavior without sacrificing simplicity.
-</div>
-
-<h2>📦 Getting Started</h2>
-
-<ul>
-    <li>Browse available plugins</li>
-    <li>Download from repository branches</li>
-    <li>Place in <code>modules/</code></li>
-    <li>Enable via config</li>
-</ul>
-
-<p>
-    Continue to the <strong>Plugins</strong> section to install your first plugin.
-</p>
-
-</body>
-</html>
+</div></body></html>

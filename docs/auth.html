@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h2 { margin-top: 40px; color: #2563eb; }
+        h3 { margin-top: 24px; color: #1e40af; }
+        p { color: #334155; }
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            color: #9a3412;
+        }
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        a { color: #2563eb; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Authentication</h1>
+
+<p>
+    Pindrop CMS authentication is provided by the <strong>admin plugin</strong>. It handles login, logout,
+    registration, email verification, and password reset. All auth routes are public by default and use a
+    session-based mechanism backed by the database.
+</p>
+
+<div class="box">
+    <strong>Requirement:</strong> The <code>admin</code> plugin must be installed and enabled for authentication to work.
+    Auth routes are registered in <code>modules/admin/routing.yml</code>.
+</div>
+
+---
+
+<h2>Auth Routes at a Glance</h2>
+
+<table>
+    <tr>
+        <th>Route name</th>
+        <th>URL</th>
+        <th>Methods</th>
+        <th>Access</th>
+    </tr>
+    <tr>
+        <td><code>user.login</code></td>
+        <td><code>/user/login</code></td>
+        <td>GET, POST</td>
+        <td>Public (anonymous only)</td>
+    </tr>
+    <tr>
+        <td><code>user.logout</code></td>
+        <td><code>/user/logout</code></td>
+        <td>GET, POST</td>
+        <td>Any authenticated role</td>
+    </tr>
+    <tr>
+        <td><code>user.register</code></td>
+        <td><code>/user/register</code></td>
+        <td>GET, POST</td>
+        <td>Public</td>
+    </tr>
+    <tr>
+        <td><code>user.forgot_password</code></td>
+        <td><code>/user/forgot-password</code></td>
+        <td>GET, POST</td>
+        <td>Public</td>
+    </tr>
+    <tr>
+        <td><code>user.reset_password</code></td>
+        <td><code>/user/reset-password/[token]</code></td>
+        <td>GET, POST</td>
+        <td>Public (token-gated)</td>
+    </tr>
+    <tr>
+        <td><code>user.verify_email</code></td>
+        <td><code>/user/verify-email/[token]</code></td>
+        <td>GET</td>
+        <td>Public (token-gated)</td>
+    </tr>
+</table>
+
+---
+
+<h2>Login</h2>
+
+<p>
+    Login is handled by <code>AdminController::login()</code>. The user submits their email and password.
+    The controller looks up the user by email, verifies the password using PHP's <code>password_verify()</code>,
+    and then creates a session record in the database.
+</p>
+
+<h3>What happens step by step</h3>
+<ol>
+    <li>User visits <code>/user/login</code> and submits the form with <code>email</code> and <code>password</code>.</li>
+    <li>The controller loads the user by email: <code>User::loadByEmail($email, $db)</code>.</li>
+    <li>Password is verified. Banned and suspended accounts are rejected with a clear message.</li>
+    <li>A <code>CurrentUser</code> session record is created with: user ID, PHP session ID, IP address, user agent, and a 24-hour expiry.</li>
+    <li>The response sets a <code>session_id</code> cookie (HTTP-only, secure) and redirects to the user's profile page.</li>
+</ol>
+
+<div class="highlight">
+    After login, the session is stored in the database and the browser receives a <code>session_id</code> cookie.
+    Every subsequent request, the <code>AuthMiddleware</code> reads this cookie, looks up the session, and
+    resolves the current user.
+</div>
+
+<h3>Login form fields</h3>
+
+<pre><code>POST /user/login
+
+email    = user@example.com
+password = secret</code></pre>
+
+---
+
+<h2>Logout</h2>
+
+<p>
+    Logout is handled by <code>AdminController::logout()</code>. It reads the active PHP session ID,
+    finds the matching <code>CurrentUser</code> database record, deletes it, clears the <code>session_id</code>
+    cookie, and redirects to <code>/user/login</code>.
+</p>
+
+<pre><code>GET /user/logout</code></pre>
+
+<div class="box">
+    Logout is a full server-side invalidation. The session record is deleted from the database, not just
+    the cookie. Visiting protected pages after logout will redirect back to <code>/user/login</code>.
+</div>
+
+---
+
+<h2>Registration</h2>
+
+<p>
+    New users register at <code>/user/register</code>. The form requires a username, email, password, and password
+    confirmation. On success the user is created with status <code>pending</code> and role <code>user</code>.
+    An email verification token is generated. The account becomes fully active after the email is verified.
+</p>
+
+<h3>Registration form fields</h3>
+
+<pre><code>POST /user/register
+
+username         = johndoe
+email            = john@example.com
+password         = secret
+password_confirm = secret</code></pre>
+
+---
+
+<h2>Password Reset</h2>
+
+<p>
+    The forgot-password flow creates a time-limited token via <code>UserVerification::createPasswordResetToken()</code>.
+    The reset link is <code>/user/reset-password/{token}</code>. After a successful reset all other active sessions
+    for that user are revoked automatically.
+</p>
+
+---
+
+<h2>AuthMiddleware</h2>
+
+<p>
+    The admin plugin registers <code>AuthMiddleware</code> globally in <code>middleware.yml</code>. It runs on
+    every request and enforces the <code>_permission</code> requirement declared on each route.
+</p>
+
+<div class="highlight">
+    <strong>How permissions work:</strong><br>
+    A route with <code>_permission: ['admin', 'super_admin']</code> will only pass if the current user's role
+    matches one of the listed values. Routes with an empty <code>requirements: {}</code> block are public.
+    Authenticated users trying to access a public-only route (like <code>/user/login</code>) are redirected
+    to <code>/</code> automatically.
+</div>
+
+<pre><code># routing.yml example — protected route
+admin.dashboard:
+  path: '/admin'
+  methods: ['GET']
+  defaults:
+    _controller: '...'
+  requirements:
+    _permission: ['admin', 'super_admin']
+
+# routing.yml example — public route
+user.login:
+  path: '/user/login'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: '...'
+  requirements: {}</code></pre>
+
+---
+
+<h2>Session Storage</h2>
+
+<p>
+    Sessions are stored in the database using the <code>CurrentUser</code> entity, not PHP's default
+    file-based sessions. Each session row holds the user ID, session token, IP address, user agent,
+    creation time, and expiry time (default 24 hours).
+</p>
+
+<p>
+    The <code>current_user</code> service is available in the DI container and in controllers:
+</p>
+
+<pre><code>$currentUser = getAppContainer()->get('current_user');
+$user = $currentUser->getUser(); // returns a User object or null</code></pre>
+
+</body>
+</html>

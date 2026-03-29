@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Events - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+thead tr{background:#f3f4f8;}th{text-align:left;padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f5;font-size:.9rem;color:#374151;vertical-align:top;}tr:last-child td{border-bottom:none;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Core</div>
+<h1>Events System</h1>
+<p class="doc-intro">Pindrop's event system is a lightweight publish-subscribe mechanism. Core framework actions fire named events. Plugins subscribe to events by declaring an <code>EventsSubscriber</code> class and receive a mutable <code>EventEmitter</code> object they can inspect and modify.</p>
+
+<h2>How It Works</h2>
+<p>On bootstrap, <code>EventsManager</code> scans every enabled plugin for an <code>Events.php</code> constants class and an <code>EventsSubscriber.php</code> subscriber. Both files must live at <code>src/Plugin/Events/</code> inside the plugin directory.</p>
+<pre><code>modules/my_plugin/
+└── src/
+    └── Plugin/
+        └── Events/
+            ├── Events.php           ← declare custom event constants
+            └── EventsSubscriber.php ← subscribe to events</code></pre>
+
+<h2>Built-in System Events</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Constant</th><th>Event name</th><th>Fired when</th></tr></thead>
+<tbody>
+<tr><td><code>ENTITY_CREATING</code></td><td><code>entity.creating</code></td><td>Before a content entity is saved for the first time</td></tr>
+<tr><td><code>ENTITY_CREATED</code></td><td><code>entity.created</code></td><td>After a content entity is first saved</td></tr>
+<tr><td><code>ENTITY_UPDATING</code></td><td><code>entity.updating</code></td><td>Before an existing entity is updated</td></tr>
+<tr><td><code>ENTITY_UPDATED</code></td><td><code>entity.updated</code></td><td>After an entity update is saved</td></tr>
+<tr><td><code>ENTITY_DELETING</code></td><td><code>entity.deleting</code></td><td>Before an entity is deleted</td></tr>
+<tr><td><code>ENTITY_DELETED</code></td><td><code>entity.deleted</code></td><td>After an entity is deleted</td></tr>
+<tr><td><code>ENTITY_SAVED</code></td><td><code>entity.saved</code></td><td>After any save (create or update)</td></tr>
+<tr><td><code>USER_CREATING</code></td><td><code>user.creating</code></td><td>Before a user is saved for the first time</td></tr>
+<tr><td><code>USER_CREATED</code></td><td><code>user.created</code></td><td>After a user is first saved</td></tr>
+<tr><td><code>USER_UPDATING</code></td><td><code>user.updating</code></td><td>Before a user record is updated</td></tr>
+<tr><td><code>USER_UPDATED</code></td><td><code>user.updated</code></td><td>After a user record is updated</td></tr>
+<tr><td><code>USER_DELETING / DELETED</code></td><td><code>user.deleting / deleted</code></td><td>Before/after user deletion</td></tr>
+<tr><td><code>AUTH_LOGIN</code></td><td><code>auth.login</code></td><td>Successful login</td></tr>
+<tr><td><code>AUTH_LOGOUT</code></td><td><code>auth.logout</code></td><td>User logout</td></tr>
+<tr><td><code>AUTH_LOGIN_FAILED</code></td><td><code>auth.login_failed</code></td><td>Failed login attempt</td></tr>
+<tr><td><code>AUTH_PASSWORD_RESET</code></td><td><code>auth.password_reset</code></td><td>Password was successfully reset</td></tr>
+<tr><td><code>REQUEST_RECEIVED</code></td><td><code>request.received</code></td><td>HTTP request received by router</td></tr>
+<tr><td><code>RESPONSE_BEFORE_SEND</code></td><td><code>response.before_send</code></td><td>Just before response is sent</td></tr>
+</tbody>
+</table></div>
+
+<h2>Declaring Custom Events</h2>
+<pre><code>&lt;?php
+// modules/my_plugin/src/Plugin/Events/Events.php
+
+namespace Simp\Pindrop\Modules\my_plugin\src\Plugin\Events;
+
+class Events
+{
+    public const string ORDER_PLACED    = 'my_plugin.order.placed';
+    public const string ORDER_FULFILLED = 'my_plugin.order.fulfilled';
+    public const string PAYMENT_FAILED  = 'my_plugin.payment.failed';
+}</code></pre>
+
+<h2>Subscribing to Events</h2>
+<pre><code>&lt;?php
+// modules/my_plugin/src/Plugin/Events/EventsSubscriber.php
+
+namespace Simp\Pindrop\Modules\my_plugin\src\Plugin\Events;
+
+use Simp\Pindrop\Events\EventEmitter;
+use Simp\Pindrop\Events\EventsSubscriberInterface;
+use Simp\Pindrop\Events\SystemEvents\Events as SystemEvents;
+
+class EventsSubscriber implements EventsSubscriberInterface
+{
+    public function getSubscribedEvents(): array
+    {
+        return [
+            // System events
+            SystemEvents::ENTITY_CREATED   => [self::class, 'onEntityCreated'],
+            SystemEvents::AUTH_LOGIN        => [self::class, 'onLogin'],
+
+            // Custom events
+            Events::ORDER_PLACED => [self::class, 'onOrderPlaced'],
+        ];
+    }
+
+    public static function onEntityCreated(EventEmitter &$event): void
+    {
+        // $event->entity is the newly-created StorageEntity
+        $entity = $event->entity ?? null;
+        if ($entity) {
+            // e.g. clear a cache, send a notification
+        }
+    }
+
+    public static function onLogin(EventEmitter &$event): void
+    {
+        $user = $event->user ?? null;
+        // log login analytics, update last_seen, etc.
+    }
+
+    public static function onOrderPlaced(EventEmitter &$event): void
+    {
+        $order = $event->order ?? null;
+        // send confirmation email, update inventory, etc.
+    }
+}</code></pre>
+
+<div class="callout info"><strong>EventEmitter is passed by reference</strong><p>Subscriber methods receive <code>EventEmitter &$event</code> by reference. Setting properties on <code>$event</code> modifies the data returned to the caller — this is how subscribers can mutate event payloads (e.g. enrich an entity before it is saved).</p></div>
+
+<h2>Firing Events</h2>
+<pre><code>// Using the global helper (available everywhere after bootstrap)
+$results = appEvents()->invokeEvents(
+    Events::ORDER_PLACED,
+    ['order' => $orderObject, 'user' => $userObject]
+);
+
+// $results contains the (potentially modified) arguments after all listeners ran</code></pre>
+
+<h2>Firing Events from a Controller</h2>
+<pre><code>use Simp\Pindrop\Events\SystemEvents\Events;
+
+// After creating an entity
+appEvents()->invokeEvents(Events::ENTITY_CREATED, ['entity' => $entity]);
+
+// After a password reset
+appEvents()->invokeEvents(Events::AUTH_PASSWORD_RESET, ['user' => $user]);</code></pre>
+
+<div class="callout tip"><strong>Naming convention</strong><p>Prefix custom event names with your plugin ID to avoid clashes with other plugins: <code>my_plugin.some_event</code>. Use dots as separators, not underscores.</p></div>
+</div></body></html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Logging - Pindrop CMS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#6366f1;--accent-bg:#eef2ff;--bg:#f8f9fc;--surface:#fff;--text:#1e1f26;--muted:#6b7280;--border:#e5e7eb;--code-bg:#0f1117;--code-fg:#a5f3fc;--radius:10px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;}
+.doc-wrap{max-width:820px;margin:0 auto;padding:48px 40px 80px;}
+.doc-badge{display:inline-flex;background:var(--accent-bg);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:600;text-transform:uppercase;margin-bottom:14px;}
+h1{font-size:2.2rem;font-weight:600;letter-spacing:-.02em;margin-bottom:14px;}
+.doc-intro{font-size:1.05rem;color:var(--muted);line-height:1.75;max-width:640px;}
+h2{font-size:1.35rem;font-weight:600;margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+h3{font-size:1.05rem;font-weight:600;margin:30px 0 10px;}
+p{color:#374151;margin-bottom:14px;}p:last-child{margin-bottom:0;}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:#f0f1f5;color:#5c2b9a;padding:2px 6px;border-radius:5px;border:1px solid #e0e0f0;}
+pre{background:var(--code-bg);border-radius:var(--radius);padding:20px 22px;overflow-x:auto;margin:18px 0;}
+pre code{background:none;border:none;color:var(--code-fg);font-size:.83rem;padding:0;line-height:1.7;}
+.callout{border-radius:var(--radius);padding:16px 18px;margin:22px 0;border-left:4px solid;}
+.callout p{margin:0;font-size:.9rem;}.callout strong{display:block;margin-bottom:4px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;}
+.callout.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af;}
+.callout.tip{background:#ecfdf5;border-color:#10b981;color:#065f46;}.callout.tip strong{color:#064e3b;}
+.callout.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e;}.callout.warning strong{color:#78350f;}
+.table-wrap{overflow-x:auto;margin:18px 0;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;background:var(--surface);}
+thead tr{background:#f3f4f8;}th{text-align:left;padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);}
+td{padding:11px 14px;border-bottom:1px solid #f0f1f5;font-size:.9rem;color:#374151;vertical-align:top;}tr:last-child td{border-bottom:none;}
+hr{border:none;border-top:1px solid var(--border);margin:44px 0;}
+</style></head><body><div class="doc-wrap">
+<div class="doc-badge">Core</div>
+<h1>Logging</h1>
+<p class="doc-intro">Pindrop's logger is PSR-3 compatible. It ships with three drivers — file, database, and null — switchable via <code>.env</code>. Context arrays are stored alongside each log entry for structured debugging.</p>
+
+<h2>Configuration</h2>
+<pre><code>LOG_ENABLED=true
+LOG_DRIVER=file            # file | database | null
+LOG_FILE=[ROOT]/.logs/reports.log</code></pre>
+
+<h2>Log Levels</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Level</th><th>Constant</th><th>When to use</th></tr></thead>
+<tbody>
+<tr><td><code>emergency</code></td><td><code>LoggerInterface::EMERGENCY</code></td><td>System is unusable</td></tr>
+<tr><td><code>alert</code></td><td><code>LoggerInterface::ALERT</code></td><td>Immediate action required</td></tr>
+<tr><td><code>critical</code></td><td><code>LoggerInterface::CRITICAL</code></td><td>Critical conditions</td></tr>
+<tr><td><code>error</code></td><td><code>LoggerInterface::ERROR</code></td><td>Runtime errors that don't require stopping execution</td></tr>
+<tr><td><code>warning</code></td><td><code>LoggerInterface::WARNING</code></td><td>Exceptional occurrences that aren't errors</td></tr>
+<tr><td><code>notice</code></td><td><code>LoggerInterface::NOTICE</code></td><td>Normal but significant events</td></tr>
+<tr><td><code>info</code></td><td><code>LoggerInterface::INFO</code></td><td>Interesting events — user logins, operations</td></tr>
+<tr><td><code>debug</code></td><td><code>LoggerInterface::DEBUG</code></td><td>Detailed debug information</td></tr>
+</tbody>
+</table></div>
+
+<h2>Using the Logger</h2>
+<pre><code>$logger = getAppContainer()->get('logger');
+
+// Basic
+$logger->info('User logged in');
+$logger->error('Payment failed');
+$logger->warning('Deprecated method called');
+
+// With context array (stored alongside the message)
+$logger->info('Order placed', [
+    'order_id' => 1234,
+    'user_id'  => 42,
+    'total'    => 99.99,
+]);
+
+$logger->error('Query failed', [
+    'sql'   => $sql,
+    'error' => $e->getMessage(),
+    'trace' => $e->getTraceAsString(),
+]);
+
+// Generic level method
+$logger->log('info', 'Something happened', ['key' => 'value']);</code></pre>
+
+<h2>Injecting via Services</h2>
+<pre><code># services.yml
+my_plugin.service:
+  class: Simp\Pindrop\Modules\my_plugin\src\Services\MyService
+  arguments:
+    - "@database"
+    - "@logger"</code></pre>
+<pre><code>class MyService
+{
+    public function __construct(
+        private DatabaseService $db,
+        private LoggerInterface $logger
+    ) {}
+
+    public function doWork(): void
+    {
+        $this->logger->info('Starting work');
+        try {
+            // ...
+            $this->logger->info('Work completed');
+        } catch (\Exception $e) {
+            $this->logger->error('Work failed', ['error' => $e->getMessage()]);
+        }
+    }
+}</code></pre>
+
+<h2>Log Drivers</h2>
+<h3>File driver (default)</h3>
+<p>Writes to the path in <code>LOG_FILE</code>. Each entry is one line with timestamp, level, message, and JSON-encoded context. The file is protected by <code>.htaccess</code> in the <code>.logs/</code> directory.</p>
+
+<h3>Database driver</h3>
+<p>Writes to a <code>logs</code> table. Set <code>LOG_DRIVER=database</code>. The table is created automatically on first use. Useful when you need to query or display logs in the admin UI.</p>
+
+<h3>Null driver</h3>
+<p>Silently discards all log entries. Set <code>LOG_DRIVER=null</code> for testing or when you want logging completely off.</p>
+
+<div class="callout warning"><strong>Log file security</strong><p>The <code>.logs/</code> directory is protected by an <code>.htaccess</code> that denies all HTTP access. Never move the log file outside this directory unless you're confident your server configuration protects it. Log files may contain sensitive data like IPs, emails, and stack traces.</p></div>
+
+<h2>Viewing Logs</h2>
+<pre><code># Tail the live log (Lando / SSH)
+tail -f .logs/reports.log
+
+# Search for errors
+grep '"level":"error"' .logs/reports.log | tail -50
+
+# Last 100 lines
+tail -100 .logs/reports.log</code></pre>
+
+<div class="callout tip"><strong>Structured context</strong><p>Always pass a context array as the second argument when the event has relevant data. This makes debugging much faster — you can grep for a specific order ID or user ID across thousands of log lines.</p></div>
+</div></body></html>

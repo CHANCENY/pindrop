@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Users - Pindrop CMS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            line-height: 1.7;
+            padding: 40px;
+            background: #ffffff;
+            color: #0f172a;
+            max-width: 900px;
+            margin: auto;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        h2 { margin-top: 40px; color: #2563eb; }
+        h3 { margin-top: 24px; color: #1e40af; }
+        p { color: #334155; }
+        .box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .highlight {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            color: #9a3412;
+        }
+        code {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        a { color: #2563eb; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Users</h1>
+
+<p>
+    The <code>User</code> entity (<code>pindrop/Entity/User/User.php</code>) is the core user object in Pindrop.
+    It supports roles, statuses, 2FA fields, login tracking, email verification, and soft deletion.
+    User management in the admin UI is provided by the <strong>admin plugin</strong>.
+</p>
+
+---
+
+<h2>Roles</h2>
+
+<table>
+    <tr><th>Constant</th><th>Value</th><th>Description</th></tr>
+    <tr><td><code>ROLE_SUPER_ADMIN</code></td><td><code>super_admin</code></td><td>Full system access, can delete users and manage plugins</td></tr>
+    <tr><td><code>ROLE_ADMIN</code></td><td><code>admin</code></td><td>Admin dashboard, user management, content management</td></tr>
+    <tr><td><code>ROLE_MODERATOR</code></td><td><code>moderator</code></td><td>Can manage content, limited user visibility</td></tr>
+    <tr><td><code>ROLE_USER</code></td><td><code>user</code></td><td>Standard authenticated user</td></tr>
+    <tr><td><code>ROLE_GUEST</code></td><td><code>guest</code></td><td>Anonymous / unauthenticated</td></tr>
+</table>
+
+---
+
+<h2>Statuses</h2>
+
+<table>
+    <tr><th>Constant</th><th>Value</th><th>Meaning</th></tr>
+    <tr><td><code>STATUS_ACTIVE</code></td><td><code>active</code></td><td>Account is active and can log in</td></tr>
+    <tr><td><code>STATUS_PENDING</code></td><td><code>pending</code></td><td>Registered but email not yet verified</td></tr>
+    <tr><td><code>STATUS_INACTIVE</code></td><td><code>inactive</code></td><td>Manually disabled, cannot log in</td></tr>
+    <tr><td><code>STATUS_SUSPENDED</code></td><td><code>suspended</code></td><td>Temporarily blocked, login rejected</td></tr>
+    <tr><td><code>STATUS_BANNED</code></td><td><code>banned</code></td><td>Permanently blocked, login rejected</td></tr>
+</table>
+
+---
+
+<h2>Creating a User (PHP)</h2>
+
+<p>Create and save a user programmatically from a controller or service:</p>
+
+<pre><code>use Simp\Pindrop\Entity\User\User;
+
+$db = getAppContainer()->get('database');
+
+$user = new User([], $db);
+$user->setUsername('johndoe');
+$user->setEmail('john@example.com');
+$user->setPassword('plaintext-password'); // hashed automatically
+$user->setRole(User::ROLE_USER);
+$user->setStatus(User::STATUS_ACTIVE);
+$user->setCreatedAt(new DateTime());
+
+if ($user->save()) {
+    echo 'User created with ID: ' . $user->getId();
+}</code></pre>
+
+<div class="highlight">
+    <code>setPassword()</code> automatically generates a salt and hashes the password using
+    <code>password_hash(PASSWORD_DEFAULT)</code>. Never set <code>passwordHash</code> directly
+    unless you are importing a pre-hashed value.
+</div>
+
+---
+
+<h2>Loading Users (PHP)</h2>
+
+<pre><code>// Load by ID
+$user = User::loadById(42, $db);
+
+// Load by email
+$user = User::loadByEmail('john@example.com', $db);
+
+// Load by username
+$user = User::loadByUsername('johndoe', $db);
+
+// Load all users
+$users = User::loadAll($db);
+
+// Paginated load (for listing pages)
+$page = User::loadWithPagination(1, 20, $db);
+// $page['users'], $page['total'], $page['total_pages']</code></pre>
+
+---
+
+<h2>Updating a User (PHP)</h2>
+
+<pre><code>$user = User::loadById(42, $db);
+
+$user->setEmail('newemail@example.com');
+$user->setRole(User::ROLE_ADMIN);
+$user->setStatus(User::STATUS_ACTIVE);
+
+// Change password
+$user->setPassword('new-plaintext-password');
+
+$user->save();</code></pre>
+
+---
+
+<h2>Deleting a User (PHP)</h2>
+
+<pre><code>$user = User::loadById(42, $db);
+$user->delete();</code></pre>
+
+<div class="warning">
+    Only <code>super_admin</code> users can delete users through the admin UI
+    (<code>admin.users.delete</code> route). Deletion via PHP is not role-restricted
+    — apply your own access checks when calling <code>delete()</code> from custom code.
+</div>
+
+---
+
+<h2>Admin UI — User Management</h2>
+
+<p>
+    The admin plugin provides a full user management interface under <code>/admin/users</code>.
+    All routes require <code>admin</code> or <code>super_admin</code> role unless noted.
+</p>
+
+<table>
+    <tr><th>URL</th><th>What it does</th><th>Role required</th></tr>
+    <tr><td><code>/admin/users</code></td><td>Paginated list of all users</td><td>admin, super_admin</td></tr>
+    <tr><td><code>/admin/users/create</code></td><td>Create a new user</td><td>admin, super_admin</td></tr>
+    <tr><td><code>/admin/users/{id}</code></td><td>View user details</td><td>admin, super_admin</td></tr>
+    <tr><td><code>/admin/users/{id}/edit</code></td><td>Edit user fields, role, status, password</td><td>admin, super_admin</td></tr>
+    <tr><td><code>/admin/users/{id}/delete</code></td><td>Confirm and delete a user</td><td>super_admin only</td></tr>
+    <tr><td><code>/admin/users/{id}/toggle</code></td><td>Toggle active/inactive status (POST)</td><td>admin, super_admin</td></tr>
+    <tr><td><code>/admin/users/bulk</code></td><td>Activate, deactivate, or delete multiple users at once</td><td>admin, super_admin</td></tr>
+    <tr><td><code>/user/{id}</code></td><td>Public profile view (own profile or admin)</td><td>any authenticated</td></tr>
+</table>
+
+---
+
+<h2>Importing Users</h2>
+
+<p>
+    Users can be bulk-imported from a <code>.csv</code>, <code>.xlsx</code>, or <code>.xls</code> file.
+    Download the template at <code>/admin/users/import-template</code>. The import accepts the
+    following columns:
+</p>
+
+<table>
+    <tr><th>Column</th><th>Required</th><th>Notes</th></tr>
+    <tr><td><code>username</code></td><td>Yes</td><td>Must be unique</td></tr>
+    <tr><td><code>email</code></td><td>Yes</td><td>Must be a valid, unique email</td></tr>
+    <tr><td><code>first_name</code></td><td>No</td><td></td></tr>
+    <tr><td><code>last_name</code></td><td>No</td><td></td></tr>
+    <tr><td><code>role</code></td><td>No</td><td>Defaults to <code>user</code>. Valid: user, moderator, admin, super_admin</td></tr>
+    <tr><td><code>status</code></td><td>No</td><td>Defaults to <code>pending</code>. Valid: pending, active, inactive</td></tr>
+</table>
+
+<p>
+    Import options available in the UI: skip duplicates, send welcome email, require password reset on first login.
+</p>
+
+---
+
+<h2>Verifying Passwords</h2>
+
+<pre><code>$user = User::loadByEmail('john@example.com', $db);
+
+if ($user && $user->verifyPassword('the-plain-password')) {
+    echo 'Password is correct';
+}</code></pre>
+
+---
+
+<h2>Checking the Current User</h2>
+
+<pre><code>$currentUser = getAppContainer()->get('current_user');
+$user = $currentUser->getUser(); // User object or anonymous
+
+if ($user && $user->getId()) {
+    echo 'Logged in as: ' . $user->getUsername();
+    echo 'Role: ' . $user->getRole();
+}</code></pre>
+
+</body>
+</html>
