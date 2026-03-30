@@ -1,4 +1,4 @@
-name: pindrop
+name: pindrop-structure
 recipe: lamp
 config:
   webroot: .

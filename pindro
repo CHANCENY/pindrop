@@ -1,0 +1,22 @@
+#!/bin/bash
+# Wrapper script to execute pindro.php using system PHP path
+
+# Find PHP executable
+PHP_BIN=$(which php)
+
+if [ -z "$PHP_BIN" ]; then
+    echo "Error: PHP is not installed or not in PATH."
+    exit 1
+fi
+
+# Resolve path to pindro.php
+SCRIPT_DIR="$(dirname "$0")"
+PHP_SCRIPT="$SCRIPT_DIR/cli/pindro.php"
+
+if [ ! -f "$PHP_SCRIPT" ]; then
+    echo "Error: PHP script not found at $PHP_SCRIPT"
+    exit 1
+fi
+
+# Execute PHP script with all arguments
+"$PHP_BIN" "$PHP_SCRIPT" "$@"
