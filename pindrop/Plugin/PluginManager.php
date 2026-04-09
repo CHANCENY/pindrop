@@ -292,7 +292,7 @@ class PluginManager
         }
         
         $configFile = $plugin['info_file'];
-        
+
         if (!file_exists($configFile)) {
             return;
         }
@@ -301,6 +301,10 @@ class PluginManager
             $config = Yaml::parseFile($configFile);
             
             $this->pluginConfigs[$pluginId] = $config;
+
+            if (empty($plugin['installed']) || empty($plugin['enabled'])) {
+                return;
+            }
             
             // Load plugin services if services.yml exists (regardless of enabled status)
             $servicesFile = $plugin['path'] . '/services.yml';
@@ -360,7 +364,8 @@ class PluginManager
                 $this->pluginTemplatesSources[] = $templateDirectory;
             }
             
-        } catch (Exception $e) {
+        }
+        catch (Exception $e) {
             throw new \RuntimeException("Failed to load plugin config for {$pluginId}: " . $e->getMessage(), 0, $e);
         }
     }
@@ -808,7 +813,7 @@ class PluginManager
             return [];
         }
 
-        return Yaml::parseFile($configFile);
+        return Yaml::parseFile($configFile) ?? [];
     }
 
     public function getPluginsYamlContent(string $filename): array

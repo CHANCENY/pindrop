@@ -74,6 +74,7 @@ $routeProvider = RouteManager::initialize($middleware_list);
 $pluginRoutes = new PluginRoutes($routeProvider, $container);
 $pluginRoutes->register($pluginManager->getPluginRoutes());
 
+
 // Initialize Whoops error handler for development
 if ($environment !== 'production' && $debug === true) {
     $whoops = new Run();

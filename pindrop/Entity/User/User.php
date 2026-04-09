@@ -2,6 +2,7 @@
 
 namespace Simp\Pindrop\Entity\User;
 
+use Simp\Pindrop\Database\DatabaseException;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Logger\LoggerInterface;
@@ -180,6 +181,10 @@ class User
     }
 
     // Instance loader methods
+
+    /**
+     * @throws DatabaseException
+     */
     public function loadByIdInstance(int $id): ?self
     {
         $sql = "SELECT * FROM users WHERE id = ? AND deleted_at IS NULL";
@@ -829,4 +834,9 @@ class User
     public function setCreatedAt(?\DateTime $createdAt): void { $this->createdAt = $createdAt; }
     public function setUpdatedAt(?\DateTime $updatedAt): void { $this->updatedAt = $updatedAt; }
     public function setDeletedAt(?\DateTime $deletedAt): void { $this->deletedAt = $deletedAt; }
+
+    public function __toString(): string
+    {
+        return "{$this->email} ({$this->id})";
+    }
 }

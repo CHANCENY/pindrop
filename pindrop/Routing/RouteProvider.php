@@ -158,6 +158,7 @@ class RouteProvider
     public function dispatch(): Response|JsonResponse|RedirectResponse|null
     {
         try{
+
             // csrf token generator
             $request = Request::createFromGlobals();
             \appEvents()->invokeEvents(Events::REQUEST_RECEIVED, ['request' => $request]);
@@ -248,12 +249,15 @@ class RouteProvider
 
             /**@var Settings $setings **/
             $settings =  \getAppContainer()->get(Settings::class);
-            $pageNotFoundTemplate = $settings->getSetting('admin.settings')->get('page_not_error');
+            $pageNotFoundTemplate = $settings->getSetting('admin.settings')?->get('page_not_error');
             if ($pageNotFoundTemplate) {
                 $response = new Response(\getAppContainer()->get('twig')->render($pageNotFoundTemplate));
                 \appEvents()->invokeEvents(Events::RESPONSE_BEFORE_SEND, ['response' => &$response, 'exception' => $exception]);
                 $response->send();
                 \appEvents()->invokeEvents(Events::RESPONSE_SENT, ['response' => &$response]);
+            }
+            else {
+                die("unexpected error occurred");
             }
         }
         return null;

@@ -38,15 +38,23 @@ class Autocomplete {
     }
 
     init() {
+
         if (!this.config.fieldId) {
-            console.error('Autocomplete: fieldId is required');
+            if (!this.config.override_field) {
+                console.error(`Autocomplete: fieldId is required`);
+                return;
+            }
+            this.element = this.config.override_field;
             return;
         }
 
         this.element = document.getElementById(this.config.fieldId);
         if (!this.element) {
-            console.error(`Autocomplete: Element with id '${this.config.fieldId}' not found`);
-            return;
+           if (!this.config.override_field) {
+               console.error(`Autocomplete: Element with id '${this.config.fieldId}' not found`);
+               return;
+           }
+           this.element = this.config.override_field;
         }
 
         this.setup();

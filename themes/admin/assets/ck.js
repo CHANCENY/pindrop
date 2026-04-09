@@ -16,7 +16,7 @@ import {
     SourceEditing,
     GeneralHtmlSupport,
     FullPage
-} from '/modules/commerce_store/assets/ckeditor5/ckeditor5.js';
+} from '/themes/admin/assets/ckeditor5/ckeditor5.js';
 
 function initCkEditor(element) {
     return ClassicEditor.create(element, {
