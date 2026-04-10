@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Plugin;
 
+use Simp\Pindrop\Message\Message;
 use Simp\Pindrop\Services\EnvServiceProvider;
 use Symfony\Component\Yaml\Yaml;
 use DI\Container;
@@ -386,6 +387,26 @@ class PluginManager
         }
         
         try {
+
+            $dependencies = $plugin['dependencies'] ?? [];
+            $flag = true;
+            foreach ($dependencies as $dependency) {
+                if (empty($this->plugins[$dependency])) {
+
+                    if (php_sapi_name() === 'cli') {
+                        echo "[{$pluginId}] cannot be installed without plugin '{$dependency}'\n";
+                    }
+                    else {
+                        Message::error("[{$pluginId}] cannot be installed without plugin '{$dependency}'\n");
+                    }
+                    $flag = false;
+                }
+            }
+
+            if (!$flag) {
+                return false;
+            }
+
             // Load plugin config if not already loaded
             if (!isset($this->pluginConfigs[$pluginId])) {
                 $this->loadPluginConfig($pluginId);
@@ -478,6 +499,26 @@ class PluginManager
         }
         
         try {
+
+            $dependencies = $plugin['dependencies'] ?? [];
+            $flag = true;
+            foreach ($dependencies as $dependency) {
+                if (empty($this->plugins[$dependency])) {
+
+                    if (php_sapi_name() === 'cli') {
+                        echo "[{$pluginId}] cannot be installed without plugin '{$dependency}'\n";
+                    }
+                    else {
+                        Message::error("[{$pluginId}] cannot be installed without plugin '{$dependency}'\n");
+                    }
+                    $flag = false;
+                }
+            }
+
+            if (!$flag) {
+                return false;
+            }
+
             // Load plugin config
             $this->loadPluginConfig($pluginId);
             
