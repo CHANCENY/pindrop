@@ -88,13 +88,15 @@ function initCkEditor(element) {
     });
 }
 
+window.editors = {};
+
 // Initial load
 if (document.querySelectorAll('textarea')) {
     const textarea = document.querySelectorAll('textarea');
     Array.from(textarea).forEach((element) => {
         if (element.classList.contains('editor')) {
-            initCkEditor(element)
-                .then(editor => { window.editor = editor; })
+             initCkEditor(element)
+                .then(editor => { window.editor = editor;  window.editors[element.id] = editor; })
                 .catch(error => { console.error(error); });
         }
     });
@@ -106,8 +108,8 @@ function reloadCk() {
         const textarea = document.querySelectorAll('textarea');
         Array.from(textarea).forEach((element) => {
             if (element.classList.contains('editor')) {
-                initCkEditor(element)
-                    .then(editor => { window.editor = editor; })
+                const ck = initCkEditor(element)
+                    .then(editor => { window.editor = editor;  window.editors[element.id] = editor; })
                     .catch(error => { console.error(error); });
             }
         });

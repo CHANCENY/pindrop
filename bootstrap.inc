@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 require_once 'vendor/autoload.php';
 
+use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Simp\Pindrop\Events\EventsManager;
@@ -46,12 +47,12 @@ $debug = getenv('DEBUG') ?: 'true';
 $debug = (bool)$debug;
 
 if ($environment === 'production') {
-    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
     ini_set('display_errors', '0');
 }
 else {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
     error_reporting(E_ALL);
-    ini_set('display_errors', $debug === 'true' ? '1' : '0');
 }
 
 // Set timezone and charset
@@ -73,7 +74,6 @@ $middleware_list =  $container->get('plugin.middleware')->getMiddlewareClasses()
 $routeProvider = RouteManager::initialize($middleware_list);
 $pluginRoutes = new PluginRoutes($routeProvider, $container);
 $pluginRoutes->register($pluginManager->getPluginRoutes());
-
 
 // Initialize Whoops error handler for development
 if ($environment !== 'production' && $debug === true) {
@@ -114,9 +114,9 @@ if ($environment !== 'production' && $debug === true) {
 /**
  * Get the application container
  * 
- * @return \DI\Container
+ * @return Container
  */
-function getAppContainer(): \DI\Container
+function getAppContainer(): Container
 {
     global $container;
     return $container;

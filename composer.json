@@ -38,6 +38,7 @@
     "filp/whoops": "^2.18",
     "simp/translate": "^1.0",
     "ext-dom": "*",
-    "ext-libxml": "*"
+    "ext-libxml": "*",
+    "giggsey/libphonenumber-for-php": "^9.0"
   }
 }

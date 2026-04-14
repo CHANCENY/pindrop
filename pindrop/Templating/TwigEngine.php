@@ -258,6 +258,22 @@ class TwigEngine
             }
         }
 
+        // Add the custom filters and functions
+
+        /**@var PluginManager $pluginManager **/
+        $pluginManager = $this->container->get('plugin.manager');
+        $extensions = $pluginManager->getPluginsYamlContent('twig.extensions');
+
+        foreach ($extensions as $extension) {
+            foreach ($extension as $ext){
+                $extensionClass = $ext['class'] ?? null;
+                if (!empty($extensionClass)) {
+
+                    $this->twig->addExtension(new $extensionClass);
+                }
+            }
+        }
+
     }
 
     /**

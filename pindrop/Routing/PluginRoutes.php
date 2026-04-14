@@ -10,6 +10,7 @@ use Simp\Pindrop\Form\FormBuilder;
 use Simp\Pindrop\Form\FormState;
 use Symfony\Component\HttpFoundation\Request;
 use Simp\Pindrop\Routing\ControllerFactory;
+use Throwable;
 
 /**
  * PluginRoutes
@@ -38,11 +39,9 @@ class PluginRoutes
     public function register(array $pluginRoutes): RouteProvider
     {
         $this->pluginRoutes = $pluginRoutes;
-
         foreach ($pluginRoutes as $pluginId => $routes) {
             $this->registerPluginRoutes($pluginId, $routes);
         }
-
         return $this->routeProvider;
     }
 
@@ -72,14 +71,14 @@ class PluginRoutes
         if (!$handler) {
             throw new \InvalidArgumentException("Route '{$name}' must have either '_controller' or '_form' in defaults");
         }
-        
+
         // Create controller instance using ControllerFactory
         $controller = $this->createControllerInstance($handler, $name);
         
         // Create options array with route name and controller method
         $options = $this->createRouteOptions($requirements);
         $options['route_name'] = $name;  // Add route name to options
-        
+
         // Set controller method based on handler type
         if (isset($defaults['_controller'])) {
             // Extract method from controller string using ControllerFactory
@@ -94,6 +93,7 @@ class PluginRoutes
         foreach ((array) $methods as $method) {
             $this->routeProvider->$method($path, $name, $controller, $options);
         }
+
     }
 
     /**
