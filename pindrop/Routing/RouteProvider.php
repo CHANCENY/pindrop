@@ -246,7 +246,6 @@ class RouteProvider
             // Return null since the response is already sent by the router
             return null;
         }catch (\Throwable $exception){
-
             /**@var Settings $setings **/
             $settings =  \getAppContainer()->get(Settings::class);
             $pageNotFoundTemplate = $settings->getSetting('admin.settings')?->get('page_not_error');

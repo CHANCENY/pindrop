@@ -39,6 +39,7 @@
     "simp/translate": "^1.0",
     "ext-dom": "*",
     "ext-libxml": "*",
-    "giggsey/libphonenumber-for-php": "^9.0"
+    "giggsey/libphonenumber-for-php": "^9.0",
+    "dragonmantank/cron-expression": "^3.6"
   }
 }
