@@ -195,6 +195,9 @@ class RouteProvider
             if (!empty($csrfToken) && $request->getMethod() === 'POST' && !$request->isXmlHttpRequest()) {
 
                 $submittedToken = $request->request->get('_csrf_token');
+                if ($request->getContentTypeFormat() === 'json') {
+                    $submittedToken = json_decode($request->getContent(), true)['_csrf_token'] ?? null;
+                }
 
                 if (!$submittedToken) {
                     throw new \RuntimeException('Missing CSRF token');
@@ -256,7 +259,20 @@ class RouteProvider
                 \appEvents()->invokeEvents(Events::RESPONSE_SENT, ['response' => &$response]);
             }
             else {
-                die("unexpected error occurred");
+                $environment = getenv('APP_ENV') ?: 'development';
+                $debug = getenv('DEBUG') ?: 'true';
+                $debug = (bool)$debug;
+
+                if ($environment !== 'production' && $debug === true){
+                    $whoops = \getAppContainer()->get('whoops');
+                    if ($whoops instanceof \Whoops\Run) {
+                        $whoops->handleException($exception);
+                    }
+                }
+                else {
+                    die("unexpected error occurred");
+                }
+
             }
         }
         return null;

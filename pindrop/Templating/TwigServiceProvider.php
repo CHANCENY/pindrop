@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Templating;
 
+use DI\Container;
 use DI\ContainerBuilder;
 use Simp\Pindrop\Services\EnvServiceProvider;
 
@@ -37,6 +38,7 @@ class TwigServiceProvider
             // Aliases for convenience
             TwigEngine::class => fn(\DI\Container $c) => $c->get('twig.engine'),
             'twig' => fn(\DI\Container $c) => $c->get('twig.engine'),
+            'library' => fn(Container $c) => new LibraryAssets($c->get('database')),
         ];
 
         $builder->addDefinitions($definitions);

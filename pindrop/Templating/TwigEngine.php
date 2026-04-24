@@ -274,6 +274,7 @@ class TwigEngine
             }
         }
 
+        $this->twig->addGlobal('asset_handler',$this->container->get('library'));
     }
 
     /**

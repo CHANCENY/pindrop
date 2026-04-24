@@ -240,4 +240,14 @@ class Url
     {
         return self::routeByName($routeName, $params, $absolute);
     }
+
+    public static function generateToken(Request $request, $secret, $offset = 0): string
+    {
+        $ip = $request->getClientIp();
+        $ua = $request->headers->get('User-Agent');
+
+        $timeWindow = floor(time() / 600) + $offset;
+
+        return hash_hmac('sha256', $ip . '|' . $ua . '|' . $timeWindow, $secret);
+    }
 }

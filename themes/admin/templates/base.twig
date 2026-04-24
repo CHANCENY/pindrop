@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/themes/admin/assets/css/autocomplete.css">
     <link rel="stylesheet" href="/themes/admin/assets/tagify-4.36.0/dist/tagify.css">
     <script src="/themes/admin/assets/jquery-4.0.0.min.js"></script>
+    {{ asset_handler.renderCss() }}
     {% block head %}{% endblock %}
 </head>
 <body class="admin-body">
@@ -127,6 +128,7 @@
     <script src="/themes/admin/assets/flatpickr.js"></script>
     <script src="/themes/admin/assets/js/autocomplete.js"></script>
     <script src="/themes/admin/assets/js/tag.js"></script>
+    {{ asset_handler.renderJs() }}
     {% if languages_Support is not empty %}
         <script src="/modules/languages/assets/js/lang-switcher.js"></script>
         <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
@@ -134,3 +136,4 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
+
