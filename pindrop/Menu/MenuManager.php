@@ -3,6 +3,7 @@
 namespace Simp\Pindrop\Menu;
 
 use DI\Container;
+use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Plugin\PluginManager;
 
 /**
@@ -22,6 +23,7 @@ class MenuManager
         $this->pluginManager = $pluginManager;
         $this->container = $container;
         $this->initializeMenus();
+        $menu = \appEvents()->invokeEvents(Events::MENUS_LOADED,[&$this]);
     }
 
     /**
@@ -220,5 +222,12 @@ class MenuManager
         // Menus are already filtered by user role during initialization
         // Just return the grouped menus
         return $this->sortedMenus;
+    }
+
+    public function removeMenu(string $menuId): void
+    {
+        if (isset($this->menus[$menuId])) {
+            unset($this->menus[$menuId]);
+        }
     }
 }

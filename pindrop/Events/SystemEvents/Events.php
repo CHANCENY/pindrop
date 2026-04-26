@@ -42,4 +42,8 @@ class Events
 
     public const string RESPONSE_BEFORE_SEND = 'response.before_send';
     public const string RESPONSE_SENT        = 'response.sent';
+
+    public const string MENUS_LOADED = 'menus.loaded';
+
+    public const string MENUS_ITEMS_RENDERER_READY = 'menus.item_renderer_renderer_ready';
 }

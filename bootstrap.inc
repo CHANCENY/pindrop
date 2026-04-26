@@ -69,6 +69,8 @@ $container = $serviceProvider->buildContainer();
 $pluginManager = $container->get('plugin.manager');
 $container->get('plugin.services.register');
 
+$eventsManager = $container->get(\Simp\Pindrop\Events\EventsManager::class);
+
 $middleware_list =  $container->get('plugin.middleware')->getMiddlewareClasses();
 // Load plugin routes and register with RouteManager
 $routeProvider = RouteManager::initialize($middleware_list);
@@ -123,6 +125,16 @@ function getAppContainer(): Container
 }
 
 /**
+ * Load all events registered.
+ */
+
+function appEvents(): EventsManager
+{
+    global $eventsManager;
+    return $eventsManager;
+}
+
+/**
  * Get the route provider
  * 
  * @return RouteProvider
@@ -144,15 +156,4 @@ function getRouteProvider(): RouteProvider
 function app(string $service)
 {
     return getAppContainer()->get($service);
-}
-
-/**
- * Load all events registered.
- */
-$eventsManager = $container->get(\Simp\Pindrop\Events\EventsManager::class);
-
-function appEvents(): EventsManager
-{
-    global $eventsManager;
-    return $eventsManager;
 }

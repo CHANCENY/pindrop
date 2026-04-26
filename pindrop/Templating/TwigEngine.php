@@ -6,6 +6,7 @@ namespace Simp\Pindrop\Templating;
 
 use DI\DependencyException;
 use DI\NotFoundException;
+use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\FileSystem\FileSystem;
 use Simp\Pindrop\Message\Message;
 use Simp\Pindrop\Modules\commerce_store\src\Autocomplete\AutocompleteOrderNumber;
@@ -172,7 +173,8 @@ class TwigEngine
             try {
                 $menuRenderer = $this->container->get('menu.renderer');
                 $menus = $menuRenderer->getMenuData();
-
+                $m = \appEvents()->invokeEvents(Events::MENUS_ITEMS_RENDERER_READY,[$menus]);
+                if (!empty($m) && !empty($m[0])) $menus = $m[0];
                 $this->twig->addGlobal('menus', $menus);
                 
                 // Add menu functions
