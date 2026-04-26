@@ -349,6 +349,9 @@ class CurrentUser
         ];
     }
 
+    /**
+     * @throws \DateMalformedStringException
+     */
     private function populateFromData(array $data): void
     {
         $this->id = (int) $data['id'];
@@ -359,5 +362,10 @@ class CurrentUser
         $this->createdAt = new DateTime($data['created_at']);
         $this->lastActivity = new DateTime($data['last_activity']);
         $this->expiresAt = new DateTime($data['expires_at']);
+    }
+
+    public function isLoggedIn(): bool
+    {
+        return !empty($this->id);
     }
 }
