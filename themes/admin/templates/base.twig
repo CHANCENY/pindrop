@@ -31,16 +31,16 @@
                 </h1>
             </div>
             <div class="admin-header-right">
+                {% if languages_Support %}
                 <div class="admin-user-menu">
                     <label style="display: none;" for="languageSupport">Languages</label>
                     <select name="lang" id="languageSupport" class="form-control">
                         {% for index,lang in  languages_Support %}
                         <option translate="no" value="{{ index }}" {% if defaultLanguage == index %} selected {% endif %}>{{ lang }}</option>
-                        {% else %}
-                            <option value="">Languages support not enabled</option>
                         {% endfor %}
                     </select>
                 </div>
+                {% endif %}
                 <div class="admin-user-menu">
                     <span class="admin-user-name">{{ user.display_name or user.username }}</span>
                     <a href="/user/logout" class="admin-logout">Logout</a>
