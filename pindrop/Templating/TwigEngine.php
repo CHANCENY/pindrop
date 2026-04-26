@@ -160,6 +160,7 @@ class TwigEngine
         $this->twig->addGlobal('app_env', $this->envProvider->get('APP_ENV', 'development'));
         $this->twig->addGlobal('request', Request::createFromGlobals());
         $this->twig->addGlobal('is_login', $this->container->get('current_user')->isLoggedIn());
+        $this->twig->addGlobal('sidebar_off', (bool) $this->envProvider->get('SIDEBAR_OFF', false));
 
         $this->twig->addFunction(new TwigFunction("supportLanguages", function (){
             return $this->supportLanguage();

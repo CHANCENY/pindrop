@@ -49,6 +49,8 @@
         </header>
 
         <div class="admin-main">
+
+            {% if sidebar_off == false %}
             <!-- Sidebar -->
             <aside class="admin-sidebar">
                 <nav class="admin-nav">
@@ -98,6 +100,8 @@
                     </ul>
                 </nav>
             </aside>
+
+            {% endif %}
 
             <!-- Main Content -->
             <main class="admin-content">
