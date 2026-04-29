@@ -93,7 +93,6 @@ class LibraryAssets
         }
     }
 
-
     public function attach(string $library_name): void
     {
         /**@var PluginManager $pluginManager **/
@@ -166,5 +165,9 @@ class LibraryAssets
             $jsMarkupLine .= $line;
         }
         return new Markup($jsMarkupLine, 'utf-8');
+    }
+
+    public function clearCache(): bool {
+        return $this->databaseService->query("delete from theme_library_assets;")->rowCount() > 0;
     }
 }

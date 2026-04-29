@@ -6,6 +6,7 @@ namespace Simp\Pindrop\Plugin;
 
 use Simp\Pindrop\Message\Message;
 use Simp\Pindrop\Services\EnvServiceProvider;
+use Simp\Pindrop\Templating\LibraryAssets;
 use Symfony\Component\Yaml\Yaml;
 use DI\Container;
 use DI\ContainerBuilder;
@@ -376,6 +377,7 @@ class PluginManager
      */
     public function enablePlugin(string $pluginId): bool
     {
+    
         if (!isset($this->plugins[$pluginId])) {
             throw new \InvalidArgumentException("Plugin '{$pluginId}' not found");
         }
@@ -387,7 +389,7 @@ class PluginManager
         }
         
         try {
-
+            new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             $dependencies = $plugin['dependencies'] ?? [];
             $flag = true;
             foreach ($dependencies as $dependency) {
@@ -447,6 +449,7 @@ class PluginManager
         }
         
         try {
+             new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             // Mark as disabled
             $this->plugins[$pluginId]['enabled'] = false;
             
@@ -500,6 +503,7 @@ class PluginManager
         
         try {
 
+            new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             $dependencies = $plugin['dependencies'] ?? [];
             $flag = true;
             foreach ($dependencies as $dependency) {
@@ -552,6 +556,7 @@ class PluginManager
         }
         
         try {
+             new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             // Disable first
             if ($plugin['enabled']) {
                 $this->disablePlugin($pluginId);
