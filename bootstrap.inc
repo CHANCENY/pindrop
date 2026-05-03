@@ -16,6 +16,7 @@ use Simp\Pindrop\Routing\PluginRoutes;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Handler\JsonResponseHandler;
 use Whoops\Run;
+use Simp\Pindrop\FileSystem\FileSystemService;
 
 /**
  * Bootstrap Application
@@ -112,6 +113,15 @@ if ($environment !== 'production' && $debug === true) {
         }
     }
 }
+
+// Create from environment
+$fileSystemService = FileSystemService::createFromEnv(getAppContainer()->get('logger'));
+
+// Or create with custom config
+$fileSystemService = new FileSystemService([
+    'public_stream' => $_ENV['PUBLIC_STREAM'],
+    'public_stream_dir' => $_ENV['PUBLIC_STREAM_DIR']
+], getAppContainer()->get('logger'));
 
 /**
  * Get the application container

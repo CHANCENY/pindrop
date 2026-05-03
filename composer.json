@@ -42,6 +42,7 @@
     "giggsey/libphonenumber-for-php": "^9.0",
     "dragonmantank/cron-expression": "^3.6",
     "react/socket": "^1.17.0",
-    "ext-sockets": "*"
+    "ext-sockets": "*",
+    "minishlink/web-push": "^10.0"
   }
 }
