@@ -225,6 +225,7 @@ class Database
         
         $params = array_merge($params, $whereParams);
         
+    
         $stmt = $this->query($sql, ...$params);
         
         if ($stmt instanceof PDOStatement) {

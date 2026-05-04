@@ -1,5 +1,6 @@
 <?php
 
+use Simp\Pindrop\Events\EventsManager;
 use Simp\Pindrop\Services\ServiceProvider;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -10,11 +11,24 @@ $container = $serviceProvider->buildContainer();
 
 $container->get('plugin.services.register');
 
+$eventsManager = $container->get(\Simp\Pindrop\Events\EventsManager::class);
+
 function getAppContainer(): \DI\Container
 {
     global $container;
     return $container;
 }
+
+/**
+ * Load all events registered.
+ */
+
+function appEvents(): EventsManager
+{
+    global $eventsManager;
+    return $eventsManager;
+}
+
 
 $factory = $container->get('content.factory');
 

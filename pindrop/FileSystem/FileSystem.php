@@ -359,7 +359,7 @@ class FileSystem implements FileSystemInterface
         }
     }
 
-    public function validateUpload(array $file, array $allowedTypes = [], int $maxSize = null): array
+    public function validateUpload(array $file, array $allowedTypes = [], ?int $maxSize = null): array
     {
         $errors = [];
         
