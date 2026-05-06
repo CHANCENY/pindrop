@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\FileSystem;
 
+use InvalidArgumentException;
+use RuntimeException;
 use Simp\Pindrop\Logger\LoggerInterface;
 use Simp\StreamWrapper\WrapperRegister\WrapperRegister;
 
@@ -19,13 +21,15 @@ class FileSystem implements FileSystemInterface
     private array $config;
     private ?LoggerInterface $logger;
     private array $registeredWrappers;
+    private array $extensions;
 
     public function __construct(array $config = [], ?LoggerInterface $logger = null)
     {
         $this->config = $config;
         $this->logger = $logger;
         $this->registeredWrappers = [];
-        
+        $this->extensions = $this->loadExtensions();
+
         $this->initializeStreamWrappers();
     }
 
@@ -45,15 +49,15 @@ class FileSystem implements FileSystemInterface
     {
         $protocol = str_replace('://', '', $this->config['public_stream'] ?? 'public://');
         $wrapperClass = ConfigurableStreamWrapper::class;
-        
+
         // Create wrapper register instance to avoid the static method bug
         $wrapperRegister = new \Simp\StreamWrapper\WrapperRegister\WrapperRegister();
-        
+
         // Register the wrapper
         if (!$wrapperRegister->isWrapperRegistered($protocol)) {
             $wrapperRegister->addWrapper($protocol, $wrapperClass);
             $this->registeredWrappers[$protocol] = $wrapperClass;
-            
+
             if ($this->logger) {
                 $this->logger->info("Registered pindrop stream wrapper: {$protocol}");
             }
@@ -64,13 +68,13 @@ class FileSystem implements FileSystemInterface
     {
         try {
             $this->ensureDirectoryExists(dirname($uri));
-            
+
             $result = file_put_contents($uri, $content, $flags);
-            
+
             if ($this->logger) {
                 $this->logger->debug("File written: {$uri}", ['bytes' => strlen($content)]);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -89,13 +93,13 @@ class FileSystem implements FileSystemInterface
                 }
                 return false;
             }
-            
+
             $content = file_get_contents($uri);
-            
+
             if ($this->logger) {
                 $this->logger->debug("File read: {$uri}", ['bytes' => strlen($content)]);
             }
-            
+
             return $content;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -116,13 +120,13 @@ class FileSystem implements FileSystemInterface
             if (!$this->exists($uri)) {
                 return true;
             }
-            
+
             $result = unlink($uri);
-            
+
             if ($this->logger) {
                 $this->logger->debug("File deleted: {$uri}", ['success' => $result]);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -136,13 +140,13 @@ class FileSystem implements FileSystemInterface
     {
         try {
             $this->ensureDirectoryExists(dirname($destinationUri));
-            
+
             $result = copy($sourceUri, $destinationUri);
-            
+
             if ($this->logger) {
                 $this->logger->debug("File copied: {$sourceUri} -> {$destinationUri}", ['success' => $result]);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -156,13 +160,13 @@ class FileSystem implements FileSystemInterface
     {
         try {
             $this->ensureDirectoryExists(dirname($destinationUri));
-            
+
             $result = rename($sourceUri, $destinationUri);
-            
+
             if ($this->logger) {
                 $this->logger->debug("File moved: {$sourceUri} -> {$destinationUri}", ['success' => $result]);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -186,11 +190,11 @@ class FileSystem implements FileSystemInterface
     {
         try {
             $result = mkdir($uri, $mode, $recursive);
-            
+
             if ($this->logger) {
                 $this->logger->debug("Directory created: {$uri}", ['success' => $result]);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -208,11 +212,11 @@ class FileSystem implements FileSystemInterface
             } else {
                 $result = $this->removeDirectoryRecursive($uri);
             }
-            
+
             if ($this->logger) {
                 $this->logger->debug("Directory removed: {$uri}", ['recursive' => $recursive, 'success' => $result]);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -228,17 +232,17 @@ class FileSystem implements FileSystemInterface
             if (!$this->isDir($uri)) {
                 return [];
             }
-            
+
             $files = [];
-            $iterator = $recursive ? 
+            $iterator = $recursive ?
                 new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($uri)) :
                 new \DirectoryIterator($uri);
-            
+
             foreach ($iterator as $file) {
                 if ($file->isDot()) {
                     continue;
                 }
-                
+
                 $files[] = [
                     'uri' => $file->getPathname(),
                     'name' => $file->getFilename(),
@@ -248,7 +252,7 @@ class FileSystem implements FileSystemInterface
                     'extension' => $file->isFile() ? $file->getExtension() : ''
                 ];
             }
-            
+
             return $files;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -273,11 +277,11 @@ class FileSystem implements FileSystemInterface
         if (!function_exists('finfo_file')) {
             return false;
         }
-        
+
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $uri);
         finfo_close($finfo);
-        
+
         return $mimeType;
     }
 
@@ -296,7 +300,7 @@ class FileSystem implements FileSystemInterface
         try {
             // Validate upload
             $validation = $this->validateUpload($file, $options['allowed_types'] ?? [], $options['max_size'] ?? null);
-            
+
             if (!$validation['valid']) {
                 return [
                     'success' => false,
@@ -304,26 +308,26 @@ class FileSystem implements FileSystemInterface
                     'errors' => $validation['errors']
                 ];
             }
-            
+
             // Ensure directory exists
             $this->ensureDirectoryExists(dirname($destinationUri));
-            
+
             // Generate unique filename if needed
             if ($options['unique'] ?? false) {
                 $extension = $this->extension($file['name']);
                 $basename = pathinfo($file['name'], PATHINFO_FILENAME);
                 $counter = 1;
                 $originalUri = $destinationUri;
-                
+
                 while ($this->exists($destinationUri)) {
                     $destinationUri = dirname($originalUri) . '/' . $basename . '_' . $counter . '.' . $extension;
                     $counter++;
                 }
             }
-            
+
             // Move uploaded file
             $result = move_uploaded_file($file['tmp_name'], $destinationUri);
-            
+
             if ($result) {
                 $fileInfo = [
                     'name' => basename($destinationUri),
@@ -333,11 +337,11 @@ class FileSystem implements FileSystemInterface
                     'mime_type' => $this->mimeType($destinationUri),
                     'extension' => $this->extension($destinationUri)
                 ];
-                
+
                 if ($this->logger) {
                     $this->logger->info("File uploaded successfully: {$destinationUri}", $fileInfo);
                 }
-                
+
                 return [
                     'success' => true,
                     'data' => [$fileInfo],
@@ -346,12 +350,12 @@ class FileSystem implements FileSystemInterface
             } else {
                 throw new \Exception('Failed to move uploaded file');
             }
-            
+
         } catch (\Exception $e) {
             if ($this->logger) {
                 $this->logger->error("File upload failed: {$destinationUri}", ['error' => $e->getMessage()]);
             }
-            
+
             return [
                 'success' => false,
                 'message' => 'File upload failed: ' . $e->getMessage()
@@ -362,7 +366,7 @@ class FileSystem implements FileSystemInterface
     public function validateUpload(array $file, array $allowedTypes = [], ?int $maxSize = null): array
     {
         $errors = [];
-        
+
         // Check upload error
         if ($file['error'] !== UPLOAD_ERR_OK) {
             $errors[] = $this->getUploadErrorMessage($file['error']);
@@ -372,12 +376,12 @@ class FileSystem implements FileSystemInterface
                 'errors' => $errors
             ];
         }
-        
+
         // Check file size
         if ($maxSize && $file['size'] > $maxSize) {
             $errors[] = "File size exceeds maximum allowed size of " . $this->formatBytes($maxSize);
         }
-        
+
         // Check file type
         if (!empty($allowedTypes)) {
             $extension = strtolower($this->extension($file['name']));
@@ -385,7 +389,7 @@ class FileSystem implements FileSystemInterface
                 $errors[] = "File type '{$extension}' is not allowed. Allowed types: " . implode(', ', $allowedTypes);
             }
         }
-        
+
         return [
             'valid' => empty($errors),
             'message' => empty($errors) ? 'File is valid' : 'Validation failed',
@@ -402,7 +406,7 @@ class FileSystem implements FileSystemInterface
         if (str_starts_with($uri, "public://")) {
             return str_replace("public://", $_ENV['PUBLIC_WEB_FILE_ROOT'], $uri);
         }
-        
+
         // For other protocols, return as-is or handle accordingly
         return $uri;
     }
@@ -425,13 +429,13 @@ class FileSystem implements FileSystemInterface
         if (!is_dir($uri)) {
             return false;
         }
-        
+
         $files = array_diff(scandir($uri), ['.', '..']);
         foreach ($files as $file) {
             $path = $uri . '/' . $file;
             is_dir($path) ? $this->removeDirectoryRecursive($path) : unlink($path);
         }
-        
+
         return rmdir($uri);
     }
 
@@ -461,9 +465,9 @@ class FileSystem implements FileSystemInterface
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
-        
+
         $bytes /= pow(1024, $pow);
-        
+
         return round($bytes, 2) . ' ' . $units[$pow];
     }
 
@@ -473,8 +477,68 @@ class FileSystem implements FileSystemInterface
         $publicWrapper = getAppContainer()->get('filesystem.public_stream');
 
         if (str_starts_with($uri, 'public://')) {
-            return str_replace('public://', $publicWrapper->getbase_path().DIRECTORY_SEPARATOR, $uri);
+            return str_replace('public://', $publicWrapper->getbase_path() . DIRECTORY_SEPARATOR, $uri);
         }
         return $uri;
+    }
+
+    public function getExtension(string $uri): ?string
+    {
+        $mime_type = mime_content_type($uri);
+        if (!empty($mime_type)) {
+            $type = explode('/', $mime_type);
+            return $this->extensions[$mime_type] ?? $type[1] ?? null;
+        }
+        return null;
+    }
+
+    private function loadExtensions()
+    {
+
+    $filePath = __DIR__ . DIRECTORY_SEPARATOR . "application.csv";
+        if (!file_exists($filePath)) {
+            throw new InvalidArgumentException("File not found: {$filePath}");
+        }
+
+        $handle = fopen($filePath, 'r');
+        if (!$handle) {
+            throw new RuntimeException("Unable to open file: {$filePath}");
+        }
+
+        $map = [];
+
+        // Skip header
+         fgetcsv($handle, 0, ',', '"', '\\');
+
+        while (($row =  fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+            if (empty($row[0])) {
+                continue;
+            }
+
+            $name = trim($row[0]); // subtype name
+            $mime = trim($row[1]);
+            $map[$mime] = $name;
+        }
+
+        fclose($handle);
+
+        return $map;
+    }
+
+    public function getImageDimession(string $uri)
+    {
+        $mime_type = mime_content_type($uri);
+
+        if (str_starts_with($mime_type,'image')) {
+            [$width, $height] = getimagesize($uri);
+            return [
+                'width'=> $width,
+                'height'=> $height
+            ];
+        }
+        return [
+            'width' => 0,
+            'height'=> 0,
+        ];
     }
 }

@@ -43,6 +43,7 @@
     "dragonmantank/cron-expression": "^3.6",
     "react/socket": "^1.17.0",
     "ext-sockets": "*",
-    "minishlink/web-push": "^10.0"
+    "minishlink/web-push": "^10.0",
+    "commerceguys/addressing": "^2.2"
   }
 }

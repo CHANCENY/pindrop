@@ -351,6 +351,7 @@ class File
                     'uuid' => $this->uuid,
                     'filename' => $this->filename
                 ]);
+                unlink($this->uri);
                 return true;
             }
 
@@ -419,11 +420,7 @@ class File
             $result = $this->database->fetch($sql, $this->uri);
             return $result['url'] ?? $this->uri;
         } catch (\Exception $e) {
-            // Fallback to manual conversion
-            if (strpos($this->uri, 'public://') === 0) {
-                return '/files/' . substr($this->uri, 9);
-            }
-            return $this->uri;
+           return \getAppContainer()->get('filesystem')->getPublicUrl($this->uri);
         }
     }
 

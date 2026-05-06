@@ -543,27 +543,3 @@
     }
 
 })();
-
-async function createCsrfToken() {
-    const response = await fetch('/internal/csrf-token/generator');
-    const results = await response.json()
-    if (results.token) {
-        return results.token;
-    }
-    return null;
-}
-
-/**
- *
- * @param url
- * @param {object} options NOTE body dont stringify it.
- * @returns {Promise<Response>}
- */
-async function send(url, options){
-    if (options.method.toLocaleLowerCase() === 'post') {
-        const body = options.body;
-        body['_csrf_token'] = await createCsrfToken();
-        options.body = JSON.stringify(body);
-    }
-    return await fetch(url, options);
-}

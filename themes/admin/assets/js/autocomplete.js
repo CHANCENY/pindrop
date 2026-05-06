@@ -3,7 +3,7 @@
  * Provides searchable dropdown functionality for any form field
  * Works with backend API that returns standardized {value, label} format
  */
-class Autocomplete {
+export class Autocomplete {
     constructor(config) {
         this.config = {
             fieldId: config.fieldId || null,
@@ -444,9 +444,4 @@ class Autocomplete {
         const container = this.input.parentNode;
        // container.remove();
     }
-}
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = Autocomplete;
 }
