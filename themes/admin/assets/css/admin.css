@@ -1009,6 +1009,8 @@
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
+
+
 /* Responsive */
 @media (max-width: 992px) {
     .drupal-address-container .address-grid { grid-template-columns: repeat(2, 1fr); }

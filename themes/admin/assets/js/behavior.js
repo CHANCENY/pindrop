@@ -210,6 +210,7 @@ class Behaviour {
 
     // Init file input fields
     initFileInputs();
+    this.scanModalLinks();
   }
 
   initCkEditor(element) {
@@ -354,6 +355,110 @@ class Behaviour {
       options.body = JSON.stringify(body);
     }
     return await fetch(url, options);
+  }
+
+  scanModalLinks() {
+    const modalEnabledElements = this.context.querySelectorAll(".use-ajax");
+    if (modalEnabledElements) {
+      const filtedElements = Array.from(modalEnabledElements).filter(
+        (element) => element.getAttribute("data-dialog-type") === "modal",
+      );
+
+      filtedElements.forEach((element) => {
+        element.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.populateModal(element);
+        });
+      });
+    }
+  }
+
+  /**
+   *
+   * @param {HTMLElement} element
+   */
+  async populateModal(element) {
+    const { dialogOptions, dialogType, linkSystemPath } = element.dataset;
+
+    let options = {};
+
+    // Parse JSON safely
+    if (dialogOptions) {
+      try {
+        options = JSON.parse(dialogOptions);
+      } catch (e) {
+        console.error("Invalid JSON in dialogOptions:", dialogOptions);
+      }
+    }
+
+    if (dialogType === "modal") {
+      await this.openModal(linkSystemPath, options);
+    }
+  }
+
+  async openModal(path, options = {}) {
+    const width = options.width || 600;
+
+    // Overlay
+    const overlay = document.createElement("div");
+    overlay.className = "dialog-overlay";
+
+    // Modal container
+    const modal = document.createElement("div");
+    modal.className = "dialog-modal";
+    modal.style.maxWidth = width + "px";
+
+    modal.innerHTML = `
+    <div class="dialog-header">
+      <span class="dialog-title">Loading...</span>
+      <button class="dialog-close">×</button>
+    </div>
+    <div class="dialog-content">Loading...</div>
+  `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+
+    // Close handlers
+    const close = () => {
+      modal.remove();
+      overlay.remove();
+    };
+
+    overlay.addEventListener("click", close);
+    modal.querySelector(".dialog-close").addEventListener("click", close);
+
+    try {
+      const response = await fetch(path, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const text = await response.text();
+
+      // Parse HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "text/html");
+
+      // Extract title
+      const title = doc.querySelector("title")?.innerText || "Dialog";
+
+      // Extract main content (fallback to body)
+      const main = doc.querySelector("main") || doc.body;
+
+      // Inject into modal
+      modal.querySelector(".dialog-title").innerText = title;
+      modal.querySelector(".dialog-content").innerHTML = main.innerHTML;
+    } catch (err) {
+      modal.querySelector(".dialog-title").innerText = "Error";
+      modal.querySelector(".dialog-content").innerHTML = `
+      <p style="color:red;">Failed to load content</p>
+      <pre>${err.message}</pre>
+    `;
+    }
   }
 }
 
