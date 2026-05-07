@@ -12,7 +12,6 @@
       "Simp\\Pindrop\\Helpers\\": "helpers/",
       "Simp\\Pindrop\\Exceptions\\": "exceptions/",
       "Simp\\Pindrop\\Plugins\\": "plugins/"
-
     }
   },
   "authors": [
@@ -45,5 +44,10 @@
     "ext-sockets": "*",
     "minishlink/web-push": "^10.0",
     "commerceguys/addressing": "^2.2"
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "php cli/composer.php"
+    ]
   }
 }

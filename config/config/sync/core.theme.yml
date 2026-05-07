@@ -1,0 +1,18 @@
+# Core Theme Configuration
+# This file tracks installed themes
+
+# Installed themes with their metadata
+admin:
+  name: admin
+  version: 1.0.0
+  installed_at: '2026-01-24 18:30:00'
+  enabled: true
+  description: Default admin theme for Pindrop CMS
+  author: Pindrop Team
+
+# Add more themes as they are installed
+# example_theme:
+#   name: example_theme
+#   version: 1.0.0
+#   installed_at: '2026-01-24 18:30:00'
+#   enabled: true

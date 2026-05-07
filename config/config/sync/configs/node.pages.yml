@@ -1,0 +1,18 @@
+name: pages
+description: 'The system includes role-based permissions, workflow tools, and integrated SEO optimization features.'
+title_label: Title
+preview: '1'
+help: 'The system includes role-based permissions, workflow tools, and integrated SEO optimization features.'
+status: 1
+promote: 1
+revision: 1
+submitted: 1
+menus:
+    - footer
+menu_parent: 'main:0'
+machine_name: pages
+label: Pages
+struct_type: node
+component:
+    - node
+    - pages

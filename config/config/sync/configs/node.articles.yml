@@ -1,0 +1,18 @@
+name: articles
+description: 'The system includes role-based permissions, workflow tools, and integrated SEO optimization features.'
+title_label: Title
+preview: '1'
+help: 'The system includes role-based permissions, workflow tools, and integrated SEO optimization features.'
+status: 1
+revision: 1
+submitted: 1
+menus:
+    - main
+menu_parent: 'main:0'
+machine_name: articles
+promote: 0
+label: Articles
+struct_type: node
+component:
+    - node
+    - articles

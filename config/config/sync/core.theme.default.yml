@@ -1,0 +1,22 @@
+# Default Theme Configuration
+# This file specifies which theme should be used by default
+
+theme: admin
+
+# Theme settings that apply to all themes
+settings:
+  logo: true
+  favicon: true
+  responsive: true
+  dark_mode: false
+
+# Default theme variables
+variables:
+  primary_color: '#007bff'
+  secondary_color: '#6c757d'
+  success_color: '#28a745'
+  danger_color: '#dc3545'
+  warning_color: '#ffc107'
+  info_color: '#17a2b8'
+  light_color: '#f8f9fa'
+  dark_color: '#343a40'
