@@ -156,10 +156,10 @@ class System
                     exec("mv $new_pindrop_directory/modules {$_ENV['ROOT']}/modules");
 
                     // remove configs root
-                    exec("rm -rf {$_ENV['ROOT']}/configs");
+                    exec("rm -rf {$_ENV['ROOT']}/config");
 
                     // move new configs directory to root
-                    exec("mv $new_pindrop_directory/configs {$_ENV['ROOT']}/configs");
+                    exec("mv $new_pindrop_directory/configs {$_ENV['ROOT']}/config");
 
                     // remove cli root
                     exec("rm -rf {$_ENV['ROOT']}/cli");
