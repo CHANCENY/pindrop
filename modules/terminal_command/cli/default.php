@@ -6,6 +6,22 @@ use Simp\Pindrop\Database\Database;
 use Simp\Pindrop\Plugin\PluginManager;
 use Symfony\Component\Yaml\Yaml;
 
+$files = array_diff(scandir(__DIR__ ."/includes"), [".",".."]);
+
+$commands = [];
+foreach ($files as $file) {
+    $path = __DIR__ . DIRECTORY_SEPARATOR . "includes" . DIRECTORY_SEPARATOR . $file;
+
+    $cc = require_once $path;
+    
+
+    if (is_array($cc)) {
+        $commands = array_merge($commands, $cc);
+    }
+
+
+}
+
 $printer = new \CLIPrinter();
 
 return [
@@ -22,6 +38,7 @@ return [
     'plugin:download' => 'downloadPlugin',
     'plugin:remove' => 'removePlugin',
     'plugin:create' => 'createPlugin',
+    ...$commands
 ];
 
 

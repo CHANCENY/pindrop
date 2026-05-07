@@ -1,0 +1,114 @@
+{% extends "templates/base.twig" %}
+
+
+{% block content %}
+
+<form>
+    <a href="" class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:900}" 
+    data-link-system-path="/admin/content">Contents</a>
+    <br/>
+    <a href="" class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:1000}" 
+    data-link-system-path="/admin">Dashboard</a>
+    <br/>
+
+    <a href="" class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:1000}" 
+    data-link-system-path="/admin/users/create">Add User</a>
+    <br/>
+
+    <button href="" class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:1000}" 
+    data-link-system-path="/admin/plugins">Plugis</button>
+    <br/>
+
+    <label for="date">Date</label>
+    <input type="date" id="date" name="date">
+
+    <label for="title">Text</label>
+    <input type="text" id="title" name="title" placeholder="Enter text">
+
+    <div class="file">
+     <label for="file">File</label>
+    <input type="file" id="file" name="file" placeholder="Enter text">
+    <noscript>
+    {
+      "allowedTypes": ["image/png", "image/jpeg", "image/jpg"],
+      "maxSize": 10000000,
+      "multiple":true
+    }
+    </noscript>
+    </div>
+
+    <div class="file2">
+     <label for="file2">File 2</label>
+    <input type="file" id="file2" name="file2" placeholder="Enter text">
+    <noscript>
+    {
+      "allowedTypes": ["text/plain", "application/pdf", "text/csv", "video/x-matroska","application/mp4","video/matroska","application/x-matroska"],
+      "maxSize": 130000000,
+      "multiple":false
+    }
+    </noscript>
+    </div>
+
+    <label for="message">Message</label>
+    <textarea class="editor" id="message" name="message" placeholder="Enter message"></textarea>
+
+     <label for="tag">Tags</label>
+    <input type="text" id="tag" name="tag" value="Chance,John,Hanna" placeholder="Enter text">
+
+    <div target-api='address' class="ok1">
+     <label for="country">Country</label>
+    <select type="text" id="country" name="_countryCode"></select>
+
+    </div>
+
+     <div target-api='address' class="ok2">
+     <label for="country2">Country 2</label>
+    <select type="text" id="country2" name="_countryCode2"></select>
+
+    </div>
+
+
+    <button type="submit">Submit</button>
+</form>
+
+
+<noscript autocomplete='true' style="display:none;">
+{
+  "fieldId": "title",
+  "source": "autocomplete.movie.search",
+  "placeholder": "Search movies..",
+  "minQueryLength": 2,
+  "limit": 10,
+  "displayField": "label",
+  "valueField": "value",
+  "searchFields": [
+    "title",
+    "id"
+  ],
+  "noResultsText": "No movies found",
+  "loadingText": "Searching...",
+  "name": "title",
+  "onSelect": null
+}
+</noscript>
+
+<noscript tags="true">
+ {
+  "options":{
+    "whitelist": [
+    "John",
+    "Chance",
+    "Marry",
+    "Hanna"
+  ],
+  "enforceWhitelist": true,
+  "dropdown": {
+    "enabled": 0
+  }
+  },
+  "id": "tag"
+}
+</noscript>
+
+
+{% endblock %}
