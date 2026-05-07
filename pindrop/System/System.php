@@ -16,6 +16,8 @@ class System
 
     private string $tarBinary = "tar";
 
+    private string $composerBinary = "composer";
+
     public function __construct(protected DatabaseService $databaseService)
     {
         $git = exec('which git');
@@ -36,6 +38,11 @@ class System
         $tar = exec('which tar');
         if (str_ends_with($tar, "tar")) {
             $this->tarBinary = $tar;
+        }
+
+        $composer = exec('which composer');
+        if (str_ends_with($composer, "composer")) {
+            $this->composerBinary = $composer;
         }
 
         $select = "SELECT version FROM system_information LIMIT 1";
@@ -134,37 +141,68 @@ class System
                     exec("rm -rf $pindrop_directory");
 
                     // move new pindrop directory to root
-                    exec("mv $new_pindrop_directory $pindrop_directory");
+                    exec("mv $new_pindrop_directory/pindrop $pindrop_directory");
 
                     // remove themes root
                     exec("rm -rf {$_ENV['ROOT']}/themes");
 
                     // move new themes directory to root
-                    exec("mv $pindrop_directory/themes {$_ENV['ROOT']}/themes");
+                    exec("mv $new_pindrop_directory/themes {$_ENV['ROOT']}/themes");
 
                     // remove modules root
                     exec("rm -rf {$_ENV['ROOT']}/modules");
 
                     // move new modules directory to root
-                    exec("mv $pindrop_directory/modules {$_ENV['ROOT']}/modules");
+                    exec("mv $new_pindrop_directory/modules {$_ENV['ROOT']}/modules");
 
                     // remove configs root
                     exec("rm -rf {$_ENV['ROOT']}/configs");
 
                     // move new configs directory to root
-                    exec("mv $pindrop_directory/configs {$_ENV['ROOT']}/configs");
+                    exec("mv $new_pindrop_directory/configs {$_ENV['ROOT']}/configs");
 
                     // remove cli root
                     exec("rm -rf {$_ENV['ROOT']}/cli");
 
                     // move new cli directory to root
-                    exec("mv $pindrop_directory/cli {$_ENV['ROOT']}/cli");
+                    exec("mv $new_pindrop_directory/cli {$_ENV['ROOT']}/cli");
 
                     // remove docs root
                     exec("rm -rf {$_ENV['ROOT']}/docs");
 
                     // move new docs directory to root
-                    exec("mv $pindrop_directory/docs {$_ENV['ROOT']}/docs");
+                    exec("mv $new_pindrop_directory/docs {$_ENV['ROOT']}/docs");
+
+                    // remove .env.example
+                    exec("rm -rf {$_ENV['ROOT']}/.env.example");
+
+                    // move new .env.example to root
+                    exec("mv $new_pindrop_directory/.env.example {$_ENV['ROOT']}/.env.example");
+
+                    $newComposerContent = json_decode(file_get_contents("$new_pindrop_directory/composer.json"), true);
+                    $oldComposerContent = json_decode(file_get_contents($_ENV['ROOT'] . "/composer.json"), true);
+                    if (isset($newComposerContent['require']) && isset($oldComposerContent['require'])) {
+                        $mergedRequire = array_merge($oldComposerContent['require'], $newComposerContent['require']);
+                        $oldComposerContent['require'] = $mergedRequire;
+                    }
+
+                    if (isset($oldComposerContent['require_dev']) && isset($newComposerContent['require_dev'])) {
+                        $mergedRequireDev = array_merge($oldComposerContent['require_dev'], $newComposerContent['require_dev']);
+                        $oldComposerContent['require_dev'] = $mergedRequireDev;
+                    }
+
+                    file_put_contents($_ENV['ROOT'] . "/composer.json", json_encode($oldComposerContent, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                   
+                    // remove bootstrap.inc
+                    exec("rm -rf {$_ENV['ROOT']}/bootstrap.inc");
+
+                    // move new bootstrap.inc to root
+                    exec("mv $new_pindrop_directory/bootstrap.inc {$_ENV['ROOT']}/bootstrap.inc");
+
+                    sleep(5); // Wait for the file operations to complete
+
+                    // run composer install
+                    exec("cd {$_ENV['ROOT']} && $this->composerBinary install --ignore-platform-reqs --no-dev");
 
                 }
             }
