@@ -1,53 +1,53 @@
 {
-  "name": "simp/pindrop",
-  "description": "This is pindrop package for php websites",
-  "type": "library",
-  "license": "MIT",
-  "autoload": {
-    "psr-4": {
-      "Simp\\Pindrop\\": "pindrop/",
-      "Simp\\Pindrop\\Modules\\": "modules/",
-      "Simp\\Pindrop\\Services\\": "services/",
-      "Simp\\Pindrop\\Controllers\\": "controllers/",
-      "Simp\\Pindrop\\Helpers\\": "helpers/",
-      "Simp\\Pindrop\\Exceptions\\": "exceptions/",
-      "Simp\\Pindrop\\Plugins\\": "plugins/"
+    "name": "simp/pindrop",
+    "description": "This is pindrop package for php websites",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Simp\\Pindrop\\": "pindrop/",
+            "Simp\\Pindrop\\Modules\\": "modules/",
+            "Simp\\Pindrop\\Services\\": "services/",
+            "Simp\\Pindrop\\Controllers\\": "controllers/",
+            "Simp\\Pindrop\\Helpers\\": "helpers/",
+            "Simp\\Pindrop\\Exceptions\\": "exceptions/",
+            "Simp\\Pindrop\\Plugins\\": "plugins/"
+        }
+    },
+    "authors": [
+        {
+            "name": "CHANCENY",
+            "email": "nyasuluchance6@gmail.com"
+        }
+    ],
+    "require": {
+        "php-di/php-di": "^7.1",
+        "ext-pdo": "*",
+        "symfony/var-dumper": "^8.0",
+        "phpmailer/phpmailer": "^7.0",
+        "symfony/yaml": "^7.2",
+        "simp/streamwrapper": "^1.0",
+        "symfony/mime": "^8.0",
+        "twig/twig": "^3.0",
+        "ext-zip": "*",
+        "simp/router": "1.1.5",
+        "shuchkin/simplexlsx": "^1.1",
+        "shuchkin/simplexls": "^1.0",
+        "shuchkin/simplecsv": "^1.0",
+        "filp/whoops": "^2.18",
+        "simp/translate": "^1.0",
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "giggsey/libphonenumber-for-php": "^9.0",
+        "dragonmantank/cron-expression": "^3.6",
+        "react/socket": "^1.17.0",
+        "ext-sockets": "*",
+        "minishlink/web-push": "^10.0",
+        "commerceguys/addressing": "^2.2"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php cli/composer.php"
+        ]
     }
-  },
-  "authors": [
-    {
-      "name": "CHANCENY",
-      "email": "nyasuluchance6@gmail.com"
-    }
-  ],
-  "require": {
-    "php-di/php-di": "^7.1",
-    "ext-pdo": "*",
-    "symfony/var-dumper": "^8.0",
-    "phpmailer/phpmailer": "^7.0",
-    "symfony/yaml": "^7.2",
-    "simp/streamwrapper": "^1.0",
-    "symfony/mime": "^8.0",
-    "twig/twig": "^3.0",
-    "ext-zip": "*",
-    "simp/router": "1.1.5",
-    "shuchkin/simplexlsx": "^1.1",
-    "shuchkin/simplexls": "^1.0",
-    "shuchkin/simplecsv": "^1.0",
-    "filp/whoops": "^2.18",
-    "simp/translate": "^1.0",
-    "ext-dom": "*",
-    "ext-libxml": "*",
-    "giggsey/libphonenumber-for-php": "^9.0",
-    "dragonmantank/cron-expression": "^3.6",
-    "react/socket": "^1.17.0",
-    "ext-sockets": "*",
-    "minishlink/web-push": "^10.0",
-    "commerceguys/addressing": "^2.2"
-  },
-  "scripts": {
-    "post-install-cmd": [
-      "php cli/composer.php"
-    ]
-  }
 }

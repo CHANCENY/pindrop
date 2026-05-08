@@ -46,4 +46,8 @@ class Events
     public const string MENUS_LOADED = 'menus.loaded';
 
     public const string MENUS_ITEMS_RENDERER_READY = 'menus.item_renderer_renderer_ready';
+
+    public const string PLUGIN_INSTALLED = "plugin.installed";
+    public const string PLUGIN_UNINSTALLED = "plugin.uninstalled";
+
 }

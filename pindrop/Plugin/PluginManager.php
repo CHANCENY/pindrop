@@ -11,6 +11,7 @@ use Symfony\Component\Yaml\Yaml;
 use DI\Container;
 use DI\ContainerBuilder;
 use Exception;
+use Simp\Pindrop\Events\SystemEvents\Events;
 
 /**
  * Plugin Manager
@@ -532,6 +533,8 @@ class PluginManager
             
             // Save plugin state
             $this->savePluginState();
+
+            \appEvents()->invokeEvents(Events::PLUGIN_INSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
             
             return true;
             
@@ -575,6 +578,8 @@ class PluginManager
             
             // Save plugin state
             $this->savePluginState();
+
+            \appEvents()->invokeEvents(Events::PLUGIN_UNINSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
             
             return true;
             
