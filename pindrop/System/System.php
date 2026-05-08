@@ -159,7 +159,7 @@ class System
                     exec("rm -rf {$_ENV['ROOT']}/config");
 
                     // move new configs directory to root
-                    exec("mv $new_pindrop_directory/configs {$_ENV['ROOT']}/config");
+                    exec("mv $new_pindrop_directory/config {$_ENV['ROOT']}/config");
 
                     // remove cli root
                     exec("rm -rf {$_ENV['ROOT']}/cli");
