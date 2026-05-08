@@ -122,7 +122,7 @@ class System
                 exec($backupCommand);
                 exec("$this->tarBinary -czvf $backupDirectory/themes.tar.gz {$_ENV['ROOT']}/themes");
                 exec("$this->tarBinary -czvf $backupDirectory/modules.tar.gz {$_ENV['ROOT']}/modules");
-                exec("$this->tarBinary -czvf $backupDirectory/configs.tar.gz {$_ENV['ROOT']}/configs");
+                exec("$this->tarBinary -czvf $backupDirectory/configs.tar.gz {$_ENV['ROOT']}/config");
                 exec("$this->tarBinary -czvf $backupDirectory/cli.tar.gz {$_ENV['ROOT']}/cli");
                 exec("$this->tarBinary -czvf $backupDirectory/docs.tar.gz {$_ENV['ROOT']}/docs");
 
