@@ -426,6 +426,8 @@ class PluginManager
             
             // Save plugin state
             $this->savePluginState();
+
+            \appEvents()->invokeEvents(Events::PLUGIN_INSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
             
             return true;
             
@@ -462,9 +464,11 @@ class PluginManager
                 $this->unregisterPluginServiceDefinitions($pluginId, $this->pluginServices[$pluginId]);
             }
             
+            \appEvents()->invokeEvents(Events::PLUGIN_UNINSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
+            
             // Save plugin state
             $this->savePluginState();
-            
+
             return true;
             
         } catch (Exception $e) {
@@ -530,12 +534,10 @@ class PluginManager
             // Mark as installed
             $this->plugins[$pluginId]['installed'] = true;
             $this->plugins[$pluginId]['installed_at'] = date('Y-m-d H:i:s');
-            
+ 
             // Save plugin state
             $this->savePluginState();
 
-            \appEvents()->invokeEvents(Events::PLUGIN_INSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
-            
             return true;
             
         } catch (Exception $e) {
@@ -579,8 +581,6 @@ class PluginManager
             // Save plugin state
             $this->savePluginState();
 
-            \appEvents()->invokeEvents(Events::PLUGIN_UNINSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
-            
             return true;
             
         } catch (Exception $e) {

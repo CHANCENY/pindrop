@@ -123,6 +123,9 @@ class EventsManager
 
     public function invokeEvents(string $eventName, array $eventArguments = []): array
     {
+        $this->events = $this->loadEvents();
+        $this->eventListeners = $this->loadSubscribers();
+
         $eventEmitter = new EventEmitter();
         $eventEmitter->options = [];
 

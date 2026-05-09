@@ -279,6 +279,22 @@ class TwigEngine
         }
 
         $this->twig->addGlobal('asset_handler',$this->container->get('library'));
+
+        $customGlobals = $pluginManager->getPluginsYamlContent('twig.globals');
+        foreach ($customGlobals as $global) {
+            foreach ($global as $g) {
+                $classGlobal = $g['class'] ?? null;
+                if (!empty($classGlobal)) {
+                    $instance = new $classGlobal();
+                    if (method_exists($instance, 'getGlobals')) {
+                        $globals = $instance->getGlobals();
+                        foreach ($globals as $name => $value) {
+                            $this->twig->addGlobal($name, $value);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -291,6 +307,7 @@ class TwigEngine
         $first = array_shift($list);
 
         $theme = $this->themeManager->getTheme($first);
+       
 
         /**@var PluginManager $pluginManager */
         $pluginManager = \getAppContainer()->get('plugin.manager');
@@ -368,8 +385,7 @@ class TwigEngine
     public function getThemeAsset(string $asset, ?string $theme = null): string
     {
         $themeName = $theme ?: $this->getDefaultTheme();
-        $themeData = $this->themeManager->getTheme($themeName);
-        
+        $themeData = $this->themeManager->getTheme($themeName); 
         if (!$themeData) {
             return $asset;
         }
