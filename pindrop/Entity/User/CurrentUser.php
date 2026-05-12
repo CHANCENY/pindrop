@@ -368,4 +368,15 @@ class CurrentUser
     {
         return !empty($this->id);
     }
+
+    public function getSessions(): array
+    {
+        if (!$this->isLoggedIn()) {
+            return [];
+        }
+        
+        $query = "SELECT * FROM user_session WHERE user_id = :user_id ORDER BY last_activity DESC";
+        return $this->db->fetchAll($query, ...$o=['user_id' => $this->userId]);
+    
+    }
 }

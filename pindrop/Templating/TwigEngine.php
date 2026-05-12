@@ -161,6 +161,7 @@ class TwigEngine
         $this->twig->addGlobal('request', Request::createFromGlobals());
         $this->twig->addGlobal('is_login', $this->container->get('current_user')?->isLoggedIn());
         $this->twig->addGlobal('sidebar_off', (bool) $this->envProvider->get('SIDEBAR_OFF', false));
+        $this->twig->addGlobal('__csrf_token',Url::generateToken( Request::createFromGlobals(), $_ENV['CSRF_TOKEN_SECRET']));
 
         $this->twig->addFunction(new TwigFunction("supportLanguages", function (){
             return $this->supportLanguage();

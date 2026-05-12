@@ -50,4 +50,6 @@ class Events
     public const string PLUGIN_INSTALLED = "plugin.installed";
     public const string PLUGIN_UNINSTALLED = "plugin.uninstalled";
 
+    public const string TWO_FACTOR_AUTHENTICATION_REQUIRED = "2fa.required";
+
 }

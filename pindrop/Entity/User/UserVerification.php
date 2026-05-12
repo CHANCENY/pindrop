@@ -280,7 +280,7 @@ class UserVerification
             $logger->debug('Finding verification token by token', ['token' => substr($token, 0, 8) . '...']);
 
             $sql = "SELECT * FROM user_verification_tokens WHERE token = :token LIMIT 1";
-            $result = $db->fetch($sql, ['token' => $token]);
+            $result = $db->fetch($sql,  $token);
 
             if ($result) {
                 $verification = new self($db, $logger);

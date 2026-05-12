@@ -5,7 +5,13 @@ namespace Simp\Pindrop\Entity\User;
 use Simp\Pindrop\Database\DatabaseException;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Events\SystemEvents\Events;
+use Simp\Pindrop\FactorAuthentication\TwoFactorAuthenticationInterface;
+use Simp\Pindrop\FactorAuthentication\TwoFactorInterface;
+use Simp\Pindrop\FactorAuthentication\TwoFactorManager;
 use Simp\Pindrop\Logger\LoggerInterface;
+use Simp\Pindrop\Modules\admin\src\Plugin\TwoFactorSettings;
+use Simp\Pindrop\Settings\Setting;
+use Simp\Pindrop\Settings\Settings;
 
 
 class User
@@ -838,5 +844,29 @@ class User
     public function __toString(): string
     {
         return "{$this->email} ({$this->id})";
+    }
+
+    public function twoFactor(): ?TwoFactorAuthenticationInterface 
+    {
+        $settings = new Settings($this->database);
+        $setting  = $settings->getSetting(new TwoFactorSettings()->settingKey());
+        if ($setting instanceof Setting){
+            $provider_key = $setting->get('two_factor_key');
+            if (!empty($provider_key)){
+                $twoFactorManager = getAppContainer()->get(TwoFactorManager::class);
+                $provider = $twoFactorManager->getTwofactorAuthenticationProvider($provider_key);
+                if ($provider instanceof TwoFactorInterface){
+            
+                    $twoFactorHandler = $provider->twoFactor();
+                    $twoFactorHandler->setSecret($this->twoFactorSecret);
+                    $twoFactorHandler->setEmail($this->email);
+                    $twoFactorHandler->setIssuer($_ENV['APP_NAME'] ?? "Pindropcms");
+                    $twoFactorHandler->setAccountName($this->username);
+                    return $twoFactorHandler;
+                }
+            }
+        }
+
+        return null;
     }
 }

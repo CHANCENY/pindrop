@@ -43,7 +43,10 @@
         "react/socket": "^1.17.0",
         "ext-sockets": "*",
         "minishlink/web-push": "^10.0",
-        "commerceguys/addressing": "^2.2"
+        "commerceguys/addressing": "^2.2",
+        "pragmarx/google2fa": "^9.0",
+        "bacon/bacon-qr-code": "^3.1",
+        "endroid/qr-code": "^6.1"
     },
     "scripts": {
         "post-install-cmd": [

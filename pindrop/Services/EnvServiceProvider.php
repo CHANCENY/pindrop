@@ -134,6 +134,7 @@ class EnvServiceProvider
         $definitions['env.root'] = fn() => $_ENV['ROOT'] ?? null;
         $definitions['env.plugin_root'] = fn() => $_ENV['PLUGIN_ROOT'] ?? null;
         $definitions['env.all'] = fn() => $_ENV;
+        $definitions['env.services'] = fn() => $this; // Allow access to this service for advanced env retrieval
 
         $builder->addDefinitions($definitions);
     }
