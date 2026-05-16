@@ -212,11 +212,33 @@
         </form>
 
     </div>
+
+<noscript autocomplete='true' style="display:none;">
+{
+  "fieldId": "site_home",
+  "source": "autocomplete.route.search",
+  "placeholder": "Search routes..",
+  "minQueryLength": 2,
+  "limit": 10,
+  "displayField": "label",
+  "valueField": "value",
+  "searchFields": [
+    "title",
+    "id"
+  ],
+  "noResultsText": "No route path",
+  "loadingText": "Searching...",
+  "name": "site_home",
+  "onSelect": null
+}
+</noscript>
+
+
 {% endblock %}
 
 {% block scripts %}
 
-    <script>
+    {# <script>
         document.addEventListener('DOMContentLoaded',()=>{
             const titleAutoComplete = new Autocomplete({
                 fieldId: 'site_home',
@@ -233,6 +255,6 @@
             });
 
         })
-    </script>
+    </script> #}
 
 {% endblock %}

@@ -52,4 +52,6 @@ class Events
 
     public const string TWO_FACTOR_AUTHENTICATION_REQUIRED = "2fa.required";
 
+    public const string HOME_PAGE_REQUEST = "pages.request.home";
+
 }

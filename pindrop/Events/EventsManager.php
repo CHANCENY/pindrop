@@ -126,9 +126,13 @@ class EventsManager
         $this->events = $this->loadEvents();
         $this->eventListeners = $this->loadSubscribers();
 
+        /* The line `         = new EventEmitter();` is creating a new instance of the
+        `EventEmitter` class. This instance will be used to emit events and pass event data to event
+        subscribers. The `EventEmitter` class likely contains methods to manage and trigger events
+        within the application. */
         $eventEmitter = new EventEmitter();
         $eventEmitter->options = [];
-
+      
         foreach ($eventArguments as $key=>$eventArgument) {
             if (is_string($key)) {
                 $eventEmitter->$key = $eventArgument;
