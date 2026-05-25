@@ -30,28 +30,54 @@ class PluginServiceProvider
     {
         $definitions = [
             // Plugin configuration
-            'plugin.config' => fn() => $this->getPluginConfig(),
+            'plugin.config' => \DI\factory([self::class, 'buildPluginConfig']),
             
             // Plugin manager
-            'plugin.manager' => fn(\DI\Container $c) => $this->createPluginManager($c),
+            'plugin.manager' => \DI\factory([self::class, 'buildPluginManager']),
             
             // Aliases for convenience
-            PluginManager::class => fn(\DI\Container $c) => $c->get('plugin.manager'),
+            PluginManager::class => function(\DI\Container $c) { return $c->get('plugin.manager'); },
         ];
 
         $builder->addDefinitions($definitions);
 
         // Register plugin services after container is built
         $builder->addDefinitions([
-            'plugin.services.register' => function(\DI\Container $c) {
-                $pluginManager = $c->get('plugin.manager');
-                $this->registerPluginServices($c, $pluginManager);
-            }
+            'plugin.services.register' => \DI\factory([self::class, 'buildPluginServiceRegistration']),
         ]);
     }
     
+    public static function buildPluginServiceRegistration(\DI\Container $c): void
+    {
+        $pluginManager = $c->get('plugin.manager');
+        foreach ($pluginManager->getPluginServices() as $pluginId => $services) {
+            $plugin = $pluginManager->getPlugin($pluginId);
+            if (!$plugin || !$plugin['enabled'] || !$plugin['installed']) {
+                continue;
+            }
+            foreach ($services as $serviceName => $serviceConfig) {
+                if (!class_exists($serviceConfig['class'])) {
+                    throw new \RuntimeException(
+                        "Service class '{$serviceConfig['class']}' not found for plugin '{$pluginId}' service '{$serviceName}'"
+                    );
+                }
+                // Container is fully built at this point (called from plugin.services.register
+                // which runs in bootstrap.inc after buildContainer() returns).
+                // Safe to resolve @arguments directly — no circular dependency risk.
+                $className = $serviceConfig['class'];
+                $resolvedArgs = [];
+                foreach ($serviceConfig['arguments'] ?? [] as $arg) {
+                    $resolvedArgs[] = (is_string($arg) && str_starts_with($arg, '@'))
+                        ? $c->get(substr($arg, 1))
+                        : $arg;
+                }
+                $c->set($serviceName, new $className(...$resolvedArgs));
+            }
+        }
+    }
+
     /**
-     * Register plugin services
+     * Register plugin services (instance version kept for BC)
      */
     private function registerPluginServices(\DI\Container $container, PluginManager $pluginManager): void
     {
@@ -94,7 +120,16 @@ class PluginServiceProvider
                 };
                 
                 // Register service in container
-                $container->set($serviceName, $definition);
+                $className = $serviceConfig['class'];
+                $resolvedArguments = [];
+                foreach ($serviceConfig['arguments'] ?? [] as $argument) {
+                    if (is_string($argument) && str_starts_with($argument, '@')) {
+                        $resolvedArguments[] = $container->get(substr($argument, 1));
+                    } else {
+                        $resolvedArguments[] = $argument;
+                    }
+                }
+                $container->set($serviceName, new $className(...$resolvedArguments));
             }
         }
     }
@@ -127,8 +162,31 @@ class PluginServiceProvider
         return $pluginManager;
     }
     
+    public static function buildPluginConfig(): array
+    {
+        return [
+            'plugin_root' => getenv('PLUGIN_ROOT') ?: (__DIR__ . '/../../plugins'),
+            'config_root' => getenv('CONFIG')      ?: (__DIR__ . '/../../config'),
+        ];
+    }
+
+    public static function buildPluginManager(\DI\Container $c): PluginManager
+    {
+        $config = $c->get('plugin.config');
+        $envProvider = \Simp\Pindrop\Services\EnvServiceProvider::getInstance();
+        $pluginManager = new PluginManager($envProvider, $config['plugin_root'], $config['config_root']);
+        $pluginManager->setContainer($c);
+        // NOTE: registerPluginServices() is intentionally NOT called here.
+        // Calling it inside a factory causes a circular dependency because
+        // @arguments like @plugin.manager resolve back to this factory while
+        // it is still running.  The existing bootstrap.inc line:
+        //   $container->get('plugin.services.register');
+        // runs this after the container is fully built — that is the correct hook.
+        return $pluginManager;
+    }
+
     /**
-     * Get plugin configuration from environment variables
+     * Instance version kept for BC
      */
     private function getPluginConfig(): array
     {

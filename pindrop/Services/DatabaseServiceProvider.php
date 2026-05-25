@@ -32,26 +32,43 @@ class DatabaseServiceProvider
              * Database configuration
              */
             'database.config' => function () {
+                $persistent = (bool)(getenv('DB_PERSISTENT') ?: false);
+                $charset    = getenv('DB_CHARSET')   ?: 'utf8mb4';
+                $collation  = getenv('DB_COLLATION') ?: 'utf8mb4_unicode_ci';
+
+                $options = [
+                    \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                    \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                    \PDO::ATTR_EMULATE_PREPARES   => false,
+                    \PDO::ATTR_PERSISTENT         => $persistent,
+                    \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+                    \PDO::ATTR_TIMEOUT            => (int)(getenv('DB_TIMEOUT') ?: 30),
+                ];
+
+                // MYSQL_ATTR_INIT_COMMAND runs only on NEW connections.
+                // With persistent connections the underlying socket is reused
+                // and init_command is silently skipped — the charset could be
+                // whatever the previous request left it as.
+                // We therefore skip init_command when persistent=true and
+                // instead run SET NAMES explicitly inside Database::connect()
+                // every time, which is safe for both persistent and non-persistent.
+                if (!$persistent) {
+                    $options[\PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES {$charset} COLLATE {$collation}";
+                }
+
                 return [
-                    'host' => $this->envProvider->get('DB_HOST', 'localhost'),
-                    'port' => $this->envProvider->get('DB_PORT', 3306),
-                    'database' => $this->envProvider->get('DB_DATABASE', 'pindrop'),
-                    'username' => $this->envProvider->get('DB_USERNAME', 'root'),
-                    'password' => $this->envProvider->get('DB_PASSWORD', ''),
-                    'charset' => $this->envProvider->get('DB_CHARSET', 'utf8mb4'),
-                    'collation' => $this->envProvider->get('DB_COLLATION', 'utf8mb4_unicode_ci'),
-                    'prefix' => $this->envProvider->get('DB_PREFIX', ''),
-                    'strict' => $this->envProvider->get('DB_STRICT', true),
-                    'engine' => $this->envProvider->get('DB_ENGINE', 'InnoDB'),
-                    'options' => [
-                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-                        \PDO::ATTR_EMULATE_PREPARES => false,
-                        \PDO::ATTR_PERSISTENT => $this->envProvider->get('DB_PERSISTENT', false),
-                        \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
-                        \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-                        \PDO::ATTR_TIMEOUT => $this->envProvider->get('DB_TIMEOUT', 30),
-                    ]
+                    'host'       => getenv('DB_HOST')     ?: 'localhost',
+                    'port'       => getenv('DB_PORT')     ?: 3306,
+                    'database'   => getenv('DB_DATABASE') ?: 'pindrop',
+                    'username'   => getenv('DB_USERNAME') ?: 'root',
+                    'password'   => getenv('DB_PASSWORD') ?: '',
+                    'charset'    => $charset,
+                    'collation'  => $collation,
+                    'prefix'     => getenv('DB_PREFIX')   ?: '',
+                    'strict'     => getenv('DB_STRICT')   ?: true,
+                    'engine'     => getenv('DB_ENGINE')   ?: 'InnoDB',
+                    'persistent' => $persistent,
+                    'options'    => $options,
                 ];
             },
 
@@ -84,7 +101,7 @@ class DatabaseServiceProvider
              * Database connection factory
              */
             'database.connection_factory' => function (\DI\Container $container) {
-                return function (array $config = null) use ($container) {
+                return function (?array $config = null) use ($container) {
                     $dbConfig = $config ?? $container->get('database.config');
                     $logger = $container->has(LoggerInterface::class) 
                         ? $container->get(LoggerInterface::class) 
@@ -98,7 +115,7 @@ class DatabaseServiceProvider
              * Database query logger
              */
             'database.query_logger' => function (\DI\Container $container) {
-                return function (string $query, array $params = [], float $duration = null) use ($container) {
+                return function (string $query, array $params = [], ?float $duration = null) use ($container) {
                     if ($container->has(LoggerInterface::class)) {
                         $logger = $container->get(LoggerInterface::class);
                         

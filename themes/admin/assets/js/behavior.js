@@ -21,6 +21,7 @@ import { Autocomplete } from "./autocomplete.js";
 import "../tagify-4.36.0/dist/tagify.js";
 import "../flatpickr/flatpickr.min.js";
 import { initFileInputs } from "./upload.js";
+import "./admin.js"
 
 class Behaviour {
   /**
@@ -211,6 +212,8 @@ class Behaviour {
     // Init file input fields
     initFileInputs();
     this.scanModalLinks();
+
+     AdminTheme.init();
   }
 
   initCkEditor(element) {

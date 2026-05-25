@@ -29,25 +29,37 @@ class MailServiceProvider
     {
         $definitions = [
             // Mail configuration
-            'mail.config' => fn() => $this->getMailConfig(),
+            'mail.config' => \DI\factory([self::class, 'buildMailConfig']),
             
             // Mail manager
-            'mail.manager' => fn(\DI\Container $c) => new MailManager(
-                $c->get('mail.config'),
-                $c->get('logger'),
-                $c->get('env.services'),
-                $c
-            ),
+            'mail.manager' => function(\DI\Container $c) { return new MailManager($c->get('mail.config'), $c->get('logger'), $c->get('env.services'), $c); },
             
             // Aliases for convenience
-            MailManager::class => fn(\DI\Container $c) => $c->get('mail.manager'),
+            MailManager::class => function(\DI\Container $c) { return $c->get('mail.manager'); },
         ];
         
         $builder->addDefinitions($definitions);
     }
     
+    public static function buildMailConfig(): array
+    {
+        return [
+            'host'       => getenv('SMTP_HOST')       ?: 'localhost',
+            'port'       => (int)(getenv('SMTP_PORT') ?: 587),
+            'username'   => getenv('SMTP_USER')       ?: '',
+            'password'   => getenv('SMTP_PASS')       ?: '',
+            'secure'     => getenv('SMTP_SECURE')     ?: 'tls',
+            'from_email' => getenv('MAIL_FROM_EMAIL') ?: '',
+            'from_name'  => getenv('MAIL_FROM_NAME')  ?: 'Application',
+            'debug'      => (getenv('SMTP_DEBUG')     ?: 'false') === 'true',
+            'charset'    => 'UTF-8',
+            'encoding'   => 'base64',
+            'word_wrap'  => 78,
+        ];
+    }
+
     /**
-     * Get mail configuration from environment variables
+     * Instance version kept for BC
      */
     private function getMailConfig(): array
     {

@@ -30,18 +30,23 @@ class ThemeServiceProvider
     {
         $definitions = [
             // Theme configuration
-            'theme.config' => fn() => $this->getThemeConfig(),
+            'theme.config' => \DI\factory([self::class, 'buildThemeConfig']),
             
             // Theme manager
-            'theme.manager' => fn(\DI\Container $c) => $this->createThemeManager($c),
+            'theme.manager' => function(\DI\Container $c) { return new ThemeManager(\Simp\Pindrop\Services\EnvServiceProvider::getInstance(), $c->get('theme.config')['themes_dir']); },
             
             // Aliases for convenience
-            ThemeManager::class => fn(\DI\Container $c) => $c->get('theme.manager'),
+            ThemeManager::class => function(\DI\Container $c) { return $c->get('theme.manager'); },
         ];
 
         $builder->addDefinitions($definitions);
     }
     
+    public static function buildThemeConfig(): array
+    {
+        return ['themes_dir' => getenv('THEMES_DIR') ?: (__DIR__ . '/../../themes')];
+    }
+
     /**
      * Create theme manager instance
      */

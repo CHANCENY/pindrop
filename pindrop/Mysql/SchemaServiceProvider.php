@@ -29,24 +29,31 @@ class SchemaServiceProvider
     {
         $definitions = [
             // Schema configuration
-            'schema.config' => fn() => $this->getSchemaConfig(),
+            'schema.config' => \DI\factory([self::class, 'buildSchemaConfig']),
             
             // Schema handler
-            'schema.handler' => fn(\DI\Container $c) => new SchemaHandler(
-                $c->get('database.service')->getDatabase(),
-                $c->get('logger'),
-                $c->get('schema.config')['schema_path']
-            ),
+            'schema.handler' => function(\DI\Container $c) { return new SchemaHandler($c->get('database.service')->getDatabase(), $c->get('logger'), $c->get('schema.config')['schema_path']); },
             
             // Aliases for convenience
-            SchemaHandler::class => fn(\DI\Container $c) => $c->get('schema.handler'),
+            SchemaHandler::class => function(\DI\Container $c) { return $c->get('schema.handler'); },
         ];
         
         $builder->addDefinitions($definitions);
     }
     
+    public static function buildSchemaConfig(): array
+    {
+        return [
+            'schema_path'          => getenv('SCHEMA_PATH')          ?: (__DIR__ . '/schema'),
+            'auto_create_tables'   => (getenv('AUTO_CREATE_TABLES')  ?: 'false') === 'true',
+            'validate_schemas'     => (getenv('VALIDATE_SCHEMAS')    ?: 'true')  === 'true',
+            'enable_partitioning'  => (getenv('ENABLE_PARTITIONING') ?: 'false') === 'true',
+            'enable_fulltext_search' => (getenv('ENABLE_FULLTEXT_SEARCH') ?: 'true') === 'true',
+        ];
+    }
+
     /**
-     * Get schema configuration from environment variables
+     * Get schema configuration from environment variables (instance version kept for BC)
      */
     private function getSchemaConfig(): array
     {

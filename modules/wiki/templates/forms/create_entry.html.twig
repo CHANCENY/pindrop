@@ -1,0 +1,151 @@
+{% extends 'templates/base.twig' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+
+<div class="wiki-editor-page">
+
+    <form method="post" class="wiki-form" action="{{ url('wiki.form.add') }}">
+
+        <div class="wiki-form-group">
+            <label for="title">Title</label>
+
+            <input
+                type="text"
+                id="title"
+                name="title"
+                value="{{ wiki.title|default('') }}"
+                required
+                maxlength="255"
+            >
+        </div>
+
+        <div class="wiki-form-group">
+            <label for="slug">Slug</label>
+
+            <input
+                type="text"
+                id="slug"
+                name="slug"
+                value="{{ wiki.slug|default('') }}"
+                maxlength="255"
+            >
+        </div>
+
+        <div class="wiki-form-group">
+            <label for="summary">Summary</label>
+
+            <textarea
+                id="summary"
+                name="summary"
+                rows="4"
+            >{{ wiki.summary|default('') }}</textarea>
+        </div>
+
+        <div class="wiki-form-row">
+
+            <div class="wiki-form-group">
+                <label for="status">Status</label>
+
+                <select id="status" name="status">
+
+                    <option value="draft"
+                        {% if wiki.status|default('draft') == 'draft' %}
+                            selected
+                        {% endif %}
+                    >
+                        Draft
+                    </option>
+
+                    <option value="published"
+                        {% if wiki.status|default('draft') == 'published' %}
+                            selected
+                        {% endif %}
+                    >
+                        Published
+                    </option>
+
+                    <option value="archived"
+                        {% if wiki.status|default('draft') == 'archived' %}
+                            selected
+                        {% endif %}
+                    >
+                        Archived
+                    </option>
+
+                </select>
+            </div>
+
+            <div class="wiki-form-group">
+                <label for="visibility">Visibility</label>
+
+                <select id="visibility" name="visibility">
+
+                    <option value="public"
+                        {% if wiki.visibility|default('public') == 'public' %}
+                            selected
+                        {% endif %}
+                    >
+                        Public
+                    </option>
+
+                    <option value="private"
+                        {% if wiki.visibility|default('public') == 'private' %}
+                            selected
+                        {% endif %}
+                    >
+                        Private
+                    </option>
+
+                    <option value="internal"
+                        {% if wiki.visibility|default('public') == 'internal' %}
+                            selected
+                        {% endif %}
+                    >
+                        Internal
+                    </option>
+
+                </select>
+            </div>
+
+        </div>
+
+        <div class="wiki-form-group">
+            <label for="meta_title">Meta Title</label>
+
+            <input
+                type="text"
+                id="meta_title"
+                name="meta_title"
+                value="{{ wiki.meta_title|default('') }}"
+            >
+        </div>
+
+        <div class="wiki-form-group">
+            <label for="meta_description">Meta Description</label>
+
+            <textarea
+                id="meta_description"
+                name="meta_description"
+                rows="4"
+            >{{ wiki.meta_description|default('') }}</textarea>
+        </div>
+
+        <div class="wiki-form-actions">
+
+            <button
+                type="submit"
+                class="wiki-btn wiki-btn-primary"
+            >
+                Save Wiki Page
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+{% endblock %}

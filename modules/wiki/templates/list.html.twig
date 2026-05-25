@@ -1,0 +1,175 @@
+{% extends 'templates/base.twig' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+
+<div class="wiki-admin-page">
+
+    <div class="wiki-admin-header">
+
+        <div class="wiki-admin-title">
+            <h1>Wiki Pages</h1>
+            <p>Manage all wiki content pages</p>
+        </div>
+
+        <div class="wiki-admin-actions">
+            <a href="{{ url('wiki.form.add') }}" 
+            class="wiki-btn wiki-btn-primary use-ajax"
+            data-dialog-type="modal" 
+            data-dialog-options="{&quot;width&quot;:900}" 
+            data-link-system-path="{{ url('wiki.form.add') }}"
+            >
+                Create Page
+            </a>
+        </div>
+
+    </div>
+
+    <div class="wiki-admin-toolbar">
+
+        <form method="get" class="wiki-search-form">
+
+            <input
+                type="text"
+                name="search"
+                placeholder="Search wiki pages..."
+                value="{{ app.request.get('search') }}"
+            >
+
+            <button type="submit">
+                Search
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="wiki-table-wrapper">
+
+        <table class="wiki-table">
+
+            <thead>
+                <tr>
+                    <th width="60">ID</th>
+                    <th>Title</th>
+                    <th width="140">Status</th>
+                    <th width="140">Visibility</th>
+                    <th width="180">Updated</th>
+                    <th width="180">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% if wiki_pages is not empty %}
+
+                    {% for page in wiki_pages %}
+
+                        <tr>
+
+                            <td>
+                                {{ page.id }}
+                            </td>
+
+                            <td>
+
+                                <div class="wiki-page-title">
+                                    <strong>
+                                        {{ page.title }}
+                                    </strong>
+
+                                    <div class="wiki-page-slug">
+                                        /wiki/{{ page.slug }}
+                                    </div>
+                                </div>
+
+                            </td>
+
+                            <td>
+
+                                <span class="wiki-badge wiki-status-{{ page.status }}">
+                                    {{ page.status }}
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span class="wiki-badge wiki-visibility-{{ page.visibility }}">
+                                    {{ page.visibility }}
+                                </span>
+
+                            </td>
+
+                            <td>
+                                {{ page.updated_at|date('M d, Y H:i') }}
+                            </td>
+
+                            <td>
+
+                                <div class="wiki-table-actions">
+
+                                    <a
+                                        href="/wiki/{{ page.slug }}"
+                                        class="wiki-btn wiki-btn-small"
+                                        target="_blank"
+                                    >
+                                        View
+                                    </a>
+
+                                    <a
+                                        href="/admin/wiki/{{ page.id }}/edit"
+                                        class="wiki-btn wiki-btn-small wiki-btn-edit"
+                                    >
+                                        Edit
+                                    </a>
+
+                                    <form
+                                        method="post"
+                                        action="/admin/wiki/{{ page.id }}/delete"
+                                        onsubmit="return confirm('Delete this wiki page?')"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="wiki-btn wiki-btn-small wiki-btn-danger"
+                                        >
+                                            Delete
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            <div class="wiki-empty-state">
+                                No wiki pages found.
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

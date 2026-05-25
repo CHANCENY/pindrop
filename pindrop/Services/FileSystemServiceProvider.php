@@ -33,11 +33,7 @@ class FileSystemServiceProvider
     {
         // FileSystem configuration
         $builder->addDefinitions([
-            'filesystem.config' => function () {
-                return [
-                    'public_stream' => $this->envProvider->get('PUBLIC_STREAM', 'public://'),
-                ];
-            },
+            'filesystem.config' => \DI\factory([self::class, 'buildFilesystemConfig']),
 
             // FileSystem service
             FileSystemInterface::class => function (\DI\Container $container) {
@@ -63,6 +59,13 @@ class FileSystemServiceProvider
 
             'filesystem.public_stream' => \DI\get(ConfigurableStreamWrapper::class)
         ]);
+    }
+
+    public static function buildFilesystemConfig(): array
+    {
+        return [
+            'public_stream' => getenv('PUBLIC_STREAM') ?: 'public://',
+        ];
     }
 
     /**

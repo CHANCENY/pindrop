@@ -31,7 +31,7 @@ class MailManager
         ?\DI\Container $container = null
     ) {
         $this->logger = $logger;
-        $this->envProvider = $envProvider ?? new EnvServiceProvider();
+        $this->envProvider = $envProvider ?? EnvServiceProvider::getInstance();
         $this->config = array_merge($this->getDefaultConfig(), $config);
 
         // If a container is provided, get logger from it

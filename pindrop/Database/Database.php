@@ -24,18 +24,20 @@ class Database
     
     public function __construct(array $config = [])
     {
+        $persistent = (bool)(getenv('DB_PERSISTENT') ?: false);
+
         $this->config = array_merge([
-            'host' => 'localhost',
-            'port' => 3306,
+            'host'     => 'localhost',
+            'port'     => 3306,
             'database' => '',
             'username' => '',
             'password' => '',
-            'charset' => 'utf8mb4',
-            'options' => [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            'charset'  => 'utf8mb4',
+            'options'  => [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::ATTR_PERSISTENT => false,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::ATTR_PERSISTENT         => $persistent,
             ]
         ], $config);
 
@@ -68,9 +70,19 @@ class Database
                 $this->config['password'],
                 $this->config['options']
             );
-            
+
+            // Always run SET NAMES explicitly after connecting.
+            // For non-persistent connections this is redundant with
+            // MYSQL_ATTR_INIT_COMMAND but harmless.
+            // For persistent connections MYSQL_ATTR_INIT_COMMAND is
+            // silently skipped on reused sockets, so this is essential
+            // to guarantee the charset is correct on every request.
+            $charset   = $this->config['charset']   ?? 'utf8mb4';
+            $collation = $this->config['collation']  ?? 'utf8mb4_unicode_ci';
+            $this->pdo->exec("SET NAMES {$charset} COLLATE {$collation}");
+
             $this->connected = true;
-            
+
             return true;
             
         } catch (PDOException $e) {

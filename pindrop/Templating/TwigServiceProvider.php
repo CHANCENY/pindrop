@@ -30,20 +30,32 @@ class TwigServiceProvider
     {
         $definitions = [
             // Twig configuration
-            'twig.config' => fn() => $this->getTwigConfig(),
+            'twig.config' => \DI\factory([self::class, 'buildTwigConfig']),
             
             // Twig engine
-            'twig.engine' => fn(\DI\Container $c) => $this->createTwigEngine($c),
+            'twig.engine' => function(\DI\Container $c) { return new TwigEngine($c->get('theme.manager'), \Simp\Pindrop\Services\EnvServiceProvider::getInstance(), $c); },
             
             // Aliases for convenience
-            TwigEngine::class => fn(\DI\Container $c) => $c->get('twig.engine'),
-            'twig' => fn(\DI\Container $c) => $c->get('twig.engine'),
+            TwigEngine::class => function(\DI\Container $c) { return $c->get('twig.engine'); },
+            'twig' => function(\DI\Container $c) { return $c->get('twig.engine'); },
             'library' => fn(Container $c) => new LibraryAssets($c->get('database')),
         ];
 
         $builder->addDefinitions($definitions);
     }
     
+    public static function buildTwigConfig(): array
+    {
+        return [
+            'debug'            => getenv('APP_DEBUG')            ?: false,
+            'cache'            => getenv('TWIG_CACHE')            ?: false,
+            'cache_path'       => getenv('TWIG_CACHE_PATH')       ?: (__DIR__ . '/../../var/cache/twig'),
+            'auto_reload'      => getenv('TWIG_AUTO_RELOAD')      ?: true,
+            'strict_variables' => getenv('TWIG_STRICT_VARIABLES') ?: false,
+            'autoescape'       => getenv('TWIG_AUTOESCAPE')       ?: 'html',
+        ];
+    }
+
     /**
      * Create Twig engine instance
      */

@@ -30,7 +30,7 @@ class LoggerServiceProvider
     {
         $definitions = [
             // Logger configuration
-            'logger.config' => fn() => $this->getLoggerConfig(),
+            'logger.config' => \DI\factory([self::class, 'buildLoggerConfig']),
             
             // Null logger (default)
             'logger.null' => fn() => new NullLogger(),
@@ -57,7 +57,7 @@ class LoggerServiceProvider
             ),
             
             // Default logger (based on configuration)
-            'logger' => fn(\DI\Container $c) => $this->createLogger($c),
+            'logger' => \DI\factory([self::class, 'buildLogger']),
             
             // Database service
             'database.service' => fn(\DI\Container $c) => new DatabaseService(
@@ -67,7 +67,7 @@ class LoggerServiceProvider
             ),
             
             // Database configuration
-            'database.config' => fn() => $this->getDatabaseConfig(),
+            'database.config' => \DI\factory([self::class, 'buildDatabaseConfig']),
             
             // Aliases for convenience
             LoggerInterface::class => fn(\DI\Container $c) => $c->get('logger'),
@@ -80,8 +80,52 @@ class LoggerServiceProvider
         $builder->addDefinitions($definitions);
     }
     
+    public static function buildLoggerConfig(): array
+    {
+        $enabled = (getenv('LOG_ENABLED') ?: 'true') === 'true';
+        return [
+            'driver'      => getenv('LOG_DRIVER')      ?: 'null',
+            'file'        => getenv('LOG_FILE')        ?: (__DIR__ . '/../../logs/app.log'),
+            'date_format' => getenv('LOG_DATE_FORMAT') ?: 'Y-m-d H:i:s',
+            'max_file_size' => (int)(getenv('LOG_MAX_FILE_SIZE') ?: 10485760),
+            'max_files'   => (int)(getenv('LOG_MAX_FILES') ?: 5),
+            'enabled'     => $enabled,
+            'level'       => getenv('LOG_LEVEL')   ?: 'info',
+            'channel'     => getenv('LOG_CHANNEL') ?: 'app',
+            'request_id'  => getenv('REQUEST_ID')  ?: null,
+            'user_id'     => getenv('USER_ID')     ?: null,
+            'ip_address'  => getenv('REMOTE_ADDR') ?: null,
+            'user_agent'  => getenv('HTTP_USER_AGENT') ?: null,
+            'session_id'  => getenv('SESSION_ID')  ?: null,
+        ];
+    }
+
+    public static function buildDatabaseConfig(): array
+    {
+        return [
+            'host'     => getenv('DB_HOST')     ?: 'localhost',
+            'port'     => (int)(getenv('DB_PORT') ?: 3306),
+            'database' => getenv('DB_DATABASE') ?: '',
+            'username' => getenv('DB_USERNAME') ?: '',
+            'password' => getenv('DB_PASSWORD') ?: '',
+            'charset'  => getenv('DB_CHARSET')  ?: 'utf8mb4',
+            'socket'   => getenv('DB_SOCKET')   ?: null,
+        ];
+    }
+
+    public static function buildLogger(\DI\Container $c): LoggerInterface
+    {
+        $config = $c->get('logger.config');
+        if (!$config['enabled']) { return $c->get('logger.null'); }
+        return match(strtolower($config['driver'])) {
+            'file'     => $c->get('logger.file'),
+            'database' => $c->get('logger.database'),
+            default    => $c->get('logger.null'),
+        };
+    }
+
     /**
-     * Get logger configuration from environment variables
+     * Get logger configuration from environment variables (instance version kept for BC)
      */
     private function getLoggerConfig(): array
     {

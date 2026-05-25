@@ -49,11 +49,11 @@ use ZipArchive;
  */
 class AdminController extends ControllerBase
 {
-    private DatabaseService $database;
+   
 
-    public function __construct()
+    public function __construct(protected DatabaseService $database)
     {
-        $this->database = getAppContainer()->get('database');
+       
         parent::__construct();
     }
 

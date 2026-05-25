@@ -19,6 +19,8 @@ class ThemeManager
     private string $themesDir;
     private array $themes = [];
     private array $themeConfigs = [];
+    private ?string $manifestCacheFile = null;
+    private bool    $cacheEnabled      = false;
     
     public function __construct(
         EnvServiceProvider $envProvider,
@@ -26,7 +28,18 @@ class ThemeManager
     ) {
         $this->envProvider = $envProvider;
         $this->themesDir = $themesDir ?? $envProvider->get('THEMES_DIR', __DIR__ . '/../../themes');
-        
+
+        $env = getenv('APP_ENV') ?: 'development';
+        if ($env === 'production') {
+            $cacheDir = rtrim(getenv('CACHE_DIR') ?: (dirname(__DIR__, 2) . '/var/cache'), '/');
+            $themeCacheDir = $cacheDir . '/themes';
+            if (!is_dir($themeCacheDir)) {
+                mkdir($themeCacheDir, 0755, true);
+            }
+            $this->manifestCacheFile = $themeCacheDir . '/manifest.php';
+            $this->cacheEnabled      = true;
+        }
+
         $this->initialize();
     }
     
@@ -35,7 +48,56 @@ class ThemeManager
      */
     private function initialize(): void
     {
+        if ($this->cacheEnabled && $this->loadFromManifestCache()) {
+            return;
+        }
+
         $this->discoverThemes();
+
+        if ($this->cacheEnabled) {
+            $this->writeManifestCache();
+        }
+    }
+
+    private function loadFromManifestCache(): bool
+    {
+        if (!file_exists($this->manifestCacheFile)) {
+            return false;
+        }
+        try {
+            $manifest = require $this->manifestCacheFile;
+        } catch (\Throwable $e) {
+            @unlink($this->manifestCacheFile);
+            return false;
+        }
+        if (!is_array($manifest) || empty($manifest['_version'] ?? null)) {
+            @unlink($this->manifestCacheFile);
+            return false;
+        }
+        $this->themes       = $manifest['themes']       ?? [];
+        $this->themeConfigs = $manifest['themeConfigs'] ?? [];
+        return true;
+    }
+
+    private function writeManifestCache(): void
+    {
+        $manifest = [
+            '_version'    => '1',
+            '_written_at' => time(),
+            'themes'      => $this->themes,
+            'themeConfigs'=> $this->themeConfigs,
+        ];
+        $php = '<?php return ' . var_export($manifest, true) . ';' . PHP_EOL;
+        $tmp = $this->manifestCacheFile . '.tmp.' . getmypid();
+        file_put_contents($tmp, $php, LOCK_EX);
+        rename($tmp, $this->manifestCacheFile);
+    }
+
+    public function clearManifestCache(): void
+    {
+        if ($this->manifestCacheFile && file_exists($this->manifestCacheFile)) {
+            @unlink($this->manifestCacheFile);
+        }
     }
     
     /**

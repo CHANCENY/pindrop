@@ -3,3 +3,8 @@ vendor
 sites
 .env
 .logs/reports.log
+
+# DI container compilation cache
+var/cache/di/
+var/cache/plugins/
+var/cache/themes/

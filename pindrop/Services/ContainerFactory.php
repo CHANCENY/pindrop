@@ -17,16 +17,22 @@ class ContainerFactory
         $builder = new ContainerBuilder();
         
         // Initialize environment service provider first
-        $envProvider = new EnvServiceProvider();
+        $envProvider = EnvServiceProvider::getInstance();
         $envProvider->configureContainer($builder);
         
         // Initialize config service provider
         $configProvider = new ConfigServiceProvider($envProvider);
         $configProvider->configureContainer($builder);
         
-        // Enable compilation for production
-        if (getenv('APP_ENV') === 'production') {
-            $builder->enableCompilation(__DIR__ . '/../../var/cache');
+        // Enable compilation cache for production
+        $env      = getenv('APP_ENV') ?: 'development';
+        $cacheDir = rtrim(getenv('CACHE_DIR') ?: (__DIR__ . '/../../var/cache/di'), '/');
+        if ($env === 'production') {
+            if (!is_dir($cacheDir)) {
+                mkdir($cacheDir, 0755, true);
+            }
+            $builder->enableCompilation($cacheDir);
+            $builder->writeProxiesToFile(true, $cacheDir . '/proxies');
         }
         
         return $builder->build();
@@ -45,7 +51,7 @@ class ContainerFactory
             }
         }
         
-        $envProvider = new EnvServiceProvider();
+        $envProvider = EnvServiceProvider::getInstance();
         $envProvider->configureContainer($builder);
         
         // Initialize config service provider

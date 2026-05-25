@@ -1,9 +1,61 @@
 <?php
 declare(strict_types=1);
 
-@session_start();
+// ---------------------------------------------------------------------------
+// Session scaling — database-backed sessions
+// ---------------------------------------------------------------------------
+// We must start the session BEFORE the DI container is built, so we do a
+// minimal .env parse here (just the DB_* keys) and wire up our custom
+// SessionHandlerInterface.  Everything downstream ($_SESSION, session_id(),
+// SessionStorage) keeps working exactly as before — only the storage backend
+// changes from the local filesystem to MySQL.
+// ---------------------------------------------------------------------------
+
+// Minimal .env parse — only what we need before the autoloader is available.
+// The full parse (with variable interpolation) runs again inside
+// EnvServiceProvider after the autoloader loads; there is no conflict.
+if (file_exists(__DIR__ . '/.env')) {
+    foreach (file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $_line) {
+        if (str_starts_with(trim($_line), '#') || !str_contains($_line, '=')) {
+            continue;
+        }
+        [$_k, $_v] = explode('=', $_line, 2);
+        $_k = trim($_k);
+        $_v = trim($_v, " \t\n\r\0\x0B\"'");
+        if (getenv($_k) === false) {   // don't overwrite real env vars
+            putenv("{$_k}={$_v}");
+            $_ENV[$_k] = $_v;
+        }
+    }
+    unset($_line, $_k, $_v);
+}
 
 require_once 'vendor/autoload.php';
+
+// Now the autoloader is ready — register the DB session handler.
+//
+// IMPORTANT: $_sessionHandler must NOT be unset.
+// PHP holds a reference internally, but prematurely destroying the variable
+// can trigger GC in some PHP builds, leaving a dead object by shutdown.
+//
+// session_set_save_handler($handler, true) auto-registers session_write_close
+// but we pass FALSE and use a closure instead — this keeps the handler object
+// alive in the closure scope so write() still has a valid $this at shutdown.
+try {
+    $_sessionHandler = \Simp\Pindrop\Session\DatabaseSessionHandler::createFromEnv();
+    session_set_save_handler($_sessionHandler, false);
+    register_shutdown_function(static function () use ($_sessionHandler): void {
+        // @ suppresses the E_WARNING that Whoops converts to ErrorException.
+        // The real error is already logged inside DatabaseSessionHandler::write().
+        @session_write_close();
+    });
+} catch (\Throwable $_sessionException) {
+    error_log('[Pindrop] DatabaseSessionHandler unavailable, falling back to file sessions: '
+        . $_sessionException->getMessage());
+    unset($_sessionException);
+}
+
+session_start();
 
 use DI\Container;
 use DI\DependencyException;

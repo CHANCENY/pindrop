@@ -1,0 +1,36 @@
+wiki.form.add:
+  path: '/admin/wiki/create'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\wiki\src\Controller\WikiController::add'
+  requirements:
+    _permission: ['admin', 'super_admin', 'moderator']
+wiki.form.wiki.editor:
+  path: '/wiki/editor/save'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\wiki\src\Controller\WikiController::wikiEditorSaver'
+  requirements:
+    _permission: ['admin', 'super_admin', 'moderator']
+wiki.form.wiki.refs:
+  path: '/wiki/editor/refs'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\wiki\src\Controller\WikiController::wikiEditorSaverRefs'
+  requirements:
+    _permission: ['admin', 'super_admin', 'moderator']
+
+wiki.list:
+  path: '/admin/wiki'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\wiki\src\Controller\WikiController::list'
+  requirements:
+    _permission: ['admin', 'super_admin', 'moderator']
+wiki.view:
+  path: '/wiki/[slug:string]'
+  methods: ['GET', 'POST']
+  defaults:
+    _controller: 'Simp\Pindrop\Modules\wiki\src\Controller\WikiController::view'
+  requirements:
+    _permission: ['admin', 'super_admin', 'moderator']

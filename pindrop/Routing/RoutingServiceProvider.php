@@ -29,19 +29,19 @@ class RoutingServiceProvider
     {
         $definitions = [
             // Route provider configuration
-            'routing.config' => fn() => $this->getRoutingConfig(),
+            'routing.config' => \DI\factory([self::class, 'buildRoutingConfig']),
             
             // Route provider instance
-            'route.provider' => fn(\DI\Container $c) => $this->createRouteProvider($c),
+            'route.provider' => \DI\factory([self::class, 'buildRouteProvider']),
             
             // Route manager (static facade)
             'route.manager' => fn(\DI\Container $c) => RouteManager::class,
             
             // Plugin routes handler
-            'plugin.routes' => fn(\DI\Container $c) => $this->createPluginRoutes($c),
+            'plugin.routes' => function(\DI\Container $c) { return new PluginRoutes($c->get('route.provider'), $c); },
             
             // Plugin middleware handler
-            'plugin.middleware' => fn(\DI\Container $c) => $this->createPluginMiddleware($c),
+            'plugin.middleware' => function(\DI\Container $c) { return new PluginMiddleware($c->get('plugin.manager'), $c); },
             
             // Aliases for convenience
             RouteProvider::class => fn(\DI\Container $c) => $c->get('route.provider'),
@@ -51,8 +51,17 @@ class RoutingServiceProvider
         $builder->addDefinitions($definitions);
     }
     
+    public static function buildRouteProvider(\DI\Container $c): RouteProvider
+    {
+        $middleware = $c->get('plugin.middleware')->getMiddlewareClasses();
+        $routeProvider = RouteManager::initialize($middleware);
+        $pluginRoutes = new PluginRoutes($routeProvider, $c);
+        $pluginRoutes->register($c->get('plugin.manager')->getPluginRoutes());
+        return $routeProvider;
+    }
+
     /**
-     * Create a route provider instance
+     * Create a route provider instance (instance version kept for BC)
      */
     private function createRouteProvider(\DI\Container $container): RouteProvider
     {
@@ -85,8 +94,18 @@ class RoutingServiceProvider
         return new PluginMiddleware($container->get('plugin.manager'), $container);
     }
     
+    public static function buildRoutingConfig(): array
+    {
+        return [
+            'base_path'       => getenv('BASE_PATH')       ?: '',
+            'debug_mode'      => getenv('DEBUG_MODE')      ?: false,
+            'cache_routes'    => getenv('CACHE_ROUTES')    ?: true,
+            'middleware_file' => getenv('MIDDLEWARE_FILE') ?: null,
+        ];
+    }
+
     /**
-     * Get routing configuration from environment variables
+     * Instance version kept for BC
      */
     private function getRoutingConfig(): array
     {

@@ -23,17 +23,17 @@ class ConfigServiceProvider
     {
         $definitions = [
             // Config service that provides access to resolved env vars
-            'config' => fn() => new ConfigService($this->envProvider),
+            'config' => \DI\create(ConfigService::class)->constructor(\DI\get(EnvServiceProvider::class)),
             
             // Individual config entries
-            'config.root' => fn() => $this->envProvider->get('ROOT'),
-            'config.plugin_root' => fn() => $this->envProvider->get('PLUGIN_ROOT'),
+            'config.root' => fn() => getenv('ROOT') ?: '',
+            'config.plugin_root' => fn() => getenv('PLUGIN_ROOT') ?: '',
             
             // Path helpers
-            'paths.root' => fn() => $this->envProvider->get('ROOT'),
-            'paths.plugins' => fn() => $this->envProvider->get('PLUGIN_ROOT'),
-            'paths.storage' => fn() => $this->envProvider->get('ROOT') . '/storage',
-            'paths.cache' => fn() => $this->envProvider->get('ROOT') . '/cache',
+            'paths.root' => fn() => getenv('ROOT') ?: '',
+            'paths.plugins' => fn() => getenv('PLUGIN_ROOT') ?: '',
+            'paths.storage' => fn() => (getenv('ROOT') ?: '') . '/storage',
+            'paths.cache' => fn() => (getenv('ROOT') ?: '') . '/cache',
             'site.settings' => fn() => new Settings(\getAppContainer()->get('database')),
         ];
         

@@ -35,6 +35,18 @@ class PluginManager
 
     private array $pluginTemplatesSources = [];
     private ?Container $container = null;
+
+    // ── YAML manifest cache ──────────────────────────────────────────────────
+    // On first production request every plugin YAML file is parsed and the
+    // resulting array is written to var/cache/plugins/manifest.php as a plain
+    // PHP return statement.  Subsequent requests just require() that one file
+    // (OPcache holds it in memory) — no YAML parsing, no disk reads per plugin.
+    //
+    // The cache is invalidated automatically whenever savePluginState() runs
+    // (enable / disable / install / uninstall actions) and when
+    // rediscoverPlugins() runs.  In development it is never written.
+    private ?string $manifestCacheFile = null;
+    private bool    $cacheEnabled      = false;
     
     public function __construct(
         EnvServiceProvider $envProvider,
@@ -44,7 +56,21 @@ class PluginManager
         $this->envProvider = $envProvider;
         $this->pluginRoot = $pluginRoot ?? $envProvider->get('PLUGIN_ROOT', __DIR__ . '/../../modules');
         $this->configRoot = $configRoot ?? $envProvider->get('CONFIG', __DIR__ . '/../../config/sync');
-        
+
+        // Enable manifest cache in production only.
+        // In development YAML files are parsed fresh every request so changes
+        // are visible immediately without needing to clear any cache.
+        $env = getenv('APP_ENV') ?: 'development';
+        if ($env === 'production') {
+            $cacheDir = rtrim(getenv('CACHE_DIR') ?: (dirname(__DIR__, 2) . '/var/cache'), '/');
+            $pluginCacheDir = $cacheDir . '/plugins';
+            if (!is_dir($pluginCacheDir)) {
+                mkdir($pluginCacheDir, 0755, true);
+            }
+            $this->manifestCacheFile = $pluginCacheDir . '/manifest.php';
+            $this->cacheEnabled      = true;
+        }
+
         $this->initialize();
     }
     
@@ -88,28 +114,19 @@ class PluginManager
             // Validate service dependencies exist
             $this->validateServiceDependencies($serviceConfig, $pluginId, $serviceName);
             
-            $definition = function ($container) use ($serviceConfig) {
-                $className = $serviceConfig['class'];
-                $arguments = $serviceConfig['arguments'] ?? [];
-                
-                // Resolve arguments
-                $resolvedArguments = [];
-                foreach ($arguments as $argument) {
-                    if (is_string($argument) && str_starts_with($argument, '@')) {
-                        // DI container reference
-                        $dependencyName = substr($argument, 1);
-                        $resolvedArguments[] = $container->get($dependencyName);
-                    } else {
-                        $resolvedArguments[] = $argument;
-                    }
+            // registerPluginServices() is only called from plugin.services.register
+            // which runs in bootstrap.inc AFTER buildContainer() returns, so the
+            // container is fully built here — safe to resolve @arguments directly.
+            $className = $serviceConfig['class'];
+            $resolvedArguments = [];
+            foreach ($serviceConfig['arguments'] ?? [] as $argument) {
+                if (is_string($argument) && str_starts_with($argument, '@')) {
+                    $resolvedArguments[] = $this->container->get(substr($argument, 1));
+                } else {
+                    $resolvedArguments[] = $argument;
                 }
-                
-                // Create service instance
-                return new $className(...$resolvedArguments);
-            };
-            
-            // Register service in container
-            $this->container->set($serviceName, $definition);
+            }
+            $this->container->set($serviceName, new $className(...$resolvedArguments));
         }
     }
     
@@ -194,8 +211,98 @@ class PluginManager
     private function initialize(): void
     {
         $this->ensureDirectories();
+
+        if ($this->cacheEnabled && $this->loadFromManifestCache()) {
+            // Served entirely from the PHP manifest cache — no YAML parsing.
+            return;
+        }
+
+        // Cache miss or development mode: parse all YAMLs the normal way.
         $this->discoverPlugins();
         $this->loadInstalledPlugins();
+
+        // Write the manifest cache for next request.
+        if ($this->cacheEnabled) {
+            $this->writeManifestCache();
+        }
+    }
+
+    // ── Manifest cache helpers ───────────────────────────────────────────────
+
+    /**
+     * Attempt to load the full plugin manifest from the compiled PHP cache.
+     * Returns true on success (no YAML parsing needed), false on cache miss.
+     */
+    private function loadFromManifestCache(): bool
+    {
+        if (!file_exists($this->manifestCacheFile)) {
+            return false;
+        }
+
+        try {
+            $manifest = require $this->manifestCacheFile;
+        } catch (\Throwable $e) {
+            // Corrupted cache file — delete and rebuild
+            @unlink($this->manifestCacheFile);
+            return false;
+        }
+
+        if (!is_array($manifest) || empty($manifest['_version'] ?? null)) {
+            @unlink($this->manifestCacheFile);
+            return false;
+        }
+
+        $this->plugins                 = $manifest['plugins']                 ?? [];
+        $this->enabledPlugins          = $manifest['enabledPlugins']          ?? [];
+        $this->pluginConfigs           = $manifest['pluginConfigs']           ?? [];
+        $this->pluginServices          = $manifest['pluginServices']          ?? [];
+        $this->pluginRoutes            = $manifest['pluginRoutes']            ?? [];
+        $this->pluginMiddleware        = $manifest['pluginMiddleware']        ?? [];
+        $this->pluginMysqlSchemas      = $manifest['pluginMysqlSchemas']      ?? [];
+        $this->pluginMenus             = $manifest['pluginMenus']             ?? [];
+        $this->pluginTemplatesSources  = $manifest['pluginTemplatesSources']  ?? [];
+
+        return true;
+    }
+
+    /**
+     * Write all current plugin data to the PHP manifest cache.
+     * Uses var_export() + return so OPcache can cache the result in memory.
+     */
+    private function writeManifestCache(): void
+    {
+        $manifest = [
+            '_version'             => '1',
+            '_written_at'          => time(),
+            'plugins'              => $this->plugins,
+            'enabledPlugins'       => $this->enabledPlugins,
+            'pluginConfigs'        => $this->pluginConfigs,
+            'pluginServices'       => $this->pluginServices,
+            'pluginRoutes'         => $this->pluginRoutes,
+            'pluginMiddleware'     => $this->pluginMiddleware,
+            'pluginMysqlSchemas'   => $this->pluginMysqlSchemas,
+            'pluginMenus'          => $this->pluginMenus,
+            'pluginTemplatesSources' => $this->pluginTemplatesSources,
+        ];
+
+        $php = '<?php return ' . var_export($manifest, true) . ';' . PHP_EOL;
+
+        // Write atomically: write to a temp file then rename so a concurrent
+        // request never reads a half-written cache file.
+        $tmp = $this->manifestCacheFile . '.tmp.' . getmypid();
+        file_put_contents($tmp, $php, LOCK_EX);
+        rename($tmp, $this->manifestCacheFile);
+    }
+
+    /**
+     * Invalidate the manifest cache.
+     * Called automatically after any state change (enable/disable/install).
+     */
+    public function clearManifestCache(): void
+    {
+        if ($this->manifestCacheFile && file_exists($this->manifestCacheFile)) {
+            @unlink($this->manifestCacheFile);
+        }
     }
     
     /**
@@ -604,6 +711,10 @@ class PluginManager
         if (file_put_contents($installedFile, $yaml) === false) {
             throw new \RuntimeException("Failed to save plugin state to: {$installedFile}");
         }
+
+        // State changed — invalidate the manifest cache so the next request
+        // rebuilds it with the updated plugin list.
+        $this->clearManifestCache();
     }
     
     /**
@@ -772,6 +883,11 @@ class PluginManager
             if (!isset($previousPlugins[$pluginId])) {
                 $newPlugins[] = $pluginId;
             }
+        }
+
+        // New plugins found — invalidate manifest cache so next request rebuilds.
+        if (!empty($newPlugins)) {
+            $this->clearManifestCache();
         }
         
         return $newPlugins;

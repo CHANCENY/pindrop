@@ -11,12 +11,54 @@ use Psr\Container\ContainerInterface;
 class EnvServiceProvider
 {
     private array $envVars = [];
-    
+
+    /**
+     * Singleton instance — the .env file is parsed exactly once per process.
+     *
+     * Every call to new EnvServiceProvider() previously re-read and re-parsed
+     * the .env file from disk.  With 6+ instantiations per request that was
+     * 6 file_reads + 6 regex loops + 6 putenv() batches for nothing.
+     *
+     * getInstance() returns the same object every time.  new EnvServiceProvider()
+     * still works (all call sites are unchanged) because __construct() delegates
+     * to getInstance() and copies the already-resolved vars.
+     */
+    private static ?self $instance = null;
+
     public function __construct()
     {
-        $this->loadEnvFile();
-        $this->resolveEnvVars();
-        $this->populateGlobalEnv();
+        if (self::$instance === null) {
+            // First instantiation — do the real work.
+            $this->loadEnvFile();
+            $this->resolveEnvVars();
+            $this->populateGlobalEnv();
+            self::$instance = $this;
+        } else {
+            // Subsequent instantiations — copy vars from the singleton.
+            // No file I/O, no regex, no putenv() calls.
+            $this->envVars = self::$instance->envVars;
+        }
+    }
+
+    /**
+     * Get the shared singleton instance.
+     * Prefer this over new EnvServiceProvider() in new code.
+     */
+    public static function getInstance(): self
+    {
+        if (self::$instance === null) {
+            new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Reset the singleton — used in tests or after .env changes.
+     * Never call this in production request code.
+     */
+    public static function reset(): void
+    {
+        self::$instance = null;
     }
     
     /**
@@ -134,7 +176,7 @@ class EnvServiceProvider
         $definitions['env.root'] = fn() => $_ENV['ROOT'] ?? null;
         $definitions['env.plugin_root'] = fn() => $_ENV['PLUGIN_ROOT'] ?? null;
         $definitions['env.all'] = fn() => $_ENV;
-        $definitions['env.services'] = fn() => $this; // Allow access to this service for advanced env retrieval
+        $definitions['env.services'] = \DI\value($this); // pre-built instance, \DIalue() bypasses compilation
 
         $builder->addDefinitions($definitions);
     }

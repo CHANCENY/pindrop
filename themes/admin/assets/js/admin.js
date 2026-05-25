@@ -2,9 +2,7 @@
  * Isolated Admin Theme JavaScript
  * All functions and variables are scoped to prevent conflicts
  */
-
-(function() {
-    'use strict';
+'use strict';
 
     // Admin namespace
     window.AdminTheme = window.AdminTheme || {};
@@ -534,12 +532,3 @@
             }
         );
     };
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', AdminTheme.init);
-    } else {
-        AdminTheme.init();
-    }
-
-})();

@@ -200,7 +200,7 @@ class RouteProvider
                 }
 
                 if (!$submittedToken) {
-                    throw new \RuntimeException('Missing CSRF token');
+                    throw new \RuntimeException('Missing CSRF token in body data with key _csrf_token');
                 }
 
                 $secret = $_ENV['CSRF_TOKEN_SECRET'];
