@@ -122,8 +122,27 @@ AddEncoding gzip svgz
   # Rewrite install.php during installation to see if mod_rewrite is working
   RewriteRule ^core/install\.php core/install.php?rewrite=ok [QSA,L]
 
-  # Pass all requests not referring directly to files in the filesystem to
-  # index.php.
+  # ── Static file bypass ───────────────────────────────────────────────
+  # Serve files under sites/default/files/ (the public:// stream) directly
+  # by Apache without touching PHP.  This eliminates the PHP-FPM overhead
+  # for every image, CSS, JS, and upload that Pindrop serves through the
+  # FileSystemService stream wrapper.
+  #
+  # How it works: if the request URI starts with /sites/default/files/ AND
+  # the file actually exists on disk, Apache serves it directly (the two
+  # RewriteCond !-f / !-d rules below would normally skip it, but we add an
+  # explicit early-return rule here so the existing guards don't interfere).
+  RewriteCond %{REQUEST_URI} ^/sites/default/files/
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # Same bypass for theme assets served from /themes/
+  RewriteCond %{REQUEST_URI} ^/themes/
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # Pass all other requests not referring directly to files/directories
+  # to index.php.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_URI} !=/favicon.ico

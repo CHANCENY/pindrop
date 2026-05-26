@@ -200,7 +200,7 @@ class RouteProvider
                 }
 
                 if (!$submittedToken) {
-                    throw new \RuntimeException('Missing CSRF token in body data with key _csrf_token');
+                    throw new \RuntimeException('Missing CSRF token');
                 }
 
                 $secret = $_ENV['CSRF_TOKEN_SECRET'];
@@ -240,6 +240,7 @@ class RouteProvider
 
             if ($response instanceof Response) {
                 $response = $this->injectCsrfToken($response, $csrfToken);
+                $response = $this->applyStandardHeaders($response);
             }
 
             $response->send();
@@ -286,6 +287,60 @@ class RouteProvider
         $timeWindow = floor(time() / 600) + $offset;
 
         return hash_hmac('sha256', $ip . '|' . $ua . '|' . $timeWindow, $secret);
+    }
+
+    /**
+     * Apply standard HTTP headers to every response.
+     *
+     * Security headers — set on every response regardless of content type.
+     * Cache-Control — HTML pages: no-store (dynamic, always fresh).
+     *                 JSON/API:   no-store.
+     *                 Neither sets a public cache — that is left to the
+     *                 CDN / reverse proxy layer which can be configured
+     *                 separately per route via the RESPONSE_BEFORE_SEND event.
+     *
+     * Why no ETag/Last-Modified here?
+     * Pindrop pages are dynamic (user-specific CSRF tokens, session data).
+     * ETags on dynamic HTML create more problems than they solve.  Static
+     * assets are handled by Apache mod_expires in .htaccess already.
+     */
+    private function applyStandardHeaders(Response $response): Response
+    {
+        $contentType = (string)$response->headers->get('Content-Type', 'text/html');
+        $isHtml = str_contains($contentType, 'text/html') || $contentType === '';
+        $isJson = str_contains($contentType, 'application/json');
+
+        // ── Security headers ──────────────────────────────────────────────
+        // Only set if not already present (allows controllers to override).
+        if (!$response->headers->has('X-Content-Type-Options')) {
+            $response->headers->set('X-Content-Type-Options', 'nosniff');
+        }
+        if (!$response->headers->has('X-Frame-Options')) {
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        }
+        if (!$response->headers->has('Referrer-Policy')) {
+            $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        }
+        if (!$response->headers->has('X-XSS-Protection')) {
+            $response->headers->set('X-XSS-Protection', '1; mode=block');
+        }
+        if (!$response->headers->has('Permissions-Policy')) {
+            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        }
+
+        // ── Cache-Control ─────────────────────────────────────────────────
+        if (!$response->headers->has('Cache-Control')) {
+            if ($isJson) {
+                // API responses: always fresh, allow CDN validation
+                $response->headers->set('Cache-Control', 'no-store');
+            } elseif ($isHtml) {
+                // Dynamic HTML: never cache (contains CSRF tokens + session data)
+                $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate');
+                $response->headers->set('Pragma', 'no-cache');
+            }
+        }
+
+        return $response;
     }
 
     private function injectCsrfToken(Response $response, string $csrfToken): Response

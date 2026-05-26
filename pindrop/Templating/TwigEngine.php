@@ -103,25 +103,37 @@ class TwigEngine
      */
     private function getTwigConfig(): array
     {
-        $debug = $this->envProvider->get('APP_DEBUG', false);
-        $cache = $this->envProvider->get('TWIG_CACHE', false);
-        
+        $env   = getenv('APP_ENV')   ?: 'development';
+        $debug = (bool)(getenv('APP_DEBUG') ?: ($env !== 'production'));
+
+        // Template cache is enabled automatically in production unless
+        // explicitly disabled via TWIG_CACHE=false.
+        // In development it is disabled so template changes are visible
+        // immediately without clearing any cache.
+        $cacheEnv = getenv('TWIG_CACHE');
+        if ($cacheEnv === false || $cacheEnv === '') {
+            $cacheEnabled = ($env === 'production');
+        } else {
+            $cacheEnabled = filter_var($cacheEnv, FILTER_VALIDATE_BOOLEAN);
+        }
+
         $config = [
-            'debug' => $debug,
-            'auto_reload' => true,
+            'debug'            => $debug,
+            'auto_reload'      => true,   // safe: Twig checks mtime before recompiling
             'strict_variables' => false,
-            'autoescape' => 'html',
+            'autoescape'       => 'html',
         ];
-        
-        // Add cache path if enabled
-        if ($cache) {
-            $cachePath = $this->envProvider->get('TWIG_CACHE_PATH', __DIR__ . '/../../var/cache/twig');
+
+        if ($cacheEnabled) {
+            $cacheBase = rtrim(getenv('CACHE_DIR') ?: (dirname(__DIR__, 2) . '/var/cache'), '/');
+            $cachePath = getenv('TWIG_CACHE_PATH') ?: ($cacheBase . '/twig');
             if (!is_dir($cachePath)) {
                 mkdir($cachePath, 0755, true);
             }
-            $config['cache'] = $cachePath;
+            $config['cache']       = $cachePath;
+            $config['auto_reload'] = true; // recompile if template mtime changes
         }
-        
+
         return $config;
     }
     

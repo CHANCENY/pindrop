@@ -8,3 +8,4 @@ sites
 var/cache/di/
 var/cache/plugins/
 var/cache/themes/
+var/cache/twig/
