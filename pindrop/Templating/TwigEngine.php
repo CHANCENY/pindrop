@@ -283,9 +283,8 @@ class TwigEngine
 
         foreach ($extensions as $extension) {
             foreach ($extension as $ext){
-                $extensionClass = $ext['class'] ?? null;
+                $extensionClass = trim($ext['class'] ?? '');
                 if (!empty($extensionClass)) {
-
                     $this->twig->addExtension(new $extensionClass);
                 }
             }

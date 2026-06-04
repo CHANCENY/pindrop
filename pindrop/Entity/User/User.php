@@ -495,6 +495,8 @@ class User
             $data['date_of_birth'] = new \DateTime($data['date_of_birth']);
         }
 
+
+    
         // Set properties
         foreach ($data as $key => $value) {
             $property = $this->camelCase($key);
@@ -502,6 +504,13 @@ class User
                 $this->$property = $value;
             }
         }
+
+    
+        if (empty($this->permissions)){
+            $pluginManager = \getAppContainer()->get('plugin.manager');
+            $this->permissions = $pluginManager->getRolePermissions($this->role ?? 'user');
+        }
+
     }
 
     public function toArray(): array
@@ -670,13 +679,37 @@ class User
 
     private function getRolePermissions(): array
     {
-        return match ($this->role) {
-            self::ROLE_SUPER_ADMIN => ['*'],
-            self::ROLE_ADMIN => ['users.manage', 'content.manage', 'system.manage'],
-            self::ROLE_MODERATOR => ['content.moderate', 'users.view'],
-            self::ROLE_USER => ['content.create', 'content.edit_own'],
-            default => []
-        };
+        if ($this->role === self::ROLE_SUPER_ADMIN) {
+            return ['*'];
+        }
+
+        // Resolve from plugin manager which merges core + all plugin permissions.
+        try {
+            $pluginManager = \getAppContainer()->get('plugin.manager');
+            return array_keys($pluginManager->getRolePermissions($this->role ?? 'user'));
+        } catch (\Throwable $e) {
+            // Fallback when container is not ready (e.g. during install/tests).
+            return match ($this->role) {
+                self::ROLE_ADMIN     => [
+                    'can_access_admin_panel', 'can_administer_users',
+                    'can_administer_permissions', 'can_administer_content',
+                    'can_administer_settings', 'can_administer_plugins',
+                    'can_administer_themes', 'can_administer_menus',
+                    'can_administer_files', 'can_view_reports',
+                ],
+                self::ROLE_MODERATOR => [
+                    'can_access_admin_panel', 'can_administer_content',
+                    'can_administer_users', 'can_administer_menus',
+                    'can_view_reports',
+                ],
+                self::ROLE_USER      => [
+                    'can_create_content', 'can_edit_own_content',
+                    'can_delete_own_content', 'can_upload_files',
+                    'can_manage_own_profile',
+                ],
+                default => [],
+            };
+        }
     }
 
     public function isAdmin(): bool

@@ -34,6 +34,7 @@ class PluginManager
     private array $pluginMenus = [];
 
     private array $pluginTemplatesSources = [];
+    private array $pluginPermissions = [];
     private ?Container $container = null;
 
     // ── YAML manifest cache ──────────────────────────────────────────────────
@@ -261,6 +262,7 @@ class PluginManager
         $this->pluginMysqlSchemas      = $manifest['pluginMysqlSchemas']      ?? [];
         $this->pluginMenus             = $manifest['pluginMenus']             ?? [];
         $this->pluginTemplatesSources  = $manifest['pluginTemplatesSources']  ?? [];
+        $this->pluginPermissions       = $manifest['pluginPermissions']       ?? [];
 
         return true;
     }
@@ -272,17 +274,18 @@ class PluginManager
     private function writeManifestCache(): void
     {
         $manifest = [
-            '_version'             => '1',
-            '_written_at'          => time(),
-            'plugins'              => $this->plugins,
-            'enabledPlugins'       => $this->enabledPlugins,
-            'pluginConfigs'        => $this->pluginConfigs,
-            'pluginServices'       => $this->pluginServices,
-            'pluginRoutes'         => $this->pluginRoutes,
-            'pluginMiddleware'     => $this->pluginMiddleware,
-            'pluginMysqlSchemas'   => $this->pluginMysqlSchemas,
-            'pluginMenus'          => $this->pluginMenus,
+            '_version'               => '1',
+            '_written_at'            => time(),
+            'plugins'                => $this->plugins,
+            'enabledPlugins'         => $this->enabledPlugins,
+            'pluginConfigs'          => $this->pluginConfigs,
+            'pluginServices'         => $this->pluginServices,
+            'pluginRoutes'           => $this->pluginRoutes,
+            'pluginMiddleware'       => $this->pluginMiddleware,
+            'pluginMysqlSchemas'     => $this->pluginMysqlSchemas,
+            'pluginMenus'            => $this->pluginMenus,
             'pluginTemplatesSources' => $this->pluginTemplatesSources,
+            'pluginPermissions'      => $this->pluginPermissions,
         ];
 
         $php = '<?php return ' . var_export($manifest, true) . ';' . PHP_EOL;
@@ -454,6 +457,28 @@ class PluginManager
                 $middleware = Yaml::parseFile($middlewareFile);
                 if (is_array($middleware)) {
                     $this->pluginMiddleware[$pluginId] = $middleware;
+                }
+            }
+
+            // Load plugin permissions if user.permissions.yml exists
+            $permissionsFile = $plugin['path'] . '/user.permissions.yml';
+            if (file_exists($permissionsFile)) {
+                $permissions = Yaml::parseFile($permissionsFile);
+                if (is_array($permissions)) {
+                    // Merge into global permissions — plugin permissions are additive.
+                    // A plugin cannot redefine or remove a core permission key;
+                    // it can only add new keys to existing roles or define new roles.
+                    foreach ($permissions as $role => $rolePerms) {
+                        if (!isset($this->pluginPermissions[$role])) {
+                            $this->pluginPermissions[$role] = [];
+                        }
+                        foreach ($rolePerms as $permKey => $permDef) {
+                            // Core permissions take precedence — skip if already defined
+                            if (!isset($this->pluginPermissions[$role][$permKey])) {
+                                $this->pluginPermissions[$role][$permKey] = $permDef;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -959,6 +984,87 @@ class PluginManager
     public function getPluginMysqlSchemas(): array
     {
         return $this->pluginMysqlSchemas;
+    }
+
+    /**
+     * Get raw permissions array as loaded from all user.permissions.yml files.
+     * Structure: ['role' => ['permission_key' => ['title' => ..., 'description' => ...]]]
+     */
+    public function getPluginPermissions(): array
+    {
+        return $this->pluginPermissions;
+    }
+
+    /**
+     * Get merged permissions for a specific role, combining core permissions
+     * (from pindrop/user.permissions.yml) with all plugin-defined permissions.
+     *
+     * Returns an array of permission keys with their title/description metadata.
+     * Example: ['can_access_admin_panel' => ['title' => ..., 'description' => ...]]
+     */
+    public function getRolePermissions(string $role): array
+    {
+        // Load core permissions once and cache them in a static variable.
+        static $corePermissions = null;
+        if ($corePermissions === null) {
+            $coreFile = dirname(__DIR__) . '/user.permissions.yml';
+            $corePermissions = file_exists($coreFile)
+                ? (Yaml::parseFile($coreFile) ?? [])
+                : [];
+        }
+
+        $merged = $corePermissions[$role] ?? [];
+
+        // Merge plugin permissions — core takes precedence (already enforced
+        // during loading, but we apply it again here for safety).
+        foreach ($this->pluginPermissions[$role] ?? [] as $key => $def) {
+            if (!isset($merged[$key])) {
+                $merged[$key] = $def;
+            }
+        }
+
+        return $merged;
+    }
+
+    /**
+     * Get ALL permissions across ALL roles, merged from core + all plugins.
+     * Useful for the admin permissions management UI.
+     *
+     * Returns: ['role' => ['permission_key' => ['title' => ..., 'description' => ...]]]
+     */
+    public function getAllPermissions(): array
+    {
+        static $corePermissions = null;
+        if ($corePermissions === null) {
+            $coreFile = dirname(__DIR__) . '/user.permissions.yml';
+            $corePermissions = file_exists($coreFile)
+                ? (Yaml::parseFile($coreFile) ?? [])
+                : [];
+        }
+
+        // Start with core, then layer in plugin additions
+        $all = $corePermissions;
+        foreach ($this->pluginPermissions as $role => $perms) {
+            if (!isset($all[$role])) {
+                $all[$role] = [];
+            }
+            foreach ($perms as $key => $def) {
+                if (!isset($all[$role][$key])) {
+                    $all[$role][$key] = $def;
+                }
+            }
+        }
+
+        return $all;
+    }
+
+    /**
+     * Check whether a given permission key exists for a given role,
+     * across core + all loaded plugins.
+     */
+    public function roleHasPermission(string $role, string $permissionKey): bool
+    {
+        return isset($this->getRolePermissions($role)[$permissionKey]);
     }
 
     public function getPluginTemplateSources(): array

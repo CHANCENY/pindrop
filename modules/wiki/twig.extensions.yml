@@ -1,0 +1,2 @@
+wiki.twig:
+  class: Simp\Pindrop\Modules\wiki\src\Plugin\Twig\TwigWikiExtension

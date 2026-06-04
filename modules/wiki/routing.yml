@@ -33,4 +33,4 @@ wiki.view:
   defaults:
     _controller: 'Simp\Pindrop\Modules\wiki\src\Controller\WikiController::view'
   requirements:
-    _permission: ['admin', 'super_admin', 'moderator']
+    _permission: ['admin', 'super_admin', 'moderator', 'user', 'guest']
