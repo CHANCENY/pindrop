@@ -82,7 +82,7 @@
                     <select id="role" name="role" class="admin-form-select">
                         {% for role_value, role_label in roles %}
                         <option value="{{ role_value }}" {% if data.role|default('user') == role_value %}selected{% endif %}>
-                            {{ role_label }}
+                            {{ role_label.label }}
                         </option>
                         {% endfor %}
                     </select>

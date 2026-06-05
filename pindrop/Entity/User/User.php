@@ -103,6 +103,17 @@ class User
         }
     }
 
+    public static function fromCurrentUser(DatabaseService $database, ?LoggerInterface $logger, CurrentUser $currentUser): ?self
+    {
+        $userId = $currentUser->getUserId();
+        if ($userId === null) {
+            return null;
+        }
+
+        $instance = new self($currentUser->getUserData() ?? [], $database, $logger);
+        return $instance;
+    }
+
     // Static factory methods
     public static function loadById(int $id, ?DatabaseService $database = null): ?self
     {
@@ -140,8 +151,7 @@ class User
     public static function loadAll(?DatabaseService $database = null): array
     {
         $instance = new self([], $database);
-        $sql = "SELECT * FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC";
-        $data = $instance->database->fetchAll($sql);
+        $data = $instance->database->table('users')->whereNull('deleted_at')->orderBy('created_at', 'desc')->get();
         
         $users = [];
         foreach ($data as $userData) {
@@ -162,13 +172,11 @@ class User
         $offset = ($page - 1) * $limit;
         
         // Get total count
-        $countSql = "SELECT COUNT(*) as total FROM users";
-        $totalData = $instance->database->fetch($countSql);
+        $totalData = $instance->database->table('users')->count();
         $total = $totalData['total'] ?? 0;
         
         // Get users for current page
-        $sql = "SELECT * FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
-        $data = $instance->database->fetchAll($sql);
+        $data = $instance->database->table('users')->whereNull('deleted_at')->orderBy('created_at', 'desc')->limit($limit)->offset($offset)->get();
 
         $users = [];
         foreach ($data as $userData) {
@@ -193,8 +201,8 @@ class User
      */
     public function loadByIdInstance(int $id): ?self
     {
-        $sql = "SELECT * FROM users WHERE id = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $id);
+       
+        $data = $this->database->table('users')->where('id', '=', $id)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -206,8 +214,7 @@ class User
 
     public function loadByUuidInstance(string $uuid): ?self
     {
-        $sql = "SELECT * FROM users WHERE uuid = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $uuid);
+        $data = $this->database->table('users')->where('uuid', '=', $uuid)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -219,8 +226,7 @@ class User
 
     public function loadByUsernameInstance(string $username): ?self
     {
-        $sql = "SELECT * FROM users WHERE username = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $username);
+        $data = $this->database->table('users')->where('username', '=', $username)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -232,8 +238,8 @@ class User
 
     public function loadByEmailInstance(string $email): ?self
     {
-        $sql = "SELECT * FROM users WHERE email = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $email);
+       
+        $data = $this->database->table('users')->where('email', '=', $email)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -245,8 +251,7 @@ class User
 
     public function loadByPasswordResetTokenInstance(string $token): ?self
     {
-        $sql = "SELECT * FROM users WHERE password_reset_token = ? AND deleted_at IS NULL AND password_reset_expires > NOW()";
-        $data = $this->database->fetch($sql, $token);
+        $data = $this->database->table('users')->where('password_reset_token', '=', $token)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -259,8 +264,8 @@ class User
     // CRUD operations
     public static function count(DatabaseService $database)
     {
-        return $database->query("SELECT COUNT(*) as total FROM users WHERE deleted_at IS NULL")->fetchColumn();
-
+        return $database->table('users')->whereNull('deleted_at')->count();
+       
     }
 
     public function save(): bool
@@ -289,9 +294,9 @@ class User
             return false;
         }
 
-        $sql = "DELETE FROM users WHERE id = ?";
+        
         \appEvents()->invokeEvents(Events::USER_DELETING, ['uid' => $this->id, 'force'=>true]);
-        $result = $this->database->query($sql, $this->id);
+        $result = $this->database->table('users')->where('id', '=', $this->id)->delete();
         
         if ($this->logger) {
             $this->logger->info('User force deleted', [
@@ -369,8 +374,7 @@ class User
         ];
 
         \appEvents()->invokeEvents(Events::USER_CREATING, ['user' => &$data]);
-
-        $this->id = $this->database->insert('users', $data);
+        $this->id = $this->database->table('users')->insert($data);
         
         if ($this->id) {
             if ($this->logger) {
@@ -451,8 +455,8 @@ class User
 
         \appEvents()->invokeEvents(Events::USER_UPDATING, ['user' => &$data]);
 
-        $result = $this->database->update('users', $data, 'id = ?', $this->id);
-        
+        $result = $this->database->table('users')->where('id', '=', $this->id)->update($data);
+
         if ($this->logger) {
             $this->logger->info('User updated', [
                 'id' => $this->id,
@@ -470,6 +474,7 @@ class User
     // Utility methods
     public function fromArray(array $data): void
     {
+       
         // Pre-process JSON fields
         $jsonFields = ['permissions', 'metadata', 'preferences', 'backup_codes'];
         foreach ($jsonFields as $field) {
@@ -508,7 +513,7 @@ class User
     
         if (empty($this->permissions)){
             $pluginManager = \getAppContainer()->get('plugin.manager');
-            $this->permissions = $pluginManager->getRolePermissions($this->role ?? 'user');
+            $this->permissions = array_keys($pluginManager->getRolePermissions($this->role ?? 'user'));
         }
 
     }

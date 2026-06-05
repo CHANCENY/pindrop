@@ -60,6 +60,7 @@ session_start();
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Simp\Pindrop\Entity\User\CurrentUser;
 use Simp\Pindrop\Events\EventsManager;
 use Simp\Pindrop\Routing\RouteProvider;
 use Simp\Pindrop\Services\ServiceProvider;
@@ -121,6 +122,21 @@ $container = $serviceProvider->buildContainer();
 // Load plugin services into container
 $pluginManager = $container->get('plugin.manager');
 $container->get('plugin.services.register');
+
+// ── Database permission guard — register current user resolver ──────────────
+// Late-binding closure so the DB layer never directly imports User/Session.
+\Simp\Pindrop\Database\CurrentUserResolver::register(function () use ($container) {
+    try {
+       
+        /**
+         * @var ?CurrentUser $currentUser
+         */
+        $currentUser = $container->get('current_user');
+        return $currentUser && $currentUser->isLoggedIn() ? $currentUser->getUser() : null;
+    } catch (\Throwable) {
+        return null;
+    }
+});
 
 $eventsManager = $container->get(\Simp\Pindrop\Events\EventsManager::class);
 

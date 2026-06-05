@@ -14,7 +14,7 @@ class LibraryAssets
 
     public function __construct(protected DatabaseService $databaseService)
     {
-        $this->schema();
+        
         $assetsCollections = $this->loadDatabaseAssets();
         if (empty($assetsCollections)) {
             $this->bootAssets();
@@ -31,23 +31,10 @@ class LibraryAssets
         }
     }
 
-    /**
-     * @throws DatabaseException
-     */
-    private function schema(): void
-    {
-        if (!$this->databaseService->tableExists("theme_library_assets")) {
-            $query = "CREATE TABLE IF NOT EXISTS `theme_library_assets` (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                      filename VARCHAR(1000) NOT NULL, dependencies JSON NULL, section_type ENUM('css', 'js') NOT NULL DEFAULT 'css')";
-            $this->databaseService->query($query);
-        }
-    }
-
+  
     private function loadDatabaseAssets(): array
     {
-        $query = "SELECT * FROM theme_library_assets;";
-        $st = $this->databaseService->query($query);
-        $data = $st->fetchAll(\PDO::FETCH_ASSOC);
+        $data = $this->databaseService->table('theme_library_assets')->get();
         return array_map(function ($row) {
             $row['dependencies'] = json_decode($row['dependencies'], true);
             return $row;
@@ -73,8 +60,7 @@ class LibraryAssets
                             'section_type' => 'css'
                         ];
 
-                        $query = "INSERT INTO theme_library_assets (filename, dependencies, section_type) VALUES (:filename, :dependencies, :section_type)";
-                        $this->databaseService->query($query, ...$collectionCss);
+                        $this->databaseService->table('theme_library_assets')->insert($collectionCss);
                     }
                 }
                 foreach ($js as $file=>$dependencies){
@@ -85,8 +71,7 @@ class LibraryAssets
                             'section_type' => 'js'
                         ];
 
-                        $query = "INSERT INTO theme_library_assets (filename, dependencies, section_type) VALUES (:filename, :dependencies, :section_type)";
-                        $this->databaseService->query($query, ...$collectionCss);
+                        $this->databaseService->table('theme_library_assets')->insert($collectionCss);
                     }
                 }
             }
@@ -168,6 +153,6 @@ class LibraryAssets
     }
 
     public function clearCache(): bool {
-        return $this->databaseService->query("delete from theme_library_assets;")->rowCount() > 0;
+        return $this->databaseService->table('theme_library_assets')->delete() > 0;
     }
 }

@@ -39,7 +39,7 @@ CREATE TABLE `logs` (
 
 -- Add partitioning for better performance with large datasets (optional)
 -- Uncomment if you have very large log volumes
--- ALTER TABLE `logs` PARTITION BY RANGE (TO_DAYS(`datetime`)) (
---     PARTITION p_current VALUES LESS THAN (TO_DAYS(CURRENT_DATE + INTERVAL 1 DAY)),
---     PARTITION p_future VALUES LESS THAN MAXVALUE
--- );
+ALTER TABLE `logs` PARTITION BY RANGE (TO_DAYS(`datetime`)) (
+    PARTITION p_current VALUES LESS THAN (TO_DAYS(CURRENT_DATE + INTERVAL 1 DAY)),
+    PARTITION p_future VALUES LESS THAN MAXVALUE
+);

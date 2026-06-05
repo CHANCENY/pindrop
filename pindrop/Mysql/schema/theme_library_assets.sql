@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS `theme_library_assets` (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                      filename VARCHAR(1000) NOT NULL, dependencies JSON NULL, section_type ENUM('css', 'js') NOT NULL DEFAULT 'css')

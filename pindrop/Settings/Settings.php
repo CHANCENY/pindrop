@@ -12,13 +12,6 @@ class Settings
      */
     public function __construct(protected DatabaseService $databaseService)
     {
-        if (!$this->databaseService->tableExists('site_settings')){
-            $query = "CREATE TABLE IF NOT EXISTS `site_settings` (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, key_token VARCHAR(300) NOT NULL, content TEXT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)";
-            $this->databaseService->query($query);
-            if (!$this->databaseService->tableExists('site_settings')){
-                throw new DatabaseException("Table 'site_settings' does not exist");
-            }
-        }
     }
 
     /**
@@ -27,21 +20,22 @@ class Settings
     public function createSetting(string $key, array $value): int
     {
         $settings = new Setting($key, $value);
-
-        $query = "DELETE FROM site_settings WHERE key_token = :key";
-        $this->databaseService->query($query, $key);
+        $this->databaseService->table('site_settings')->where('key_token','=', $key)->delete();
 
         $query = "INSERT INTO site_settings(key_token, content) VALUES(:key, :value)";
         $value = serialize($settings);
-        return $this->databaseService->query($query, $key, $value)->rowCount();
+        return $this->databaseService->table('site_settings')->insert([
+            'key_token' => $key,
+            'content' => $value
+        ]);
+        
     }
 
     /**
      * @throws DatabaseException
      */
     public function getSetting(string $key): ?Setting {
-        $st = $this->databaseService->query("SELECT content FROM site_settings WHERE key_token = :key",$key)->fetch();
-
+        $st = $this->databaseService->table('site_settings')->where('key_token','=', $key)->first();
         if (!empty($st)) {
             return unserialize($st['content']);
         }
@@ -53,7 +47,6 @@ class Settings
      */
     public function deleteSetting(string $key): int
     {
-        $query = "DELETE FROM site_settings WHERE key_token = :key";
-        return $this->databaseService->query($query, $key)->rowCount();
+        return $this->databaseService->table('site_settings')->where('key_token','=', $key)->delete();
     }
 }

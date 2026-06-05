@@ -19,6 +19,7 @@ class CurrentUser
     private ?DateTime $createdAt = null;
     private ?DateTime $lastActivity = null;
     private ?DateTime $expiresAt = null;
+    private ?array $user_data = null;
     
     private ?User $user = null;
     private DatabaseService $db;
@@ -106,6 +107,11 @@ class CurrentUser
         return $this->expiresAt;
     }
 
+    public function getUserData() 
+    {
+        return $this->user_data;
+    }
+
     public function setExpiresAt(DateTime $expiresAt): self
     {
         $this->expiresAt = $expiresAt;
@@ -115,9 +121,22 @@ class CurrentUser
     public function getUser(): ?User
     {
         if ($this->user === null && $this->userId !== null) {
-            $this->user = User::loadById($this->userId,$this->db);
+
+            $this->user = User::fromCurrentUser($this->db, $this->logger, $this);
         }
         return $this->user;
+    }
+
+    public function setUser(User $user): self
+    {
+        $this->user = $user;
+        return $this;
+    }
+
+    public function setUserData(array $data): self
+    {
+        $this->user_data = $data;
+        return $this;
     }
 
     // Database operations
@@ -128,16 +147,17 @@ class CurrentUser
                 'user_id' => $this->userId,
                 'session_id' => $this->sessionId
             ]);
-
+           
             $data = [
                 'session_id' => $this->sessionId,
                 'user_id' => $this->userId,
                 'ip_address' => $this->ipAddress,
                 'user_agent' => $this->userAgent,
-                'expires_at' => $this->expiresAt->format('Y-m-d H:i:s')
+                'expires_at' => $this->expiresAt->format('Y-m-d H:i:s'),
+                'user_data' => json_encode($this->user_data ?? [])
             ];
 
-            $this->id = $this->db->insert('user_session', $data);
+            $this->id = $this->db->table('user_session')->insert($data);
 
             if ($this->id) {
                 \appEvents()->invokeEvents(Events::AUTH_LOGIN, ['session_id' => $this->id]);
@@ -176,7 +196,7 @@ class CurrentUser
                 'expires_at' => $this->expiresAt->format('Y-m-d H:i:s')
             ];
 
-            $affected = $this->db->update('user_session', $data, 'id' ,$this->id);
+            $affected = $this->db->table('user_session')->where('id', '=', $this->id)->update($data);
 
             if ($affected > 0) {
                 $this->logger->debug('User session updated successfully', [
@@ -207,7 +227,7 @@ class CurrentUser
                 'user_id' => $this->userId
             ]);
 
-            $affected = $this->db->query('delete from user_session where id = :id', id: $this->id)->rowCount();
+            $affected = $this->db->table('user_session')->where('id', '=', $this->id)->delete();
 
             if ($affected > 0) {
                 \appEvents()->invokeEvents(Events::AUTH_LOGOUT, ['user_id' => $this->userId]);
@@ -232,9 +252,8 @@ class CurrentUser
     {
         try {
             $logger->debug('Finding user session by session_id', ['session_id' => $sessionId]);
-
-            $sql = "SELECT * FROM user_session WHERE session_id = :session_id LIMIT 1";
-            $result = $db->query($sql, session_id: $sessionId)->fetch();
+            $result = $db->table('user_session')->where('session_id', '=', $sessionId)->first();
+           
 
             if ($result) {
                 $session = new self($db, $logger);
@@ -259,8 +278,7 @@ class CurrentUser
         try {
             $logger->debug('Finding sessions by user_id', ['user_id' => $userId]);
 
-            $sql = "SELECT * FROM user_session WHERE user_id = :user_id ORDER BY last_activity DESC";
-            $results = $db->fetchAll($sql, ['user_id' => $userId]);
+            $results = $db->table('user_session')->where('user_id', '=', $userId)->orderBy('last_activity', 'DESC')->get();
 
             $sessions = [];
             foreach ($results as $result) {
@@ -362,6 +380,7 @@ class CurrentUser
         $this->createdAt = new DateTime($data['created_at']);
         $this->lastActivity = new DateTime($data['last_activity']);
         $this->expiresAt = new DateTime($data['expires_at']);
+        $this->user_data = isset($data['user_data']) ? json_decode($data['user_data'], true) : null;
     }
 
     public function isLoggedIn(): bool
@@ -375,8 +394,7 @@ class CurrentUser
             return [];
         }
         
-        $query = "SELECT * FROM user_session WHERE user_id = :user_id ORDER BY last_activity DESC";
-        return $this->db->fetchAll($query, ...$o=['user_id' => $this->userId]);
+        return $this->db->table('user_session')->where('user_id', '=', $this->userId)->orderBy('last_activity', 'DESC')->get();
     
     }
 }

@@ -6,6 +6,9 @@ namespace Simp\Pindrop\Services;
 
 use DI\ContainerBuilder;
 use Simp\Pindrop\Database\DatabaseService;
+use Simp\Pindrop\Database\DatabasePermissionGuard;
+use Simp\Pindrop\Database\CurrentUserResolver;
+use Simp\Pindrop\Database\PluginTableRegistry;
 use Simp\Pindrop\Logger\LoggerInterface;
 
 /**
@@ -77,11 +80,20 @@ class DatabaseServiceProvider
              */
             DatabaseService::class => function (\DI\Container $container) {
                 $config = $container->get('database.config');
-                $logger = $container->has(LoggerInterface::class) 
-                    ? $container->get(LoggerInterface::class) 
+                $logger = $container->has(LoggerInterface::class)
+                    ? $container->get(LoggerInterface::class)
+                    : null;
+                // DB_PERMISSION_GUARD=false disables all checks (CLI/migrations)
+                $guardEnabled = filter_var(getenv('DB_PERMISSION_GUARD') ?: 'true', FILTER_VALIDATE_BOOLEAN);
+
+                // PluginTableRegistry tracks table→plugin ownership.
+                // Populated later in bootstrap.inc after PluginManager loads.
+                $registry = new PluginTableRegistry();
+                $guard    = $guardEnabled
+                    ? new DatabasePermissionGuard(new CurrentUserResolver(), $registry)
                     : null;
 
-                return new DatabaseService($config, $logger, $container);
+                return new DatabaseService($config, $logger, $container, $guard, $registry);
             },
 
             /**
@@ -92,6 +104,12 @@ class DatabaseServiceProvider
             /**
              * PDO connection (for direct access if needed)
              */
+            'database.table.registry' => function (\DI\Container $container) {
+                // The registry is owned by the DatabaseService instance
+                $db = $container->get(DatabaseService::class);
+                return $db->getDatabase() ? new PluginTableRegistry() : new PluginTableRegistry();
+            },
+
             \PDO::class => function (\DI\Container $container) {
                 $database = $container->get(DatabaseService::class);
                 return $database->getConnection();

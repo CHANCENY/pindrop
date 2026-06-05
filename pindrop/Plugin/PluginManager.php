@@ -9,7 +9,6 @@ use Simp\Pindrop\Services\EnvServiceProvider;
 use Simp\Pindrop\Templating\LibraryAssets;
 use Symfony\Component\Yaml\Yaml;
 use DI\Container;
-use DI\ContainerBuilder;
 use Exception;
 use Simp\Pindrop\Events\SystemEvents\Events;
 
@@ -35,6 +34,8 @@ class PluginManager
 
     private array $pluginTemplatesSources = [];
     private array $pluginPermissions = [];
+    private ?\Simp\Pindrop\Database\PluginTableRegistry $tableRegistry = null;
+    private array $pluginRoles = [];
     private ?Container $container = null;
 
     // ── YAML manifest cache ──────────────────────────────────────────────────
@@ -57,6 +58,7 @@ class PluginManager
         $this->envProvider = $envProvider;
         $this->pluginRoot = $pluginRoot ?? $envProvider->get('PLUGIN_ROOT', __DIR__ . '/../../modules');
         $this->configRoot = $configRoot ?? $envProvider->get('CONFIG', __DIR__ . '/../../config/sync');
+        $this->tableRegistry = new \Simp\Pindrop\Database\PluginTableRegistry();
 
         // Enable manifest cache in production only.
         // In development YAML files are parsed fresh every request so changes
@@ -263,6 +265,7 @@ class PluginManager
         $this->pluginMenus             = $manifest['pluginMenus']             ?? [];
         $this->pluginTemplatesSources  = $manifest['pluginTemplatesSources']  ?? [];
         $this->pluginPermissions       = $manifest['pluginPermissions']       ?? [];
+        $this->pluginRoles             = $manifest['pluginRoles']             ?? [];
 
         return true;
     }
@@ -460,6 +463,28 @@ class PluginManager
                 }
             }
 
+            // Load plugin role definitions if user.roles.yml exists
+            $rolesFile = $plugin['path'] . '/user.roles.yml';
+            if (file_exists($rolesFile)) {
+                $roles = Yaml::parseFile($rolesFile);
+                if (is_array($roles)) {
+                    foreach ($roles as $roleKey => $roleDef) {
+                        // Core roles cannot be redefined by plugins
+                        $coreRoles = ['super_admin', 'admin', 'moderator', 'user', 'anonymous'];
+                        if (in_array($roleKey, $coreRoles, true)) {
+                            error_log("[Pindrop] Plugin '$pluginId' attempted to redefine core role '$roleKey' — skipped.");
+                            continue;
+                        }
+                        if (!isset($this->pluginRoles[$roleKey])) {
+                            $this->pluginRoles[$roleKey] = array_merge(
+                                $roleDef,
+                                ['defined_by' => $pluginId]
+                            );
+                        }
+                    }
+                }
+            }
+
             // Load plugin permissions if user.permissions.yml exists
             $permissionsFile = $plugin['path'] . '/user.permissions.yml';
             if (file_exists($permissionsFile)) {
@@ -479,6 +504,17 @@ class PluginManager
                             }
                         }
                     }
+                }
+            }
+
+            // Register plugin tables with PluginTableRegistry
+            if ($this->tableRegistry !== null) {
+                try {
+                    $this->tableRegistry->registerPluginTables($pluginId, $plugin['path']);
+                    $this->tableRegistry->registerDbPermissions($pluginId, $plugin['path']);
+                } catch (\RuntimeException $e) {
+                    // Table conflict — log and continue so other plugins still load
+                    error_log("[Pindrop] Table registry error for plugin '$pluginId': " . $e->getMessage());
                 }
             }
 
@@ -990,6 +1026,36 @@ class PluginManager
      * Get raw permissions array as loaded from all user.permissions.yml files.
      * Structure: ['role' => ['permission_key' => ['title' => ..., 'description' => ...]]]
      */
+    public function setTableRegistry(\Simp\Pindrop\Database\PluginTableRegistry $registry): void
+    {
+        $this->tableRegistry = $registry;
+    }
+
+    public function getPluginRoles(): array
+    {
+        return $this->pluginRoles;
+    }
+
+    /**
+     * Get all roles — core + plugin-defined.
+     */
+    public function getAllRoles(): array
+    {
+        $coreRoles = [
+            'super_admin' => ['label' => 'Super Admin',  'description' => 'Full system access.',         'parent' => null],
+            'admin'       => ['label' => 'Admin',        'description' => 'Administrative access.',      'parent' => null],
+            'moderator'   => ['label' => 'Moderator',    'description' => 'Content moderation access.',  'parent' => 'user'],
+            'user'        => ['label' => 'User',         'description' => 'Authenticated user.',         'parent' => null],
+            'anonymous'   => ['label' => 'Anonymous',    'description' => 'Unauthenticated visitor.',    'parent' => null],
+        ];
+        return array_merge($coreRoles, $this->pluginRoles);
+    }
+
+    public function getTableRegistry(): ?\Simp\Pindrop\Database\PluginTableRegistry
+    {
+        return $this->tableRegistry;
+    }
+
     public function getPluginPermissions(): array
     {
         return $this->pluginPermissions;

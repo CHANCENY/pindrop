@@ -5,6 +5,7 @@ CREATE TABLE `user_session` (
     `user_id` INT(11) NOT NULL,
     `ip_address` VARCHAR(45) NULL,
     `user_agent` TEXT NULL,
+    `user_data` JSON NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `last_activity` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `expires_at` TIMESTAMP NOT NULL,

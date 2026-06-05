@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `date_of_birth` DATE NULL DEFAULT NULL,
     `gender` ENUM('male','female','other','prefer_not_to_say') NULL DEFAULT NULL,
     `status` ENUM('active','inactive','suspended','banned','pending') NOT NULL DEFAULT 'pending',
-    `role` ENUM('super_admin','admin','moderator','user','guest') NOT NULL DEFAULT 'user',
+    `role` VARCHAR(100) NOT NULL DEFAULT 'user',
     `permissions` JSON NULL DEFAULT NULL,
     `last_login_at` DATETIME NULL DEFAULT NULL,
     `last_login_ip` VARCHAR(45) NULL DEFAULT NULL,

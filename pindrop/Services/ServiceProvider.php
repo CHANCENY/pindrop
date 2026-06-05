@@ -6,7 +6,6 @@ namespace Simp\Pindrop\Services;
 
 use DI\Container;
 use DI\ContainerBuilder;
-use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Logger\LoggerServiceProvider;
 use Simp\Pindrop\Mail\MailServiceProvider;
 use Simp\Pindrop\Mysql\SchemaServiceProvider;
@@ -15,7 +14,6 @@ use Simp\Pindrop\Routing\RoutingServiceProvider;
 use Simp\Pindrop\Theme\ThemeServiceProvider;
 use Simp\Pindrop\Templating\TwigServiceProvider;
 use Simp\Pindrop\Services\UserServiceProvider;
-use Simp\Pindrop\Content\ContentServiceProvider;
 use Simp\Pindrop\Services\WhoopsServiceProvider;
 use Simp\Pindrop\Services\MenuServiceProvider;
 use Simp\Pindrop\Session\SessionServiceProvider;
@@ -50,7 +48,6 @@ class ServiceProvider
         $this->providers[] = new TwigServiceProvider($envProvider);
         $this->providers[] = new RoutingServiceProvider($envProvider);
         $this->providers[] = new UserServiceProvider($envProvider);
-        $this->providers[] = new ContentServiceProvider($envProvider);
         $this->providers[] = new SessionServiceProvider($envProvider);
     }
     
@@ -136,9 +133,7 @@ class ServiceProvider
                 $provider->configureContainer($builder);
             } elseif ($provider instanceof UserServiceProvider) {
                 $provider->configureContainer($builder);
-            } elseif ($provider instanceof ContentServiceProvider) {
-                $provider->configureContainer($builder);
-            } elseif ($provider instanceof SessionServiceProvider) {
+            }elseif ($provider instanceof SessionServiceProvider) {
                 $provider->configureContainer($builder);
             }
         }

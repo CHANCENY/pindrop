@@ -127,8 +127,8 @@ class File
      */
     public function loadById(int $id): ?self
     {
-        $sql = "SELECT * FROM file_managed WHERE id = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $id);
+  
+        $data = $this->database->table('file_managed')->where('id', $id)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -143,8 +143,7 @@ class File
      */
     public function loadByUuidInstance(string $uuid): ?self
     {
-        $sql = "SELECT * FROM file_managed WHERE uuid = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $uuid);
+        $data = $this->database->table('file_managed')->where('uuid', '=', $uuid)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -159,8 +158,7 @@ class File
      */
     public function loadByUriInstance(string $uri): ?self
     {
-        $sql = "SELECT * FROM file_managed WHERE uri = ? AND deleted_at IS NULL";
-        $data = $this->database->fetch($sql, $uri);
+        $data = $this->database->table('file_managed')->where('uri', '=', $uri)->whereNull('deleted_at')->first();
         
         if ($data) {
             $this->fromArray($data);
@@ -172,7 +170,8 @@ class File
 
     public static function count(mixed $database)
     {
-        return $database->query("SELECT COUNT(*) as total FROM file_managed WHERE deleted_at IS NULL")->fetchColumn();
+
+        return $database->table('file_managed')->whereNull('deleted_at')->count();
     }
 
     /**
@@ -233,7 +232,7 @@ class File
             'updated_at' => $this->updatedAt->format('Y-m-d H:i:s')
         ];
 
-        $this->id = $this->database->insert('file_managed', $data);
+        $this->id = $this->database->table('file_managed')->insert($data);
         
         if ($this->id) {
             $this->logger->info('File created', [
@@ -277,8 +276,8 @@ class File
             'updated_at' => $this->updatedAt->format('Y-m-d H:i:s')
         ];
 
-        $result = $this->database->update('file_managed', $data, 'id = ?', $this->id);
-        
+        $result = $this->database->table('file_managed')->where('id', '=', $this->id)->update($data);
+
         if ($result) {
             $this->logger->info('File updated', [
                 'id' => $this->id,
@@ -304,7 +303,7 @@ class File
             $this->deletedAt = new \DateTime();
             
             $data = ['deleted_at' => $this->deletedAt->format('Y-m-d H:i:s')];
-            $result = $this->database->update('file_managed', $data, 'id = ?', $this->id);
+            $result = $this->database->table('file_managed')->where('id', '=', $this->id)->update($data);
 
             if ($result) {
                 $this->logger->info('File deleted', [
@@ -336,15 +335,7 @@ class File
 
         try {
             // Check if DatabaseService has a delete method, otherwise use query
-            if (method_exists($this->database, 'delete')) {
-                $result = $this->database->delete('file_managed', 'id = ?', $this->id);
-            } else {
-                // Fallback to direct query
-                $sql = "DELETE FROM file_managed WHERE id = ?";
-                $stmt = $this->database->query($sql, $this->id);
-                $result = $stmt instanceof \PDOStatement ? $stmt->rowCount() > 0 : false;
-            }
-
+            $result = $this->database->table('file_managed')->where('id', '=', $this->id)->delete();
             if ($result) {
                 $this->logger->info('File permanently deleted', [
                     'id' => $this->id,
@@ -379,8 +370,8 @@ class File
      */
     public function loadByUserId(int $uid): array
     {
-        $sql = "SELECT * FROM file_managed WHERE uid = ? AND deleted_at IS NULL ORDER BY created_at DESC";
-        $files = $this->database->fetchAll($sql, $uid);
+   
+        $files = $this->database->table('file_managed')->where('uid', '=', $uid)->whereNull('deleted_at')->orderBy('created_at', 'desc')->get();
         
         return array_map(function ($fileData) {
             return new self($fileData, $this->database, $this->logger);
@@ -401,9 +392,8 @@ class File
      */
     public function loadByEntityTypeAndId(string $entityType, int $entityId): array
     {
-        $sql = "SELECT * FROM file_managed WHERE entity_type = ? AND entity_id = ? AND deleted_at IS NULL ORDER BY created_at DESC";
-        $files = $this->database->fetchAll($sql, $entityType, $entityId);
-        
+        $files = $this->database->table('file_managed')->where('entity_type', '=', $entityType)->where('entity_id', '=', $entityId)->whereNull('deleted_at')->orderBy('created_at', 'desc')->get();
+
         return array_map(function ($fileData) {
             return new self($fileData, $this->database, $this->logger);
         }, $files);
@@ -416,9 +406,7 @@ class File
     {
         // Use the database function if available
         try {
-            $sql = "SELECT get_file_url(?) as url";
-            $result = $this->database->fetch($sql, $this->uri);
-            return $result['url'] ?? $this->uri;
+            return $this->uri;
         } catch (\Exception $e) {
            return \getAppContainer()->get('filesystem')->getPublicUrl($this->uri);
         }
@@ -430,9 +418,8 @@ class File
     public function getFormattedSize(): string
     {
         try {
-            $sql = "SELECT format_file_size(?) as formatted_size";
-            $result = $this->database->fetch($sql, $this->filesize);
-            return $result['formatted_size'] ?? $this->formatFileSize($this->filesize);
+         
+            return  $this->formatFileSize($this->filesize);
         } catch (\Exception $e) {
             return $this->formatFileSize($this->filesize);
         }

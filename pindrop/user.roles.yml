@@ -1,0 +1,28 @@
+# Pindrop Core — Built-in Role Definitions
+# These roles are hardcoded in the system and cannot be redefined by plugins.
+# Plugins may ADD new roles via their own user.roles.yml.
+
+super_admin:
+  label: 'Super Admin'
+  description: 'Full unrestricted access to all system features and data.'
+  parent: null
+
+admin:
+  label: 'Admin'
+  description: 'Full administrative access except core system bypass.'
+  parent: null
+
+moderator:
+  label: 'Moderator'
+  description: 'Content moderation and limited user management.'
+  parent: 'user'
+
+user:
+  label: 'User'
+  description: 'Standard authenticated user with basic content capabilities.'
+  parent: null
+
+anonymous:
+  label: 'Anonymous'
+  description: 'Unauthenticated visitor. Read-only public access.'
+  parent: null

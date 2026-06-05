@@ -43,7 +43,7 @@ class UserVerification
 
     public static function currentRecentsCount(DatabaseService $database)
     {
-        return $database->query("SELECT COUNT(*) FROM user_session WHERE last_activity > DATE_SUB(NOW(), INTERVAL 5 DAY)")->fetchColumn();
+        return $database->table('user_session')->where('last_activity', '>', (new DateTime())->sub(new \DateInterval('P5D'))->format('Y-m-d H:i:s'))->count();
     }
 
     public function getUserId(): ?int
@@ -182,7 +182,7 @@ class UserVerification
                 'user_agent' => $this->userAgent
             ];
 
-            $this->id = $this->db->insert('user_verification_tokens', $data);
+            $this->id = $this->db->table('user_verification_tokens')->insert($data);
 
             if ($this->id) {
                 $this->logger->info('User verification token created successfully', [
@@ -221,7 +221,7 @@ class UserVerification
                 'used_at' => (new DateTime())->format('Y-m-d H:i:s')
             ];
 
-            $affected = $this->db->update('user_verification_tokens', $data, 'id',  $this->id);
+            $affected = $this->db->table('user_verification_tokens')->where('id', '=', $this->id)->update($data);
 
             if ($affected > 0) {
                 $this->used = true;
@@ -254,7 +254,7 @@ class UserVerification
                 'token_type' => $this->tokenType
             ]);
 
-            $affected = $this->db->delete('user_verification_tokens', 'id', $this->id);
+            $affected = $this->db->table('user_verification_tokens')->where('id', '=', $this->id)->delete();
 
             if ($affected > 0) {
                 $this->logger->info('Verification token deleted successfully', [
@@ -279,8 +279,7 @@ class UserVerification
         try {
             $logger->debug('Finding verification token by token', ['token' => substr($token, 0, 8) . '...']);
 
-            $sql = "SELECT * FROM user_verification_tokens WHERE token = :token LIMIT 1";
-            $result = $db->fetch($sql,  $token);
+            $result = $db->table('user_verification_tokens')->where('token', '=', $token)->first();
 
             if ($result) {
                 $verification = new self($db, $logger);
@@ -311,10 +310,7 @@ class UserVerification
                 'token_type' => $tokenType
             ]);
 
-            $sql = "SELECT * FROM user_verification_tokens 
-                    WHERE user_id = :user_id AND token_type = :token_type AND used = 0 
-                    ORDER BY created_at DESC LIMIT 1";
-            $result = $db->fetch($sql, ['user_id' => $userId, 'token_type' => $tokenType]);
+            $result = $db->table('user_verification_tokens')->where('user_id', '=', $userId)->where('token_type', '=', $tokenType)->where('used', '=', 0)->orderBy('created_at', 'DESC')->limit(1)->first();
 
             if ($result) {
                 $verification = new self($db, $logger);
@@ -349,10 +345,7 @@ class UserVerification
                 'token_type' => $tokenType
             ]);
 
-            $sql = "SELECT * FROM user_verification_tokens 
-                    WHERE email = :email AND token_type = :token_type AND used = 0 
-                    ORDER BY created_at DESC LIMIT 1";
-            $result = $db->fetch($sql, ['email' => $email, 'token_type' => $tokenType]);
+            $result = $db->table('user_verification_tokens')->where('email', '=', $email)->where('token_type', '=', $tokenType)->where('used', '=', 0)->orderBy('created_at', 'DESC')->limit(1)->first();
 
             if ($result) {
                 $verification = new self($db, $logger);
@@ -384,8 +377,7 @@ class UserVerification
         try {
             $logger->debug('Cleaning up expired verification tokens');
 
-            $sql = "DELETE FROM user_verification_tokens WHERE expires_at < NOW()";
-            $affected = $db->query($sql)->fetch();
+            $affected = $db->table('user_verification_tokens')->where('expires_at', '<', (new DateTime())->format('Y-m-d H:i:s'))->delete();
 
             $logger->info('Expired verification tokens cleaned up', ['count' => $affected]);
             return $affected;
@@ -406,11 +398,9 @@ class UserVerification
             ]);
 
             if ($tokenType) {
-                $sql = "DELETE FROM user_verification_tokens WHERE user_id = :user_id AND token_type = :token_type";
-                $affected = $db->query($sql, user_id: $userId, token_type: $tokenType);
+                $affected = $db->table('user_verification_tokens')->where('user_id', '=', $userId)->where('token_type', '=', $tokenType)->delete();
             } else {
-                $sql = "DELETE FROM user_verification_tokens WHERE user_id = :user_id";
-                $affected = $db->query($sql, user_id: $userId);
+                $affected = $db->table('user_verification_tokens')->where('user_id', '=', $userId)->delete();
             }
 
             $logger->info('All user verification tokens revoked', [
@@ -418,7 +408,7 @@ class UserVerification
                 'token_type' => $tokenType,
                 'count' => $affected
             ]);
-            return $affected->rowCount();
+            return $affected;
         } catch (\Exception $e) {
             $logger->error('Failed to revoke all user verification tokens', [
                 'error' => $e->getMessage(),

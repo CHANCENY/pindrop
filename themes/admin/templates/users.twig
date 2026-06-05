@@ -11,6 +11,7 @@
             <button onclick="openImportModal()" class="admin-button admin-button-secondary">
                 <i class="admin-icon-upload"></i> Import Users
             </button>
+            <a href="{{ url('admin.users.permissions.all') }}" class="admin-button admin-button-secondary">Permissions</a>
             <a href="/admin/users/create" class="admin-button admin-button-primary">
                 <i class="admin-icon-plus"></i> Add User
             </a>
@@ -98,6 +99,7 @@
                                 <a href="/admin/users/{{ user_item.id }}/delete" style="display: block; padding: 0.5rem 1rem; color: #ef4444; text-decoration: none; font-size: 0.875rem; white-space: nowrap;">
                                     🗑️ Delete
                                 </a>
+                                <a href="{{ url('admin.users.permissions', {user_id: user_item.id}) }}" style="display: block; padding: 0.5rem 1rem; color: #000; text-decoration: none; font-size: 0.875rem; white-space: nowrap;">Manage Permissions</a>
                             </div>
                         </div>
                     </td>
