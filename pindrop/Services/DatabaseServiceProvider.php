@@ -83,17 +83,21 @@ class DatabaseServiceProvider
                 $logger = $container->has(LoggerInterface::class)
                     ? $container->get(LoggerInterface::class)
                     : null;
-                // DB_PERMISSION_GUARD=false disables all checks (CLI/migrations)
-                $guardEnabled = filter_var(getenv('DB_PERMISSION_GUARD') ?: 'true', FILTER_VALIDATE_BOOLEAN);
 
-                // PluginTableRegistry tracks table→plugin ownership.
-                // Populated later in bootstrap.inc after PluginManager loads.
-                $registry = new PluginTableRegistry();
-                $guard    = $guardEnabled
-                    ? new DatabasePermissionGuard(new CurrentUserResolver(), $registry)
+                // The PluginTableRegistry is owned by PluginManager — it is
+                // populated during plugin discovery (loadInstalledPlugins).
+                // We retrieve the SAME instance from the container so that
+                // DatabasePermissionGuard and PluginManager share one registry.
+                // At this point PluginManager may not be built yet, so we pass
+                // null and let bootstrap.inc inject the real instance after the
+                // container is fully assembled.
+                $guardEnabled = filter_var(getenv('DB_PERMISSION_GUARD') ?: 'true', FILTER_VALIDATE_BOOLEAN);
+                $guard = $guardEnabled
+                    ? new DatabasePermissionGuard(new CurrentUserResolver(), new PluginTableRegistry())
                     : null;
 
-                return new DatabaseService($config, $logger, $container, $guard, $registry);
+                $service = new DatabaseService($config, $logger, $container, $guard, null);
+                return $service;
             },
 
             /**
@@ -105,14 +109,15 @@ class DatabaseServiceProvider
              * PDO connection (for direct access if needed)
              */
             'database.table.registry' => function (\DI\Container $container) {
-                // The registry is owned by the DatabaseService instance
-                $db = $container->get(DatabaseService::class);
-                return $db->getDatabase() ? new PluginTableRegistry() : new PluginTableRegistry();
+                // Return the PluginTableRegistry owned by PluginManager.
+                // This is the authoritative registry populated during plugin
+                // discovery — all permission lookups must use this instance.
+                $pluginManager = $container->get('plugin.manager');
+                return $pluginManager->getTableRegistry();
             },
 
             \PDO::class => function (\DI\Container $container) {
-                $database = $container->get(DatabaseService::class);
-                return $database->getConnection();
+                return $container->get(DatabaseService::class)->getPdo();
             },
 
             /**
@@ -311,151 +316,3 @@ class DatabaseServiceProvider
     }
 }
 
-/**
- * Simple Query Builder Helper
- */
-class QueryBuilderHelper
-{
-    private string $table;
-    private DatabaseService $database;
-    private array $wheres = [];
-    private array $orders = [];
-    private ?int $limit = null;
-    private ?int $offset = null;
-
-    public function __construct(string $table, DatabaseService $database)
-    {
-        $this->table = $table;
-        $this->database = $database;
-    }
-
-    public function where(string $column, string $operator, mixed $value): self
-    {
-        $this->wheres[] = [$column, $operator, $value];
-        return $this;
-    }
-
-    public function orderBy(string $column, string $direction = 'ASC'): self
-    {
-        $this->orders[] = [$column, $direction];
-        return $this;
-    }
-
-    public function limit(int $limit): self
-    {
-        $this->limit = $limit;
-        return $this;
-    }
-
-    public function offset(int $offset): self
-    {
-        $this->offset = $offset;
-        return $this;
-    }
-
-    public function get(): array
-    {
-        $sql = $this->buildQuery();
-        $params = $this->buildParams();
-        
-        return $this->database->fetchAll($sql, ...$params);
-    }
-
-    public function first(): ?array
-    {
-        $sql = $this->buildQuery();
-        $params = $this->buildParams();
-        
-        return $this->database->fetch($sql, ...$params);
-    }
-
-    public function count(): int
-    {
-        $sql = "SELECT COUNT(*) as count FROM {$this->table}";
-        $params = [];
-        
-        if (!empty($this->wheres)) {
-            $sql .= " WHERE " . implode(' AND ', array_fill(0, count($this->wheres), '?'));
-            foreach ($this->wheres as [$column, $operator, $value]) {
-                $params[] = $value;
-            }
-        }
-        
-        $result = $this->database->fetch($sql, ...$params);
-        return $result['count'] ?? 0;
-    }
-
-    public function insert(array $data): int
-    {
-        return $this->database->insert($this->table, $data);
-    }
-
-    public function update(array $data): int
-    {
-        $where = $this->buildWhereClause();
-        $params = array_merge(array_values($data), $this->buildWhereParams());
-        
-        return $this->database->update($this->table, $data, $where, ...$params);
-    }
-
-    public function delete(): int
-    {
-        $where = $this->buildWhereClause();
-        $params = $this->buildWhereParams();
-        
-        $sql = "DELETE FROM {$this->table} WHERE $where";
-        $stmt = $this->database->query($sql, ...$params);
-        
-        return $stmt instanceof \PDOStatement ? $stmt->rowCount() : 0;
-    }
-
-    private function buildQuery(): string
-    {
-        $sql = "SELECT * FROM {$this->table}";
-        
-        if (!empty($this->wheres)) {
-            $sql .= " WHERE " . implode(' AND ', array_fill(0, count($this->wheres), '?'));
-        }
-        
-        if (!empty($this->orders)) {
-            $orderClauses = array_map(function($order) {
-                list($col, $dir) = $order;
-                return "$col $dir";
-            }, $this->orders);
-            $sql .= " ORDER BY " . implode(', ', $orderClauses);
-        }
-        
-        if ($this->limit !== null) {
-            $sql .= " LIMIT {$this->limit}";
-        }
-        
-        if ($this->offset !== null) {
-            $sql .= " OFFSET {$this->offset}";
-        }
-        
-        return $sql;
-    }
-
-    private function buildParams(): array
-    {
-        return $this->buildWhereParams();
-    }
-
-    private function buildWhereClause(): string
-    {
-        if (empty($this->wheres)) {
-            return '1=1';
-        }
-        
-        return implode(' AND ', array_fill(0, count($this->wheres), '?'));
-    }
-
-    private function buildWhereParams(): array
-    {
-        $params = [];
-        foreach ($this->wheres as $where) {
-            $params[] = $where[2];
-        }
-        return $params;
-    }
-}

@@ -123,6 +123,31 @@ $container = $serviceProvider->buildContainer();
 $pluginManager = $container->get('plugin.manager');
 $container->get('plugin.services.register');
 
+// ── Sync PluginTableRegistry from PluginManager into DatabaseService ─────────
+// PluginManager creates and populates its own PluginTableRegistry during
+// loadInstalledPlugins() (which already ran above inside buildContainer).
+// We retrieve that SAME instance and inject it into DatabaseService so
+// DatabasePermissionGuard uses the fully-populated registry.
+try {
+    $pluginManager = $container->get('plugin.manager');
+    $dbService     = $container->get('database');
+    $registry      = $pluginManager->getTableRegistry();
+
+    if ($registry !== null) {
+        // Inject the populated registry into DatabaseService
+        $dbService->setTableRegistry($registry);
+
+        // Also update the guard inside DatabaseService with the same registry
+        $guard = new \Simp\Pindrop\Database\DatabasePermissionGuard(
+            new \Simp\Pindrop\Database\CurrentUserResolver(),
+            $registry
+        );
+        $dbService->setPermissionGuard($guard);
+    }
+} catch (\Throwable $e) {
+    error_log("[Pindrop] Failed to sync PluginTableRegistry: " . $e->getMessage());
+}
+
 // ── Database permission guard — register current user resolver ──────────────
 // Late-binding closure so the DB layer never directly imports User/Session.
 \Simp\Pindrop\Database\CurrentUserResolver::register(function () use ($container) {

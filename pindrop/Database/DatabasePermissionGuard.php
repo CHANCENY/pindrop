@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Database;
 
-use Simp\Pindrop\Entity\User\User;
-
 /**
  * DatabasePermissionGuard
  *
@@ -135,8 +133,6 @@ class DatabasePermissionGuard
             return;
         }
 
-        $userPermissions = $this->getRolePermissionKeys($this->userResolver->getCurrentUser());
-        dump($op, $table, $role, $userPermissions);
         throw new DatabasePermissionException(
             "Role '$role' cannot perform '$op' on core table '$table'. "
             . "Only super_admin or system context may access core tables.",
@@ -149,9 +145,9 @@ class DatabasePermissionGuard
      * Returns flat array of permission key strings, e.g.
      *   ['db.wiki.read', 'db.wiki.write', 'can_create_wiki', ...]
      */
-    private function getRolePermissionKeys(User $user): array
+    private function getRolePermissionKeys(?object $user): array
     {
-        if (!method_exists($user, 'getPermissions')) {
+        if ($user === null || !method_exists($user, 'getPermissions')) {
             return [];
         }
         $perms = $user->getPermissions();
