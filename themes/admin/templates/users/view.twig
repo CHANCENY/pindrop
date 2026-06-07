@@ -92,7 +92,7 @@
                     </div>
                     <div class="admin-detail-item">
                         <label class="admin-detail-label">Last Login:</label>
-                        <span class="admin-detail-value">{{ user.lastLoginAt|default('Never') }}</span>
+                        <span class="admin-detail-value">{{ user.lastLoginAt.format('d-m-y')|default('Never') }}</span>
                     </div>
                     <div class="admin-detail-item">
                         <label class="admin-detail-label">Last Login IP:</label>
@@ -118,7 +118,7 @@
                         <span class="admin-detail-value">
                             {% if user.emailVerified %}
                                 <span class="admin-status admin-status-active">Verified</span>
-                                <small>({{ user.emailVerifiedAt|default('Unknown date') }})</small>
+                                <small>({{ user.emailVerifiedAt.format('d-m-y')|default('Unknown date') }})</small>
                             {% else %}
                                 <span class="admin-status admin-status-disabled">Not Verified</span>
                             {% endif %}
@@ -129,7 +129,7 @@
                         <span class="admin-detail-value">
                             {% if user.phoneVerified %}
                                 <span class="admin-status admin-status-active">Verified</span>
-                                <small>({{ user.phoneVerifiedAt|default('Unknown date') }})</small>
+                                <small>({{ user.phoneVerifiedAt.format('d-m-y')|default('Unknown date') }})</small>
                             {% else %}
                                 <span class="admin-status admin-status-disabled">Not Verified</span>
                             {% endif %}
@@ -140,7 +140,7 @@
                         <span class="admin-detail-value">
                             {% if user.isVerified %}
                                 <span class="admin-status admin-status-active">Verified</span>
-                                <small>({{ user.verifiedAt|default('Unknown date') }})</small>
+                                <small>({{ user.verifiedAt.format('d-m-y')|default('Unknown date') }})</small>
                             {% else %}
                                 <span class="admin-status admin-status-disabled">Not Verified</span>
                             {% endif %}

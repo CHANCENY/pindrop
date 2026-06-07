@@ -346,12 +346,13 @@ class AdminController extends ControllerBase
     public function viewUser(Request $request, string $route_name, array $options): Response
     {
         $user_id = $request->query->get('user_id');
-        $user = User::loadById($user_id, $this->database);
+        $user = User::loadById((int)$user_id, $this->database);
 
         if (!$user) {
             return $this->redirect('/admin/users');
         }
 
+    
         return $this->renderTwig('admin/users/view.twig', [
             'page_title' => 'User Details',
             'user' => $user
@@ -1142,7 +1143,24 @@ Generated: " . date('Y-m-d H:i:s') . "
                     );
 
                     if ($verification) {
-                        // TODO: Send verification email
+                       
+                        $content = $this->renderTwig("@admin/emails/verify_email.twig",[
+                            'user' => $user,
+                            'verification_link' => $request->getSchemeAndHttpHost(). Url::routeByName('user.verify_email',[
+                                'token' => $verification->getToken()
+                            ])
+                        ]);
+
+                        /**
+                         * @var MailManager
+                         */
+                        $mailManager = getAppContainer()->get('mail.manager');
+                        $mailManager->sendHtml(
+                            $verification->getEmail(),
+                            $_ENV['MAIL_VERIFICATION_SUBJECT'] ?? "Verify your email",
+                            $content->getContent()
+                        );
+
                         getAppContainer()->get('logger')->info('Registration successful, verification email sent', [
                             'user_id' => $user->getId(),
                             'email' => $user->getEmail()
