@@ -35,7 +35,7 @@ class RoutingServiceProvider
             'route.provider' => \DI\factory([self::class, 'buildRouteProvider']),
             
             // Route manager (static facade)
-            'route.manager' => fn(\DI\Container $c) => RouteManager::class,
+            'route.manager' => fn(\DI\Container $c) => new RouteManager(),
             
             // Plugin routes handler
             'plugin.routes' => function(\DI\Container $c) { return new PluginRoutes($c->get('route.provider'), $c); },

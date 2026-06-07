@@ -71,7 +71,6 @@ class NullLogger implements LoggerInterface
     public function error(string $message, array $context = []): void
     {
         // Do nothing
-        dump($message, $context);
     }
     
     /**

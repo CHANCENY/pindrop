@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Database;
 
+use Simp\Pindrop\Entity\User\User;
+
 /**
  * CurrentUserResolver
  *
@@ -45,7 +47,7 @@ class CurrentUserResolver
      * Get the currently authenticated user, or null if unauthenticated
      * or in a system context (CLI, migrations).
      */
-    public function getCurrentUser(): ?object
+    public function getCurrentUser(): User|null
     {
         if (self::$resolver === null) {
             return null;

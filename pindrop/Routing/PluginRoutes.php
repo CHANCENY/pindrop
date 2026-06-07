@@ -125,7 +125,7 @@ class PluginRoutes
             $options['_permissions'] = [];
             
             foreach ($permissions as $role) {
-                $options['_permissions'][$role . '___required'] = true;
+                $options['_permissions'][] = $role;
             }
         }
         

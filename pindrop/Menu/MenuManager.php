@@ -3,6 +3,7 @@
 namespace Simp\Pindrop\Menu;
 
 use DI\Container;
+use Simp\Pindrop\Entity\User\CurrentUser;
 use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Plugin\PluginManager;
 
@@ -23,7 +24,7 @@ class MenuManager
         $this->pluginManager = $pluginManager;
         $this->container = $container;
         $this->initializeMenus();
-        $menu = \appEvents()->invokeEvents(Events::MENUS_LOADED,[&$this]);
+        $menu = \appEvents()->invokeEvents(Events::MENUS_LOADED, [&$this]);
     }
 
     /**
@@ -42,7 +43,7 @@ class MenuManager
                     foreach ($menus['groups'] as $groupName => $groupMenus) {
                         foreach ($groupMenus as $menuId => $menuConfig) {
                             // Check if current user has access to this menu
-                            if ($this->hasAccessToMenu($menuConfig, $currentUserRole)) {
+                            if ($this->hasAccessToMenu($menuConfig)) {
                                 $this->menus[$menuId] = [
                                     'id' => $menuId,
                                     'title' => $menuConfig['title'] ?? $menuId,
@@ -64,7 +65,7 @@ class MenuManager
                     // Handle legacy flat structure for backward compatibility
                     foreach ($menus as $menuId => $menuConfig) {
                         // Check if current user has access to this menu
-                        if ($this->hasAccessToMenu($menuConfig, $currentUserRole)) {
+                        if ($this->hasAccessToMenu($menuConfig)) {
                             $this->menus[$menuId] = [
                                 'id' => $menuId,
                                 'title' => $menuConfig['title'] ?? $menuId,
@@ -85,35 +86,43 @@ class MenuManager
     /**
      * Check if user has access to menu based on role configuration
      */
-    private function hasAccessToMenu(array $menuConfig, ?string $userRole): bool
+    private function hasAccessToMenu(array $menuConfig): bool
     {
         // Handle new structure
-        $requiredRoles = $menuConfig['roles'] ?? null;
-        
+        $requiredRoles = $menuConfig['roles'] ?? [];
+        $permissions = $menuConfig['permissions'] ?? [];
+
         // Handle legacy structure
         if ($requiredRoles === null) {
             $requiredRoles = $menuConfig['attributes']['role'] ?? null;
         }
 
-        // If no role required, everyone has access
-        if (!$requiredRoles) {
+        // So we validate again permissions first if available.
+        if (!empty($permissions)) {
+
+            if (!empty(array_intersect($permissions, $this->getCurrentUserPermissions()))) {
+                return true;
+            }
+
+        }
+
+
+        // Lets check by roles
+        if (in_array($this->getCurrentUserRole(), $requiredRoles)) {
             return true;
         }
 
-        // If no user role, deny access
-        if (!$userRole) {
+        // check if current user is super admin
+        /**
+         * @var ?CurrentUser
+         */
+        $current_user = getAppContainer()->get('current_user');
+
+        if ($current_user === null)
             return false;
-        }
 
-        // Support multiple roles (array or comma-separated string)
-        $allowedRoles = $requiredRoles;
-        if (is_string($requiredRoles)) {
-            $allowedRoles = array_map('trim', explode(',', $requiredRoles));
-        }
 
-        // Allow access if user role is in allowed roles
-        // Admin users can access all menus (fallback for admin-level access)
-        return in_array($userRole, (array) $allowedRoles) || $userRole === 'admin';
+        return $current_user->getUser()->isAdmin();
     }
 
     /**
@@ -205,6 +214,25 @@ class MenuManager
 
         return null;
     }
+
+
+    /**
+     * Get current user role
+     */
+    private function getCurrentUserPermissions(): ?array
+    {
+        try {
+            if ($this->container->has('current_user')) {
+                $user = $this->container->get('current_user');
+                return $user?->getUser()?->getPermissions() ?? [];
+            }
+        } catch (\Exception $e) {
+            // User not available
+        }
+
+        return null;
+    }
+
 
     /**
      * Get DI container

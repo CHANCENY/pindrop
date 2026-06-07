@@ -42,7 +42,7 @@
                 </div>
                 {% endif %}
                 <div class="admin-user-menu">
-                    <span class="admin-user-name">{{ user.display_name or user.username }}</span>
+                    <a href="{{ url('users.view.user',{user_id: user.id}) }}"><span class="admin-user-name">{{ user.display_name ?? user.username }}</span></a>
                     <a href="/user/logout" class="admin-logout">Logout</a>
                 </div>
             </div>

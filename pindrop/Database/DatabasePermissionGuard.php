@@ -133,6 +133,10 @@ class DatabasePermissionGuard
             return;
         }
 
+        if ($this->userResolver->getCurrentUser()->hasPermission('db.system.read')) {
+            return;
+        }
+
         throw new DatabasePermissionException(
             "Role '$role' cannot perform '$op' on core table '$table'. "
             . "Only super_admin or system context may access core tables.",

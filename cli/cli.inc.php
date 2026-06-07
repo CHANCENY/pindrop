@@ -30,10 +30,6 @@ function appEvents(): EventsManager
     return $eventsManager;
 }
 
-
-$factory = $container->get('content.factory');
-
-
 // Allow CLI only
 if (php_sapi_name() !== 'cli') {
     exit('This script must be run from the command line.');

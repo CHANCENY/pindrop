@@ -855,7 +855,11 @@ class User
     public function setDateOfBirth(?\DateTime $dateOfBirth): void { $this->dateOfBirth = $dateOfBirth; }
     public function setGender(?string $gender): void { $this->gender = $gender; }
     public function setStatus(string $status): void { $this->status = $status; }
-    public function setRole(string $role): void { $this->role = $role; }
+    public function setRole(string $role): void { 
+        $this->role = $role; 
+        $pluginManager = \getAppContainer()->get('plugin.manager');
+        $this->permissions = array_keys($pluginManager->getRolePermissions($this->role ?? 'user'));
+    }
     public function setPermissions(?array $permissions): void { $this->permissions = $permissions; }
     public function setLastLoginAt(?\DateTime $lastLoginAt): void { $this->lastLoginAt = $lastLoginAt; }
     public function setLastLoginIp(?string $lastLoginIp): void { $this->lastLoginIp = $lastLoginIp; }
