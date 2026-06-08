@@ -354,7 +354,7 @@ class Behaviour {
   async send(url, options) {
     if (options.method.toLocaleLowerCase() === "post") {
       const body = options.body;
-      body["_csrf_token"] = await createCsrfToken();
+      body["_csrf_token"] = await this.createCsrfToken();
       options.body = JSON.stringify(body);
     }
     return await fetch(url, options);

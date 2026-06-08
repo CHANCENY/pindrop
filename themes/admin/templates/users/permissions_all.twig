@@ -32,7 +32,7 @@
                 <td class="text-center">
 
                     <input type="checkbox" name="permissions[{{ role }}][]" value="{{ permission_key }}" {% if
-                        role_permissions[role][permission_key] is defined %} checked {% endif %}>
+                        permission_key in general_permissions[role] %} checked {% endif %}>
 
                 </td>
                 {% endfor %}
@@ -42,7 +42,9 @@
 
         </tbody>
     </table>
-
+    <button type="submit" class="admin-button admin-button-primary">
+        Save Permissions
+    </button>
 </form>
 {% endblock %}
 

@@ -38,7 +38,7 @@ class PluginTableRegistry
         'users', 'user_session', 'php_sessions', 'site_settings',
         'system_information', 'user_verification_tokens',
         'nodes', 'node_data', 'file_managed', 'logs',
-        'logs', 'theme_library_assets'
+        'logs', 'theme_library_assets','general_permissions'
     ];
 
     public function __construct()
