@@ -10,6 +10,7 @@ use Simp\Pindrop\FactorAuthentication\TwoFactorInterface;
 use Simp\Pindrop\FactorAuthentication\TwoFactorManager;
 use Simp\Pindrop\Logger\LoggerInterface;
 use Simp\Pindrop\Modules\admin\src\Plugin\TwoFactorSettings;
+use Simp\Pindrop\Permission\Permission;
 use Simp\Pindrop\Settings\Setting;
 use Simp\Pindrop\Settings\Settings;
 
@@ -859,6 +860,9 @@ class User
         $this->role = $role; 
         $pluginManager = \getAppContainer()->get('plugin.manager');
         $this->permissions = array_keys($pluginManager->getRolePermissions($this->role ?? 'user'));
+        $permissionManager = getAppContainer()->get(Permission::class);
+        $general_permissions = $permissionManager->getPermission($role ?? "user");
+        $this->permissions = array_merge($this->permissions, $general_permissions);
     }
     public function setPermissions(?array $permissions): void { $this->permissions = $permissions; }
     public function setLastLoginAt(?\DateTime $lastLoginAt): void { $this->lastLoginAt = $lastLoginAt; }
