@@ -57,6 +57,7 @@ class PluginServiceProvider
             }
             foreach ($services as $serviceName => $serviceConfig) {
                 if (!class_exists($serviceConfig['class'])) {
+                    
                     throw new \RuntimeException(
                         "Service class '{$serviceConfig['class']}' not found for plugin '{$pluginId}' service '{$serviceName}'"
                     );
@@ -67,6 +68,7 @@ class PluginServiceProvider
                 $className = $serviceConfig['class'];
                 $resolvedArgs = [];
                 foreach ($serviceConfig['arguments'] ?? [] as $arg) {
+                
                     $resolvedArgs[] = (is_string($arg) && str_starts_with($arg, '@'))
                         ? $c->get(substr($arg, 1))
                         : $arg;

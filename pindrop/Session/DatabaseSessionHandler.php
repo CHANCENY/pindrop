@@ -160,17 +160,19 @@ class DatabaseSessionHandler implements SessionHandlerInterface
             $stmt = $this->pdo->prepare(
                 'INSERT INTO php_sessions
                         (session_id, session_data, expires_at, updated_at)
-                 VALUES (:id, :data, :expires, :now)
+                 VALUES (:id, :data, :expires, :nows)
                  ON DUPLICATE KEY UPDATE
                         session_data = VALUES(session_data),
                         expires_at   = VALUES(expires_at),
                         updated_at   = VALUES(updated_at)'
             );
+           
+           
             $result = $stmt->execute([
                 ':id'      => $id,
                 ':data'    => $data,
-                ':expires' => time() + $this->lifetime,
-                ':now'     => time(),
+                ':expires' => strtotime( date('Y-m-d H:i:s', time() + $this->lifetime)),
+                ':nows'     => date('Y-m-d H:i:s'),
             ]);
             return $result;
 
@@ -182,6 +184,7 @@ class DatabaseSessionHandler implements SessionHandlerInterface
             // converts to ErrorException — the session data is lost this cycle
             // but the app stays alive.  This is equivalent to file-session
             // behaviour when the disk is full.
+            dd($e);
             return true;
         }
     }

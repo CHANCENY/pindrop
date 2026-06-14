@@ -61,22 +61,7 @@ class SessionServiceProvider
              * into a service so it can be injected and tested.
              */
             'session.storage' => function () {
-                return new class {
-                    public function add(array|string $key, mixed $value): void
-                    {
-                        SessionStorage::add($key, $value);
-                    }
-
-                    public function get(array|string $key): mixed
-                    {
-                        return SessionStorage::get($key);
-                    }
-
-                    public function remove(array|string $key): void
-                    {
-                        SessionStorage::remove($key);
-                    }
-                };
+                return new SessionStorage();
             },
 
             /**
@@ -88,7 +73,8 @@ class SessionServiceProvider
                     'cookie_name' => session_name(),
                     'backend'     => 'database',
                 ];
-            },
+            }
+            
         ]);
     }
 }

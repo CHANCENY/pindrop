@@ -48,8 +48,8 @@ class PluginManager
     // (enable / disable / install / uninstall actions) and when
     // rediscoverPlugins() runs.  In development it is never written.
     private ?string $manifestCacheFile = null;
-    private bool    $cacheEnabled      = false;
-    
+    private bool $cacheEnabled = false;
+
     public function __construct(
         EnvServiceProvider $envProvider,
         ?string $pluginRoot = null,
@@ -71,12 +71,12 @@ class PluginManager
                 mkdir($pluginCacheDir, 0755, true);
             }
             $this->manifestCacheFile = $pluginCacheDir . '/manifest.php';
-            $this->cacheEnabled      = true;
+            $this->cacheEnabled = true;
         }
 
         $this->initialize();
     }
-    
+
     /**
      * Set DI container for service registration
      */
@@ -84,7 +84,7 @@ class PluginManager
     {
         $this->container = $container;
     }
-    
+
     /**
      * Register plugin services in DI container
      */
@@ -93,14 +93,14 @@ class PluginManager
         if (!$this->container) {
             return;
         }
-        
+
         foreach ($this->pluginServices as $pluginId => $services) {
             if ($this->plugins[$pluginId]['enabled'] && $this->plugins[$pluginId]['installed']) {
                 $this->registerPluginServiceDefinitions($pluginId, $services);
             }
         }
     }
-    
+
     /**
      * Register service definitions for a specific plugin
      */
@@ -113,10 +113,10 @@ class PluginManager
                     "Service class '{$serviceConfig['class']}' not found for plugin '{$pluginId}' service '{$serviceName}'"
                 );
             }
-            
+
             // Validate service dependencies exist
             $this->validateServiceDependencies($serviceConfig, $pluginId, $serviceName);
-            
+
             // registerPluginServices() is only called from plugin.services.register
             // which runs in bootstrap.inc AFTER buildContainer() returns, so the
             // container is fully built here — safe to resolve @arguments directly.
@@ -132,7 +132,7 @@ class PluginManager
             $this->container->set($serviceName, new $className(...$resolvedArguments));
         }
     }
-    
+
     /**
      * Validate service class exists
      */
@@ -141,7 +141,7 @@ class PluginManager
         if (!class_exists($className)) {
             return false;
         }
-        
+
         try {
             $reflection = new \ReflectionClass($className);
             return $reflection->isInstantiable();
@@ -149,14 +149,14 @@ class PluginManager
             return false;
         }
     }
-    
+
     /**
      * Validate service dependencies
      */
     private function validateServiceDependencies(array $serviceConfig, string $pluginId, string $serviceName): void
     {
         $arguments = $serviceConfig['arguments'] ?? [];
-        
+
         foreach ($arguments as $argument) {
             if (is_string($argument) && str_starts_with($argument, '@')) {
                 $dependencyName = substr($argument, 1);
@@ -170,7 +170,7 @@ class PluginManager
             }
         }
     }
-    
+
     /**
      * Check if dependency is valid
      */
@@ -187,9 +187,10 @@ class PluginManager
             'filesystem.config',
             'filesystem',
             'filesystem.interface',
-            'database'
+            'database',
+            'session'
         ];
-        
+
         // Check if it's a core service
         if (in_array($dependencyName, $coreServices)) {
             return true;
@@ -198,7 +199,7 @@ class PluginManager
         $flag = false;
         // Check if it's a registered plugin service
         foreach ($this->pluginServices as $pluginService) {
-            foreach ($pluginService as $name=>$service) {
+            foreach ($pluginService as $name => $service) {
                 if ($dependencyName === $name) {
                     $flag = true;
                     break;
@@ -207,7 +208,7 @@ class PluginManager
         }
         return $flag;
     }
-    
+
     /**
      * Initialize plugin system
      */
@@ -255,17 +256,17 @@ class PluginManager
             return false;
         }
 
-        $this->plugins                 = $manifest['plugins']                 ?? [];
-        $this->enabledPlugins          = $manifest['enabledPlugins']          ?? [];
-        $this->pluginConfigs           = $manifest['pluginConfigs']           ?? [];
-        $this->pluginServices          = $manifest['pluginServices']          ?? [];
-        $this->pluginRoutes            = $manifest['pluginRoutes']            ?? [];
-        $this->pluginMiddleware        = $manifest['pluginMiddleware']        ?? [];
-        $this->pluginMysqlSchemas      = $manifest['pluginMysqlSchemas']      ?? [];
-        $this->pluginMenus             = $manifest['pluginMenus']             ?? [];
-        $this->pluginTemplatesSources  = $manifest['pluginTemplatesSources']  ?? [];
-        $this->pluginPermissions       = $manifest['pluginPermissions']       ?? [];
-        $this->pluginRoles             = $manifest['pluginRoles']             ?? [];
+        $this->plugins = $manifest['plugins'] ?? [];
+        $this->enabledPlugins = $manifest['enabledPlugins'] ?? [];
+        $this->pluginConfigs = $manifest['pluginConfigs'] ?? [];
+        $this->pluginServices = $manifest['pluginServices'] ?? [];
+        $this->pluginRoutes = $manifest['pluginRoutes'] ?? [];
+        $this->pluginMiddleware = $manifest['pluginMiddleware'] ?? [];
+        $this->pluginMysqlSchemas = $manifest['pluginMysqlSchemas'] ?? [];
+        $this->pluginMenus = $manifest['pluginMenus'] ?? [];
+        $this->pluginTemplatesSources = $manifest['pluginTemplatesSources'] ?? [];
+        $this->pluginPermissions = $manifest['pluginPermissions'] ?? [];
+        $this->pluginRoles = $manifest['pluginRoles'] ?? [];
 
         return true;
     }
@@ -277,18 +278,18 @@ class PluginManager
     private function writeManifestCache(): void
     {
         $manifest = [
-            '_version'               => '1',
-            '_written_at'            => time(),
-            'plugins'                => $this->plugins,
-            'enabledPlugins'         => $this->enabledPlugins,
-            'pluginConfigs'          => $this->pluginConfigs,
-            'pluginServices'         => $this->pluginServices,
-            'pluginRoutes'           => $this->pluginRoutes,
-            'pluginMiddleware'       => $this->pluginMiddleware,
-            'pluginMysqlSchemas'     => $this->pluginMysqlSchemas,
-            'pluginMenus'            => $this->pluginMenus,
+            '_version' => '1',
+            '_written_at' => time(),
+            'plugins' => $this->plugins,
+            'enabledPlugins' => $this->enabledPlugins,
+            'pluginConfigs' => $this->pluginConfigs,
+            'pluginServices' => $this->pluginServices,
+            'pluginRoutes' => $this->pluginRoutes,
+            'pluginMiddleware' => $this->pluginMiddleware,
+            'pluginMysqlSchemas' => $this->pluginMysqlSchemas,
+            'pluginMenus' => $this->pluginMenus,
             'pluginTemplatesSources' => $this->pluginTemplatesSources,
-            'pluginPermissions'      => $this->pluginPermissions,
+            'pluginPermissions' => $this->pluginPermissions,
         ];
 
         $php = '<?php return ' . var_export($manifest, true) . ';' . PHP_EOL;
@@ -310,7 +311,7 @@ class PluginManager
             @unlink($this->manifestCacheFile);
         }
     }
-    
+
     /**
      * Ensure required directories exist
      */
@@ -322,11 +323,11 @@ class PluginManager
         ];
         foreach ($directories as $directory) {
             if (!is_dir($directory)) {
-                mkdir($directory, recursive:  true);
+                mkdir($directory, recursive: true);
             }
         }
     }
-    
+
     /**
      * Discover available plugins
      */
@@ -335,9 +336,9 @@ class PluginManager
         if (!is_dir($this->pluginRoot)) {
             return;
         }
-        
+
         $iterator = new \DirectoryIterator($this->pluginRoot);
-        
+
         foreach ($iterator as $item) {
             if ($item->isDir() && !$item->isDot()) {
                 $pluginId = $item->getBasename();
@@ -357,22 +358,22 @@ class PluginManager
             }
         }
     }
-    
+
     /**
      * Load installed plugins configuration
      */
     private function loadInstalledPlugins(): void
     {
         $installedFile = $this->configRoot . '/core.plugin.yml';
-        
+
         if (!file_exists($installedFile)) {
             $this->createDefaultInstalledConfig($installedFile);
             return;
         }
-        
+
         try {
             $installed = Yaml::parseFile($installedFile);
-            
+
             if (is_array($installed)) {
                 foreach ($installed as $pluginId => $enabled) {
                     if (isset($this->plugins[$pluginId])) {
@@ -384,44 +385,142 @@ class PluginManager
                         if (!empty($this->plugins[$pluginId]['enabled'])) {
                             $this->enabledPlugins[] = $pluginId;
                         }
-                        
+
                         // Load plugin configuration for installed plugins (regardless of enabled status)
                         $this->loadPluginConfig($pluginId);
                     }
                 }
             }
-            
+
         } catch (Exception $e) {
             throw new \RuntimeException("Failed to load installed plugins: " . $e->getMessage(), 0, $e);
         }
     }
-    
+
+
+
+    function topologicalSortServices(array $modules): array
+    {
+        // Step 1: Build a flat map of ALL service IDs => config (read-only, for lookup)
+        $allServices = [];
+        foreach ($modules as $moduleServices) {
+            foreach ($moduleServices as $serviceId => $serviceConfig) {
+                $allServices[$serviceId] = $serviceConfig;
+            }
+        }
+
+        // Step 2: Build dependency map for every service
+        $dependencies = [];
+        foreach ($allServices as $serviceId => $config) {
+            $dependencies[$serviceId] = [];
+            foreach ($config['arguments'] ?? [] as $arg) {
+                if (is_string($arg) && str_starts_with($arg, '@')) {
+                    $dep = ltrim($arg, '@');
+                    if (isset($allServices[$dep])) {
+                        $dependencies[$serviceId][] = $dep;
+                    }
+                }
+            }
+        }
+
+        // Step 3: Topological sort (Kahn's algorithm) — produces ordered service IDs
+        $inDegree = array_fill_keys(array_keys($allServices), 0);
+        foreach ($dependencies as $serviceId => $deps) {
+            foreach ($deps as $dep) {
+                $inDegree[$serviceId]++;
+            }
+        }
+
+        $queue = array_keys(array_filter($inDegree, fn($d) => $d === 0));
+        $sortedServiceIds = [];
+
+        while (!empty($queue)) {
+            $current = array_shift($queue);
+            $sortedServiceIds[] = $current;
+
+            foreach ($dependencies as $serviceId => $deps) {
+                if (in_array($current, $deps)) {
+                    $inDegree[$serviceId]--;
+                    if ($inDegree[$serviceId] === 0) {
+                        $queue[] = $serviceId;
+                    }
+                }
+            }
+        }
+
+        // Detect circular dependencies
+        if (count($sortedServiceIds) !== count($allServices)) {
+            $unresolved = array_diff(array_keys($allServices), $sortedServiceIds);
+            throw new \RuntimeException(
+                'Circular dependency detected: ' . implode(', ', $unresolved)
+            );
+        }
+
+        // Step 4: Rebuild modules preserving structure, but reorder services within
+        //         each module AND reorder the modules themselves by first-service appearance
+
+        // Assign each module a "priority" = position of its earliest service in sortedServiceIds
+        $moduleOrder = [];
+        foreach ($modules as $moduleName => $moduleServices) {
+            $earliest = PHP_INT_MAX;
+            foreach (array_keys($moduleServices) as $serviceId) {
+                $pos = array_search($serviceId, $sortedServiceIds);
+                if ($pos !== false && $pos < $earliest) {
+                    $earliest = $pos;
+                }
+            }
+            $moduleOrder[$moduleName] = $earliest;
+        }
+        asort($moduleOrder);
+
+        // Step 5: Rebuild the result — modules in resolved order, services within
+        //         each module also in resolved order
+        $result = [];
+        foreach (array_keys($moduleOrder) as $moduleName) {
+            $moduleServices = $modules[$moduleName];
+
+            // Sort services within this module by their position in sortedServiceIds
+            $serviceOrder = [];
+            foreach (array_keys($moduleServices) as $serviceId) {
+                $serviceOrder[$serviceId] = array_search($serviceId, $sortedServiceIds);
+            }
+            asort($serviceOrder);
+
+            $result[$moduleName] = [];
+            foreach (array_keys($serviceOrder) as $serviceId) {
+                $result[$moduleName][$serviceId] = $moduleServices[$serviceId];
+            }
+        }
+
+        return $result;
+    }
+
     /**
      * Load plugin configuration
      */
     private function loadPluginConfig(string $pluginId): void
     {
         $plugin = $this->plugins[$pluginId] ?? null;
-        
+
         if (!$plugin) {
             return;
         }
-        
+
         $configFile = $plugin['info_file'];
 
         if (!file_exists($configFile)) {
             return;
         }
-        
+
         try {
             $config = Yaml::parseFile($configFile);
-            
+
             $this->pluginConfigs[$pluginId] = $config;
 
             if (empty($plugin['installed']) || empty($plugin['enabled'])) {
                 return;
             }
-            
+
             // Load plugin services if services.yml exists (regardless of enabled status)
             $servicesFile = $plugin['path'] . '/services.yml';
             if (file_exists($servicesFile)) {
@@ -430,12 +529,14 @@ class PluginManager
                     $this->pluginServices[$pluginId] = $services;
                 }
             }
+
+            $this->pluginServices = $this->topologicalSortServices($this->pluginServices);
             
             // Load plugin routes if routing.yml exists
             $routingFile = $plugin['path'] . '/routing.yml';
             if (file_exists($routingFile)) {
                 $routes = Yaml::parseFile($routingFile);
-                
+
                 // Handle both formats: routes under 'routes' key or at root level
                 if (isset($routes['routes']) && is_array($routes['routes'])) {
                     $this->pluginRoutes[$pluginId] = $routes['routes'];
@@ -444,7 +545,7 @@ class PluginManager
                     $this->pluginRoutes[$pluginId] = $routes;
                 }
             }
-            
+
             // Load plugin menus if menu.yml exists
             $menuFile = $plugin['path'] . '/menu.yml';
             if (file_exists($menuFile)) {
@@ -453,7 +554,7 @@ class PluginManager
                     $this->pluginMenus[$pluginId] = $menus;
                 }
             }
-            
+
             // Load plugin middleware if middleware.yml exists
             $middlewareFile = $plugin['path'] . '/middleware.yml';
             if (file_exists($middlewareFile)) {
@@ -534,29 +635,28 @@ class PluginManager
             if (is_dir($templateDirectory)) {
                 $this->pluginTemplatesSources[] = $templateDirectory;
             }
-            
-        }
-        catch (Exception $e) {
+
+        } catch (Exception $e) {
             throw new \RuntimeException("Failed to load plugin config for {$pluginId}: " . $e->getMessage(), 0, $e);
         }
     }
-    
+
     /**
      * Enable a plugin
      */
     public function enablePlugin(string $pluginId): bool
     {
-    
+
         if (!isset($this->plugins[$pluginId])) {
             throw new \InvalidArgumentException("Plugin '{$pluginId}' not found");
         }
-        
+
         $plugin = $this->plugins[$pluginId];
-        
+
         if ($plugin['enabled']) {
             return true; // Already enabled
         }
-        
+
         try {
             new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             $dependencies = $plugin['dependencies'] ?? [];
@@ -566,8 +666,7 @@ class PluginManager
 
                     if (php_sapi_name() === 'cli') {
                         echo "[{$pluginId}] cannot be installed without plugin '{$dependency}'\n";
-                    }
-                    else {
+                    } else {
                         Message::error("[{$pluginId}] cannot be installed without plugin '{$dependency}'\n");
                     }
                     $flag = false;
@@ -582,28 +681,28 @@ class PluginManager
             if (!isset($this->pluginConfigs[$pluginId])) {
                 $this->loadPluginConfig($pluginId);
             }
-            
+
             // Mark as enabled
             $this->plugins[$pluginId]['enabled'] = true;
             $this->enabledPlugins[] = $pluginId;
-            
+
             // Register plugin services in DI container
             if ($this->container && isset($this->pluginServices[$pluginId])) {
                 $this->registerPluginServiceDefinitions($pluginId, $this->pluginServices[$pluginId]);
             }
-            
+
             // Save plugin state
             $this->savePluginState();
 
-            \appEvents()->invokeEvents(Events::PLUGIN_INSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
-            
+            \appEvents()->invokeEvents(Events::PLUGIN_INSTALLED, ['plugin_id' => $pluginId, 'container' => $this->container]);
+
             return true;
-            
+
         } catch (Exception $e) {
             throw new \RuntimeException("Failed to enable plugin '{$pluginId}': " . $e->getMessage(), 0, $e);
         }
     }
-    
+
     /**
      * Disable a plugin
      */
@@ -612,38 +711,38 @@ class PluginManager
         if (!isset($this->plugins[$pluginId])) {
             throw new \InvalidArgumentException("Plugin '{$pluginId}' not found");
         }
-        
+
         $plugin = $this->plugins[$pluginId];
-        
+
         if (!$plugin['enabled']) {
             return true; // Already disabled
         }
-        
+
         try {
-             new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
+            new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             // Mark as disabled
             $this->plugins[$pluginId]['enabled'] = false;
-            
+
             // Remove from enabled list
             $this->enabledPlugins = array_filter($this->enabledPlugins, fn($id) => $id !== $pluginId);
-            
+
             // Unregister plugin services from DI container
             if ($this->container && isset($this->pluginServices[$pluginId])) {
                 $this->unregisterPluginServiceDefinitions($pluginId, $this->pluginServices[$pluginId]);
             }
-            
-            \appEvents()->invokeEvents(Events::PLUGIN_UNINSTALLED, ['plugin_id' => $pluginId, 'container'=> $this->container]);
-            
+
+            \appEvents()->invokeEvents(Events::PLUGIN_UNINSTALLED, ['plugin_id' => $pluginId, 'container' => $this->container]);
+
             // Save plugin state
             $this->savePluginState();
 
             return true;
-            
+
         } catch (Exception $e) {
             throw new \RuntimeException("Failed to disable plugin '{$pluginId}': " . $e->getMessage(), 0, $e);
         }
     }
-    
+
     /**
      * Unregister service definitions for a specific plugin
      */
@@ -652,13 +751,13 @@ class PluginManager
         if (!$this->container) {
             return;
         }
-        
+
         foreach (array_keys($services) as $serviceName) {
             // Remove service from container
             $this->container->set($serviceName, null);
         }
     }
-    
+
     /**
      * Install a plugin
      */
@@ -667,13 +766,13 @@ class PluginManager
         if (!isset($this->plugins[$pluginId])) {
             throw new \InvalidArgumentException("Plugin '{$pluginId}' not found");
         }
-        
+
         $plugin = $this->plugins[$pluginId];
-        
+
         if ($plugin['installed']) {
             return true; // Already installed
         }
-        
+
         try {
 
             new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
@@ -684,8 +783,7 @@ class PluginManager
 
                     if (php_sapi_name() === 'cli') {
                         echo "[{$pluginId}] cannot be installed without plugin '{$dependency}'\n";
-                    }
-                    else {
+                    } else {
                         Message::error("[{$pluginId}] cannot be installed without plugin '{$dependency}'\n");
                     }
                     $flag = false;
@@ -698,21 +796,21 @@ class PluginManager
 
             // Load plugin config
             $this->loadPluginConfig($pluginId);
-            
+
             // Mark as installed
             $this->plugins[$pluginId]['installed'] = true;
             $this->plugins[$pluginId]['installed_at'] = date('Y-m-d H:i:s');
- 
+
             // Save plugin state
             $this->savePluginState();
 
             return true;
-            
+
         } catch (Exception $e) {
             throw new \RuntimeException("Failed to install plugin '{$pluginId}': " . $e->getMessage(), 0, $e);
         }
     }
-    
+
     /**
      * Uninstall a plugin
      */
@@ -721,41 +819,41 @@ class PluginManager
         if (!isset($this->plugins[$pluginId])) {
             throw new \InvalidArgumentException("Plugin '{$pluginId}' not found");
         }
-        
+
         $plugin = $this->plugins[$pluginId];
-        
+
         if (!$plugin['installed']) {
             return true; // Already uninstalled
         }
-        
+
         try {
-             new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
+            new LibraryAssets(\getAppContainer()->get('database'))->clearCache();
             // Disable first
             if ($plugin['enabled']) {
                 $this->disablePlugin($pluginId);
             }
-            
+
             // Mark as uninstalled
             $this->plugins[$pluginId]['installed'] = false;
             unset($this->plugins[$pluginId]['installed_at']);
-            
+
             // Remove plugin config
             unset($this->pluginConfigs[$pluginId]);
             unset($this->pluginServices[$pluginId]);
             unset($this->pluginRoutes[$pluginId]);
             unset($this->pluginMiddleware[$pluginId]);
             unset($this->pluginMenus[$pluginId]);
-            
+
             // Save plugin state
             $this->savePluginState();
 
             return true;
-            
+
         } catch (Exception $e) {
             throw new \RuntimeException("Failed to uninstall plugin '{$pluginId}': " . $e->getMessage(), 0, $e);
         }
     }
-    
+
     /**
      * Save plugin state configuration
      */
@@ -766,9 +864,9 @@ class PluginManager
         foreach ($this->plugins as $pluginId => $plugin) {
             $data[$pluginId] = $plugin['enabled'] ? 1 : 0;
         }
-        
+
         $yaml = Yaml::dump($data, 4, 2);
-        
+
         if (file_put_contents($installedFile, $yaml) === false) {
             throw new \RuntimeException("Failed to save plugin state to: {$installedFile}");
         }
@@ -777,21 +875,21 @@ class PluginManager
         // rebuilds it with the updated plugin list.
         $this->clearManifestCache();
     }
-    
+
     /**
      * Create default installed plugins configuration
      */
     private function createDefaultInstalledConfig(string $filePath): void
     {
         $data = [];
-        
+
         $yaml = Yaml::dump($data, 4, 2);
-        
+
         if (file_put_contents($filePath, $yaml) === false) {
             throw new \RuntimeException("Failed to create default plugin config: {$filePath}");
         }
     }
-    
+
     /**
      * Get all plugins
      */
@@ -799,7 +897,7 @@ class PluginManager
     {
         return $this->plugins;
     }
-    
+
     /**
      * Get enabled plugins
      */
@@ -807,7 +905,7 @@ class PluginManager
     {
         return array_filter($this->plugins, fn($plugin) => $plugin['enabled']);
     }
-    
+
     /**
      * Get installed plugins
      */
@@ -815,7 +913,7 @@ class PluginManager
     {
         return array_filter($this->plugins, fn($plugin) => $plugin['installed']);
     }
-    
+
     /**
      * Get plugin configuration
      */
@@ -823,7 +921,7 @@ class PluginManager
     {
         return $this->pluginConfigs[$pluginId] ?? null;
     }
-    
+
     /**
      * Get all plugin services
      */
@@ -831,7 +929,7 @@ class PluginManager
     {
         return $this->pluginServices;
     }
-    
+
     /**
      * Get all plugin routes
      */
@@ -873,7 +971,7 @@ class PluginManager
                 }
             }
         }
-        
+
         return $middlewareClasses;
     }
 
@@ -887,10 +985,10 @@ class PluginManager
                 return $middleware[$middlewareName];
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * Check if plugin is enabled
      */
@@ -898,7 +996,7 @@ class PluginManager
     {
         return in_array($pluginId, $this->enabledPlugins);
     }
-    
+
     /**
      * Check if plugin is installed
      */
@@ -906,7 +1004,7 @@ class PluginManager
     {
         return ($this->plugins[$pluginId]['installed'] ?? false);
     }
-    
+
     /**
      * Get plugin by ID
      */
@@ -914,7 +1012,7 @@ class PluginManager
     {
         return $this->plugins[$pluginId] ?? null;
     }
-    
+
     /**
      * Get plugin manager statistics
      */
@@ -926,7 +1024,7 @@ class PluginManager
             'installed_plugins' => count($this->getInstalledPlugins())
         ];
     }
-    
+
     /**
      * Re-discover plugins (public method for scanning)
      */
@@ -934,10 +1032,10 @@ class PluginManager
     {
         // Store current plugins to compare
         $previousPlugins = $this->plugins;
-        
+
         // Re-discover plugins
         $this->discoverPlugins();
-        
+
         // Find newly discovered plugins
         $newPlugins = [];
         foreach ($this->plugins as $pluginId => $plugin) {
@@ -950,7 +1048,7 @@ class PluginManager
         if (!empty($newPlugins)) {
             $this->clearManifestCache();
         }
-        
+
         return $newPlugins;
     }
 
@@ -960,19 +1058,19 @@ class PluginManager
     public function getEntityClasses(): array
     {
         $entityClasses = [];
-        
+
         foreach ($this->plugins as $pluginId => $plugin) {
             // Only load from enabled plugins
             if (!$plugin['enabled']) {
                 continue;
             }
-            
+
             $entityFile = $plugin['path'] . '/entity.repository.yml';
-            
+
             if (file_exists($entityFile)) {
                 try {
                     $entities = Yaml::parseFile($entityFile);
-                    
+
                     if (is_array($entities)) {
                         foreach ($entities as $entityName => $entityConfig) {
                             // Validate entity configuration
@@ -990,10 +1088,10 @@ class PluginManager
                 }
             }
         }
-        
+
         return $entityClasses;
     }
-    
+
     /**
      * Get specific entity class by name
      */
@@ -1002,7 +1100,7 @@ class PluginManager
         $entityClasses = $this->getEntityClasses();
         return $entityClasses[$entityName] ?? null;
     }
-    
+
     /**
      * Check if entity class exists
      */
@@ -1042,11 +1140,11 @@ class PluginManager
     public function getAllRoles(): array
     {
         $coreRoles = [
-            'super_admin' => ['label' => 'Super Admin',  'description' => 'Full system access.',         'parent' => null],
-            'admin'       => ['label' => 'Admin',        'description' => 'Administrative access.',      'parent' => null],
-            'moderator'   => ['label' => 'Moderator',    'description' => 'Content moderation access.',  'parent' => 'user'],
-            'user'        => ['label' => 'User',         'description' => 'Authenticated user.',         'parent' => null],
-            'anonymous'   => ['label' => 'Anonymous',    'description' => 'Unauthenticated visitor.',    'parent' => null],
+            'super_admin' => ['label' => 'Super Admin', 'description' => 'Full system access.', 'parent' => null],
+            'admin' => ['label' => 'Admin', 'description' => 'Administrative access.', 'parent' => null],
+            'moderator' => ['label' => 'Moderator', 'description' => 'Content moderation access.', 'parent' => 'user'],
+            'user' => ['label' => 'User', 'description' => 'Authenticated user.', 'parent' => null],
+            'anonymous' => ['label' => 'Anonymous', 'description' => 'Unauthenticated visitor.', 'parent' => null],
         ];
         return array_merge($coreRoles, $this->pluginRoles);
     }
