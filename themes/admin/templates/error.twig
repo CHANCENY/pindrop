@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #f8fafc;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #dc2626;
+        }
+
+        .message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            word-break: break-word;
+        }
+
+        .trace {
+            background: #111827;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        details {
+            margin-top: 20px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    
+    <div class="card">
+        <h1>Something went wrong</h1>
+
+        <div class="message">
+            {{ error|default('An unexpected error occurred.') }}
+        </div>
+
+        {% if trace is not empty %}
+            <details>
+                <summary>View Stack Trace</summary>
+
+                <div class="trace">
+                    {{ trace }}
+                </div>
+            </details>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

@@ -132,6 +132,7 @@ class EventsManager
         within the application. */
         $eventEmitter = new EventEmitter();
         $eventEmitter->options = [];
+        $eventEmitter->raw = $eventArguments;
       
         foreach ($eventArguments as $key=>$eventArgument) {
             if (is_string($key)) {

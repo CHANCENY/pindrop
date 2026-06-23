@@ -49,10 +49,12 @@ try {
         // The real error is already logged inside DatabaseSessionHandler::write().
         @session_write_close();
     });
+    
 } catch (\Throwable $_sessionException) {
     error_log('[Pindrop] DatabaseSessionHandler unavailable, falling back to file sessions: '
         . $_sessionException->getMessage());
     unset($_sessionException);
+    
 }
 
 session_start();

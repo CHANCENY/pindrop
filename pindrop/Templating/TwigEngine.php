@@ -270,6 +270,10 @@ class TwigEngine
                     return false;
                 }));
 
+                $this->twig->addFunction(new TwigFunction('backtrace',function(){
+                    return debug_backtrace();
+                }));
+
             } catch (\Exception $e) {
                 // Menu service not available, skip
             }

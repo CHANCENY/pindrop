@@ -86,6 +86,7 @@ class ControllerBase implements ControllerBaseInterface
     {
         // Try to render error template
         if ($this->templateExists('error.twig')) {
+            
             return $this->twig->render('error.twig', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
