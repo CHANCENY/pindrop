@@ -273,6 +273,32 @@ class CurrentUser
         }
     }
 
+    public static function findById(DatabaseService $db, LoggerInterface $logger, int $id): ?self
+    {
+        try {
+            $logger->debug('Finding user session by session_id', ['session_id' => $id]);
+            $result = $db->table('user_session')->where('id', '=', $id)->first();
+           
+
+            if ($result) {
+                $session = new self($db, $logger);
+                $session->populateFromData($result);
+                $logger->debug('User session found', ['session_id' => $id]);
+                return $session;
+            }
+
+            $logger->debug('User session not found', ['sessionid_id' => $id]);
+            return null;
+        } catch (Exception $e) {
+            $logger->error('Failed to find user session by session_id', [
+                'error' => $e->getMessage(),
+                'session_id' => $id
+            ]);
+            return null;
+        }
+    }
+
+
     public static function findByUserId(DatabaseService $db, LoggerInterface $logger, int $userId): array
     {
         try {
@@ -304,7 +330,7 @@ class CurrentUser
             $logger->debug('Cleaning up expired sessions');
 
             $sql = "DELETE FROM user_session WHERE expires_at < NOW()";
-            $affected = $db->query($sql);
+            $affected = $db->execRaw($sql);
 
             $logger->info('Expired sessions cleaned up', ['count' => $affected]);
             return $affected;
@@ -321,8 +347,7 @@ class CurrentUser
         try {
             $logger->debug('Revoking all user sessions', ['user_id' => $userId]);
 
-            $sql = "DELETE FROM user_session WHERE user_id = :user_id";
-            $affected = $db->query($sql, ['user_id' => $userId]);
+            $affected = $db->table('user_session')->where('user_id','=', $userId)->delete();
 
             $logger->info('All user sessions revoked', ['user_id' => $userId, 'count' => $affected]);
             return $affected;

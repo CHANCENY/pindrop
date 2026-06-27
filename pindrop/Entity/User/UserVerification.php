@@ -302,6 +302,34 @@ class UserVerification
         }
     }
 
+    public static function findById(DatabaseService $db, LoggerInterface $logger, int $id): ?self
+    {
+        try {
+            $logger->debug('Finding verification token by id', ['token' => $id]);
+
+            $result = $db->table('user_verification_tokens')->where('id', '=', $id)->first();
+
+            if ($result) {
+                $verification = new self($db, $logger);
+                $verification->populateFromData($result);
+                $logger->debug('Verification token found', [
+                    'token_id' => $verification->getId(),
+                    'token_type' => $verification->getTokenType()
+                ]);
+                return $verification;
+            }
+
+            $logger->debug('Verification token not found', ['token' => $id]);
+            return null;
+        } catch (\Exception $e) {
+            $logger->error('Failed to find verification token by token', [
+                'error' => $e->getMessage(),
+                'token' => $id
+            ]);
+            return null;
+        }
+    }
+
     public static function findByUserAndType(DatabaseService $db, LoggerInterface $logger, int $userId, string $tokenType): ?self
     {
         try {

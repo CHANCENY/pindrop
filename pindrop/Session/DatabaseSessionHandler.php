@@ -184,7 +184,6 @@ class DatabaseSessionHandler implements SessionHandlerInterface
             // converts to ErrorException — the session data is lost this cycle
             // but the app stays alive.  This is equivalent to file-session
             // behaviour when the disk is full.
-            dd($e);
             return true;
         }
     }
