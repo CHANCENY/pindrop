@@ -1,8 +1,0 @@
-groups:
-  wiki:
-    list:
-      title: Wiki
-      route: wiki.list
-      icon: fa-solid fa-list
-      weight: 20
-      roles: [admin, super_admin, moderator]
