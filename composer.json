@@ -46,7 +46,9 @@
         "commerceguys/addressing": "^2.2",
         "pragmarx/google2fa": "^9.0",
         "bacon/bacon-qr-code": "^3.1",
-        "endroid/qr-code": "^6.1"
+        "endroid/qr-code": "^6.1",
+        "mpdf/mpdf": "^8.3",
+        "shuchkin/simplexlsxgen": "^1.5"
     },
     "scripts": {
         "post-install-cmd": [

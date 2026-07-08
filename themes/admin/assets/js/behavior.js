@@ -71,6 +71,7 @@ class Behaviour {
           const autoObj = {
             fieldId: object.fieldId,
             source: object.source,
+            dataSource: object?.dataSource || null,
             name: object.name,
             loadingText: object?.loadingText ?? "Searching..",
             noResultsText: object?.noResultsText ?? "No results",
@@ -82,6 +83,10 @@ class Behaviour {
             placeholder:
               object?.placeholder ?? element.placeholder ?? "Search..",
             onSelect: object?.onSelect ?? null,
+            onSearch: object?.onSearch ?? null,
+            customTemplate: object?.customTemplate || null,
+            delay: object?.delay || 300,
+            cssClass: object?.cssClass || 'autocomplete-container',
           };
           return autoObj;
         }

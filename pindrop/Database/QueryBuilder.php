@@ -12,53 +12,65 @@ namespace Simp\Pindrop\Database;
  *
  * Flow:
  *   DatabaseService::table('wiki_pages')
- *     ->select(['id', 'title', 'status'])
- *     ->where('status', '=', 'published')
- *     ->orderBy('created_at', 'DESC')
- *     ->limit(10)
- *     ->get();
+ *       ->select(['id', 'title', 'status'])
+ *       ->where('status', '=', 'published')
+ *       ->orderBy('created_at', 'DESC')
+ *       ->limit(10)
+ *       ->get();
+ *
+ * Table aliasing:
+ *   Both table() and join()/leftJoin() accept "real_table AS alias"
+ *   (e.g. 'pf_pigs AS sow'). The alias portion is stripped before
+ *   permission checks (the guard always authorizes the REAL table
+ *   name) and re-attached only when compiling SQL.
  *
  * All public methods return $this for chaining except terminal methods:
- *   ->get()        → array of rows
- *   ->first()      → single row or null
- *   ->count()      → int
- *   ->insert()     → int (last insert id)
- *   ->update()     → int (affected rows)
- *   ->delete()     → int (affected rows)
- *   ->exists()     → bool
- *   ->value(col)   → scalar
+ *   ->get()      → array of rows
+ *   ->first()    → single row or null
+ *   ->count()    → int
+ *   ->insert()   → int (last insert id)
+ *   ->update()   → int (affected rows)
+ *   ->delete()   → int (affected rows)
+ *   ->exists()   → bool
+ *   ->value(col) → scalar
  */
 class QueryBuilder
 {
     // ── Query state ──────────────────────────────────────────────────────────
-    private array  $columns    = ['*'];
-    private array  $wheres     = [];
-    private array  $orWheres   = [];
-    private array  $orderBys   = [];
-    private array  $joins      = [];
-    private array  $groupBys   = [];
-    private array  $havings    = [];
-    private ?int   $limitVal   = null;
-    private ?int   $offsetVal  = null;
-    private array  $bindings   = [];
-    private string $operation  = 'select';
+    private array $columns = ['*'];
+    private array $wheres = [];
+    private array $orWheres = [];
+    private array $orderBys = [];
+    private array $joins = [];
+    private array $joinTables = []; // real table names of every joined table, for guard checks
+    private array $groupBys = [];
+    private array $havings = [];
+    private ?int $limitVal = null;
+    private ?int $offsetVal = null;
+    private array $bindings = [];
+    private string $operation = 'select';
+
+    // The real (unaliased) table name — this is what the permission guard checks.
+    private readonly string $realTable;
+    // The alias for the base table, if "table AS alias" was passed in, else null.
+    private readonly ?string $tableAlias;
 
     // ── Allowed operations for validation ───────────────────────────────────
     private const ALLOWED_OPERATORS = ['=', '!=', '<>', '<', '>', '<=', '>=',
         'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'IS NULL', 'IS NOT NULL',
         'BETWEEN', 'NOT BETWEEN'];
-
     private const ALLOWED_DIRECTIONS = ['ASC', 'DESC'];
 
     public function __construct(
-        private readonly string   $table,
+        private readonly string $table,
         private readonly Database $database,
         private readonly DatabasePermissionGuard $guard,
-        private readonly string   $pluginContext = ''
-    ) {}
+        private readonly string $pluginContext = ''
+    ) {
+        [$this->realTable, $this->tableAlias] = self::splitTableAlias($table);
+    }
 
     // ── Column selection ─────────────────────────────────────────────────────
-
     public function select(array $columns = ['*']): static
     {
         $this->columns = $columns;
@@ -66,16 +78,15 @@ class QueryBuilder
     }
 
     // ── WHERE clauses ────────────────────────────────────────────────────────
-
     public function where(string $column, string $operator, mixed $value = null): static
     {
         $operator = $this->validateOperator($operator);
 
         if (in_array($operator, ['IS NULL', 'IS NOT NULL'], true)) {
             $this->wheres[] = [
-                'sql'      => $this->quoteColumn($column) . ' ' . $operator,
+                'sql' => $this->quoteColumn($column) . ' ' . $operator,
                 'bindings' => [],
-                'type'     => 'AND',
+                'type' => 'AND',
             ];
             return $this;
         }
@@ -86,9 +97,9 @@ class QueryBuilder
             }
             $placeholders = implode(', ', array_fill(0, count($value), '?'));
             $this->wheres[] = [
-                'sql'      => $this->quoteColumn($column) . " $operator ($placeholders)",
+                'sql' => $this->quoteColumn($column) . " $operator ($placeholders)",
                 'bindings' => array_values($value),
-                'type'     => 'AND',
+                'type' => 'AND',
             ];
             return $this;
         }
@@ -98,17 +109,17 @@ class QueryBuilder
                 throw new \InvalidArgumentException("BETWEEN requires an array of exactly 2 values.");
             }
             $this->wheres[] = [
-                'sql'      => $this->quoteColumn($column) . " $operator ? AND ?",
+                'sql' => $this->quoteColumn($column) . " $operator ? AND ?",
                 'bindings' => array_values($value),
-                'type'     => 'AND',
+                'type' => 'AND',
             ];
             return $this;
         }
 
         $this->wheres[] = [
-            'sql'      => $this->quoteColumn($column) . " $operator ?",
+            'sql' => $this->quoteColumn($column) . " $operator ?",
             'bindings' => [$value],
-            'type'     => 'AND',
+            'type' => 'AND',
         ];
         return $this;
     }
@@ -117,9 +128,9 @@ class QueryBuilder
     {
         $operator = $this->validateOperator($operator);
         $this->wheres[] = [
-            'sql'      => $this->quoteColumn($column) . " $operator ?",
+            'sql' => $this->quoteColumn($column) . " $operator ?",
             'bindings' => [$value],
-            'type'     => 'OR',
+            'type' => 'OR',
         ];
         return $this;
     }
@@ -147,17 +158,22 @@ class QueryBuilder
     public function whereRaw(string $sql, array $bindings = []): static
     {
         $this->wheres[] = [
-            'sql'      => $sql,
+            'sql' => $sql,
             'bindings' => $bindings,
-            'type'     => 'AND',
+            'type' => 'AND',
         ];
         return $this;
     }
 
     // ── JOIN ─────────────────────────────────────────────────────────────────
-
     /**
      * Add a JOIN clause.
+     *
+     * $table may be a bare table name ('pf_pigs') or an aliased table
+     * ('pf_pigs AS sow'). The real table name is what gets checked
+     * against the permission guard; the alias (if any) is what you use
+     * in subsequent select()/where()/orderBy() column references.
+     *
      * NOTE: joined tables must belong to the same plugin OR the join target
      * must be explicitly allowed by the permission guard.
      */
@@ -167,7 +183,13 @@ class QueryBuilder
         if (!in_array($type, ['INNER', 'LEFT', 'RIGHT', 'CROSS'], true)) {
             throw new \InvalidArgumentException("Invalid join type: $type");
         }
-        $this->joins[] = "$type JOIN `$table` ON " .
+
+        [$realTable, $alias] = self::splitTableAlias($table);
+        $this->joinTables[] = $realTable;
+
+        $quotedTable = "`$realTable`" . ($alias !== null ? " AS `$alias`" : '');
+
+        $this->joins[] = "$type JOIN $quotedTable ON " .
             $this->quoteColumn($first) . " $operator " . $this->quoteColumn($second);
         return $this;
     }
@@ -178,7 +200,6 @@ class QueryBuilder
     }
 
     // ── ORDER / LIMIT / OFFSET ───────────────────────────────────────────────
-
     public function orderBy(string $column, string $direction = 'ASC'): static
     {
         $direction = strtoupper($direction);
@@ -219,7 +240,6 @@ class QueryBuilder
     }
 
     // ── GROUP BY / HAVING ────────────────────────────────────────────────────
-
     public function groupBy(string ...$columns): static
     {
         foreach ($columns as $col) {
@@ -237,11 +257,10 @@ class QueryBuilder
     }
 
     // ── Terminal — READ ──────────────────────────────────────────────────────
-
     /** Execute SELECT and return all matching rows. */
     public function get(): array
     {
-        $this->guard->authorize('select', $this->table);
+        $this->authorizeAll('select');
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
         return $stmt instanceof \PDOStatement ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
@@ -250,7 +269,7 @@ class QueryBuilder
     /** Execute SELECT and return first matching row or null. */
     public function first(): ?array
     {
-        $this->guard->authorize('select', $this->table);
+        $this->authorizeAll('select');
         $this->limitVal = 1;
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
@@ -262,8 +281,8 @@ class QueryBuilder
     /** Return a single column value from the first matching row. */
     public function value(string $column): mixed
     {
-        $this->guard->authorize('select', $this->table);
-        $this->columns  = [$column];
+        $this->authorizeAll('select');
+        $this->columns = [$column];
         $this->limitVal = 1;
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
@@ -275,7 +294,7 @@ class QueryBuilder
     /** Return a flat array of values from a single column across all rows. */
     public function pluck(string $column): array
     {
-        $this->guard->authorize('select', $this->table);
+        $this->authorizeAll('select');
         $this->columns = [$column];
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
@@ -286,7 +305,7 @@ class QueryBuilder
     /** Count matching rows. */
     public function count(string $column = '*'): int
     {
-        $this->guard->authorize('select', $this->table);
+        $this->authorizeAll('select');
         $col = $column === '*' ? '*' : $this->quoteColumn($column);
         $this->columns = ["COUNT($col) AS _count"];
         [$sql, $bindings] = $this->compileSelect();
@@ -310,29 +329,28 @@ class QueryBuilder
     public function paginate(int $page = 1, int $perPage = 15): array
     {
         $total = $this->count();
-        $rows  = $this->forPage($page, $perPage)->get();
+        $rows = $this->forPage($page, $perPage)->get();
         return [
-            'data'         => $rows,
-            'total'        => $total,
-            'per_page'     => $perPage,
+            'data' => $rows,
+            'total' => $total,
+            'per_page' => $perPage,
             'current_page' => $page,
-            'last_page'    => (int)ceil($total / $perPage),
+            'last_page' => (int)ceil($total / $perPage),
         ];
     }
 
     // ── Terminal — WRITE ─────────────────────────────────────────────────────
-
     /** Insert a row. Returns the last insert ID. */
     public function insert(array $data): int
     {
-        $this->guard->authorize('insert', $this->table);
+        $this->guard->authorize('insert', $this->realTable);
         if (empty($data)) {
             throw new \InvalidArgumentException("insert() requires at least one column.");
         }
-        $columns      = array_keys($data);
+        $columns = array_keys($data);
         $placeholders = implode(', ', array_fill(0, count($columns), '?'));
-        $colList      = implode('`, `', $columns);
-        $sql          = "INSERT INTO `{$this->table}` (`$colList`) VALUES ($placeholders)";
+        $colList = implode('`, `', $columns);
+        $sql = "INSERT INTO `{$this->realTable}` (`$colList`) VALUES ($placeholders)";
         $this->database->query($sql, ...array_values($data));
         return (int)$this->database->getPdo()->lastInsertId();
     }
@@ -340,11 +358,11 @@ class QueryBuilder
     /** Insert a row or ignore on duplicate key. Returns last insert ID. */
     public function insertIgnore(array $data): int
     {
-        $this->guard->authorize('insert', $this->table);
-        $columns      = array_keys($data);
+        $this->guard->authorize('insert', $this->realTable);
+        $columns = array_keys($data);
         $placeholders = implode(', ', array_fill(0, count($columns), '?'));
-        $colList      = implode('`, `', $columns);
-        $sql          = "INSERT IGNORE INTO `{$this->table}` (`$colList`) VALUES ($placeholders)";
+        $colList = implode('`, `', $columns);
+        $sql = "INSERT IGNORE INTO `{$this->realTable}` (`$colList`) VALUES ($placeholders)";
         $this->database->query($sql, ...array_values($data));
         return (int)$this->database->getPdo()->lastInsertId();
     }
@@ -352,14 +370,14 @@ class QueryBuilder
     /** Upsert (INSERT … ON DUPLICATE KEY UPDATE). Returns last insert ID. */
     public function upsert(array $data, array $updateColumns = []): int
     {
-        $this->guard->authorize('insert', $this->table);
-        $this->guard->authorize('update', $this->table);
-        $columns      = array_keys($data);
+        $this->guard->authorize('insert', $this->realTable);
+        $this->guard->authorize('update', $this->realTable);
+        $columns = array_keys($data);
         $placeholders = implode(', ', array_fill(0, count($columns), '?'));
-        $colList      = implode('`, `', $columns);
-        $updateCols   = empty($updateColumns) ? $columns : $updateColumns;
-        $updateParts  = array_map(fn($c) => "`$c` = VALUES(`$c`)", $updateCols);
-        $sql          = "INSERT INTO `{$this->table}` (`$colList`) VALUES ($placeholders)"
+        $colList = implode('`, `', $columns);
+        $updateCols = empty($updateColumns) ? $columns : $updateColumns;
+        $updateParts = array_map(fn($c) => "`$c` = VALUES(`$c`)", $updateCols);
+        $sql = "INSERT INTO `{$this->realTable}` (`$colList`) VALUES ($placeholders)"
             . " ON DUPLICATE KEY UPDATE " . implode(', ', $updateParts);
         $this->database->query($sql, ...array_values($data));
         return (int)$this->database->getPdo()->lastInsertId();
@@ -368,35 +386,34 @@ class QueryBuilder
     /** Update rows matching current WHERE conditions. Returns affected rows. */
     public function update(array $data): int
     {
-        $this->guard->authorize('update', $this->table);
+        $this->guard->authorize('update', $this->realTable);
         if (empty($data)) {
             throw new \InvalidArgumentException("update() requires at least one column.");
         }
         $setParts = [];
         $setBindings = [];
         foreach ($data as $col => $val) {
-            $setParts[]    = $this->quoteColumn($col) . ' = ?';
+            $setParts[] = $this->quoteColumn($col) . ' = ?';
             $setBindings[] = $val;
         }
         [$whereClause, $whereBindings] = $this->compileWhere();
-        $sql      = "UPDATE `{$this->table}` SET " . implode(', ', $setParts) . $whereClause;
+        $sql = "UPDATE `{$this->realTable}` SET " . implode(', ', $setParts) . $whereClause;
         $bindings = array_merge($setBindings, $whereBindings);
-        $stmt     = $this->database->query($sql, ...$bindings);
+        $stmt = $this->database->query($sql, ...$bindings);
         return $stmt instanceof \PDOStatement ? $stmt->rowCount() : 0;
     }
 
     /** Delete rows matching current WHERE conditions. Returns affected rows. */
     public function delete(): int
     {
-        $this->guard->authorize('delete', $this->table);
+        $this->guard->authorize('delete', $this->realTable);
         [$whereClause, $whereBindings] = $this->compileWhere();
-        $sql  = "DELETE FROM `{$this->table}`" . $whereClause;
+        $sql = "DELETE FROM `{$this->realTable}`" . $whereClause;
         $stmt = $this->database->query($sql, ...$whereBindings);
         return $stmt instanceof \PDOStatement ? $stmt->rowCount() : 0;
     }
 
     // ── SQL Compilation ──────────────────────────────────────────────────────
-
     private function compileSelect(): array
     {
         $columns = implode(', ', array_map(function (string $col): string {
@@ -405,7 +422,7 @@ class QueryBuilder
                 : $this->quoteColumn($col);
         }, $this->columns));
 
-        $sql = "SELECT $columns FROM `{$this->table}`";
+        $sql = "SELECT $columns FROM " . $this->quotedBaseTable();
         $bindings = [];
 
         if (!empty($this->joins)) {
@@ -413,26 +430,22 @@ class QueryBuilder
         }
 
         [$whereClause, $whereBindings] = $this->compileWhere();
-        $sql      .= $whereClause;
-        $bindings  = array_merge($bindings, $whereBindings);
+        $sql .= $whereClause;
+        $bindings = array_merge($bindings, $whereBindings);
 
         if (!empty($this->groupBys)) {
             $sql .= ' GROUP BY ' . implode(', ', $this->groupBys);
         }
-
         if (!empty($this->havings)) {
             $sql .= ' HAVING ' . implode(' AND ', $this->havings);
             $bindings = array_merge($bindings, $this->bindings);
         }
-
         if (!empty($this->orderBys)) {
             $sql .= ' ORDER BY ' . implode(', ', $this->orderBys);
         }
-
         if ($this->limitVal !== null) {
             $sql .= ' LIMIT ' . $this->limitVal;
         }
-
         if ($this->offsetVal !== null) {
             $sql .= ' OFFSET ' . $this->offsetVal;
         }
@@ -445,18 +458,43 @@ class QueryBuilder
         if (empty($this->wheres)) {
             return ['', []];
         }
-
-        $parts    = [];
+        $parts = [];
         $bindings = [];
         foreach ($this->wheres as $i => $where) {
-            $parts[]  = ($i === 0 ? '' : $where['type'] . ' ') . $where['sql'];
+            $parts[] = ($i === 0 ? '' : $where['type'] . ' ') . $where['sql'];
             $bindings = array_merge($bindings, $where['bindings']);
         }
-
         return [' WHERE ' . implode(' ', $parts), $bindings];
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Renders the base table for FROM, including its alias if one was given. */
+    private function quotedBaseTable(): string
+    {
+        return "`{$this->realTable}`" . ($this->tableAlias !== null ? " AS `{$this->tableAlias}`" : '');
+    }
+
+    /**
+     * Splits "real_table AS alias" (case-insensitive AS, any whitespace)
+     * into [realTable, alias|null]. Bare table names pass through unchanged.
+     */
+    private static function splitTableAlias(string $table): array
+    {
+        if (preg_match('/^\s*([A-Za-z0-9_]+)\s+AS\s+([A-Za-z0-9_]+)\s*$/i', $table, $m)) {
+            return [$m[1], $m[2]];
+        }
+        return [trim($table), null];
+    }
+
+    /** Authorize the base table plus every joined table for the given action. */
+    private function authorizeAll(string $action): void
+    {
+        $this->guard->authorize($action, $this->realTable);
+        foreach ($this->joinTables as $joinedTable) {
+            $this->guard->authorize($action, $joinedTable);
+        }
+    }
 
     private function quoteColumn(string $column): string
     {

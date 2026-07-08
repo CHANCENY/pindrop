@@ -29,6 +29,7 @@ use Simp\Pindrop\FactorAuthentication\TwoFactorManager;
 use Simp\Pindrop\Mail\MailManager;
 use Simp\Pindrop\Message\Message;
 use Simp\Pindrop\Modules\admin\src\Address\AddressFormatter;
+use Simp\Pindrop\Modules\admin\src\Plugin\AdminSettings;
 use Simp\Pindrop\Modules\admin\src\Plugin\TwoFactorSettings;
 use Simp\Pindrop\Permission\Permission;
 use Simp\Pindrop\Plugin\PluginManager;
@@ -1265,7 +1266,16 @@ Generated: " . date('Y-m-d H:i:s') . "
 
                 if ($session->create()) {
                     // Set session cookie
-                    $response = new RedirectResponse(Url::routeByName('users.view.user', ['user_id' => $user->getId()]));
+                    $settings = new Settings($this->database);
+                    $settingsAdmin = $settings->getSetting(new AdminSettings()->settingKey());
+
+                    $url = Url::routeByName('users.view.user', ['user_id' => $user->getId()]);
+
+                    if ($settingsAdmin?->get('login_redirect')) {
+                        $url = $settingsAdmin->get('login_redirect');
+                    }
+                   
+                    $response = new RedirectResponse($url);
                     $response->headers->setCookie(
                         new Cookie(
                             'session_id',

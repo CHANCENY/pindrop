@@ -228,8 +228,8 @@ export class Autocomplete {
     async search(query) {
         try {
             // Call custom search function if provided
-            if (this.config.onSearch) {
-                const results = await this.config.onSearch(query, this.config.limit);
+            if (this.config.onSearch && typeof window[this.config.onSearch] === "function") {
+                const results = await  window[this.config.onSearch](query, this.config.limit);
                 this.displayResults(results);
             } else if (this.config.source) {
                 // Use backend autocomplete endpoint
@@ -317,8 +317,8 @@ export class Autocomplete {
             this.hideDropdown();
 
             // Call custom select handler
-            if (this.config.onSelect) {
-                this.config.onSelect(item);
+            if (this.config.onSelect && typeof window[this.config.onSelect] === "function") {
+                window[this.config.onSearch](limit);
             }
         }
     }
