@@ -1273,6 +1273,8 @@ Generated: " . date('Y-m-d H:i:s') . "
 
                     if ($settingsAdmin?->get('login_redirect')) {
                         $url = $settingsAdmin->get('login_redirect');
+                        $url = substr($url, 0,strrpos($url, '('));
+                        $url = trim($url);
                     }
                    
                     $response = new RedirectResponse($url);

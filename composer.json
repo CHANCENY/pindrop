@@ -1,7 +1,7 @@
 {
     "name": "simp/pindrop",
-    "description": "This is pindrop package for php websites",
-    "type": "library",
+    "description": "Pindrop CMS project for building PHP websites",
+    "type": "project",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -21,38 +21,39 @@
         }
     ],
     "require": {
-        "php-di/php-di": "^7.1",
-        "ext-pdo": "*",
-        "symfony/var-dumper": "^8.0",
-        "phpmailer/phpmailer": "^7.0",
-        "symfony/yaml": "^7.2",
-        "simp/streamwrapper": "^1.0",
-        "symfony/mime": "^8.0",
-        "twig/twig": "^3.0",
-        "ext-zip": "*",
-        "simp/router": "1.1.5",
-        "shuchkin/simplexlsx": "^1.1",
-        "shuchkin/simplexls": "^1.0",
-        "shuchkin/simplecsv": "^1.0",
-        "filp/whoops": "^2.18",
-        "simp/translate": "^1.0",
-        "ext-dom": "*",
-        "ext-libxml": "*",
-        "giggsey/libphonenumber-for-php": "^9.0",
-        "dragonmantank/cron-expression": "^3.6",
-        "react/socket": "^1.17.0",
-        "ext-sockets": "*",
-        "minishlink/web-push": "^10.0",
-        "commerceguys/addressing": "^2.2",
-        "pragmarx/google2fa": "^9.0",
+        "php": "^8.4",
         "bacon/bacon-qr-code": "^3.1",
+        "commerceguys/addressing": "^2.2",
+        "dragonmantank/cron-expression": "^3.6",
         "endroid/qr-code": "^6.1",
+        "filp/whoops": "^2.18",
+        "giggsey/libphonenumber-for-php": "^9.0",
+        "minishlink/web-push": "^10.0",
         "mpdf/mpdf": "^8.3",
-        "shuchkin/simplexlsxgen": "^1.5"
+        "php-di/php-di": "^7.1",
+        "phpmailer/phpmailer": "^7.0",
+        "pragmarx/google2fa": "^9.0",
+        "react/socket": "^1.17.0",
+        "shuchkin/simplecsv": "^1.0",
+        "shuchkin/simplexls": "^1.0",
+        "shuchkin/simplexlsx": "^1.1",
+        "shuchkin/simplexlsxgen": "^1.5",
+        "simp/router": "^1.1.5",
+        "simp/streamwrapper": "^1.0",
+        "simp/translate": "^1.0",
+        "symfony/mime": "^8.0",
+        "symfony/var-dumper": "^8.0",
+        "symfony/yaml": "^7.2",
+        "twig/twig": "^3.0"
     },
     "scripts": {
         "post-install-cmd": [
             "php cli/composer.php"
+        ],
+        "post-update-cmd": [
+            "php cli/composer.php"
         ]
-    }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
