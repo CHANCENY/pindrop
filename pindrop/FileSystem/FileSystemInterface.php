@@ -100,7 +100,7 @@ interface FileSystemInterface
     /**
      * Validate file upload
      */
-    public function validateUpload(array $file, array $allowedTypes = [], int $maxSize = null): array;
+    public function validateUpload(array $file, array $allowedTypes = [], ?int $maxSize = null): array;
 
     /**
      * Get public URL for a file

@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Plugin;
 
+use DI\Container;
+use Exception;
+use InvalidArgumentException;
+use Reflection;
+use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Message\Message;
+use Simp\Pindrop\Routing\AttributeRoute;
 use Simp\Pindrop\Services\EnvServiceProvider;
 use Simp\Pindrop\Templating\LibraryAssets;
 use Symfony\Component\Yaml\Yaml;
-use DI\Container;
-use Exception;
-use Simp\Pindrop\Events\SystemEvents\Events;
 
 /**
  * Plugin Manager
@@ -531,7 +534,7 @@ class PluginManager
             }
 
             $this->pluginServices = $this->topologicalSortServices($this->pluginServices);
-            
+
             // Load plugin routes if routing.yml exists
             $routingFile = $plugin['path'] . '/routing.yml';
             if (file_exists($routingFile)) {
@@ -545,6 +548,45 @@ class PluginManager
                     $this->pluginRoutes[$pluginId] = $routes;
                 }
             }
+
+            //TODO add route from attributes
+            $attribute_routes_directory = $plugin['path'] . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Routes';
+            $attrbuteRoutes = [];
+            if (is_dir($attribute_routes_directory)) {
+                $files = array_diff(scandir($attribute_routes_directory) ?? [], ['.', '..']);
+                foreach ($files as $file) {
+                    $full_path = $attribute_routes_directory . DIRECTORY_SEPARATOR . $file;
+                    $class_details = $this->getClassInfo($full_path);
+                    $qualified_class = $class_details['fqcn'] ?? null;
+                    if (!is_null($qualified_class) && !class_exists($qualified_class)) {
+                        throw new Exception(json_encode($class_details) . " attribute route class not found");
+                    }
+
+                    $reflection = new \ReflectionClass($qualified_class);
+                    foreach ($reflection->getMethods() as $method) {
+                        $attributes = $method->getAttributes(AttributeRoute::class);
+                        foreach ($attributes as $attribute) {
+                            $arguments = $attribute->getArguments();
+                            $route = null;
+                            if (isset($arguments['name']) && isset($arguments['controller'])) {
+                                $route = $attribute->newInstance();
+                            } else {
+                                $arguments['name'] = $class_details['class'] . "." . $method->getName();
+                                $arguments['controller'] = $class_details['fqcn'] . "::" . $method->getName();
+                                $route = new AttributeRoute(...$arguments);
+                            }
+
+                            if (!is_null($route) && $route->isValidRoute()) {
+                                $attrbuteRoutes[$route->getName()] = $route->routeDefinition();
+                            }
+                        }
+
+
+                    }
+                }
+            }
+
+            $this->pluginRoutes[$pluginId] = array_merge($this->pluginRoutes[$pluginId] ?? [], $attrbuteRoutes);
 
             // Load plugin menus if menu.yml exists
             $menuFile = $plugin['path'] . '/menu.yml';
@@ -639,6 +681,69 @@ class PluginManager
         } catch (Exception $e) {
             throw new \RuntimeException("Failed to load plugin config for {$pluginId}: " . $e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * Get the namespace, class name and fully-qualified class name (FQCN)
+     * from a PHP file.
+     *
+     * @param string $file
+     * @return array{
+     *     namespace: ?string,
+     *     class: ?string,
+     *     fqcn: ?string
+     * }
+     */
+    function getClassInfo(string $file): array
+    {
+        if (!is_file($file)) {
+            throw new InvalidArgumentException("File not found: {$file}");
+        }
+
+        $tokens = token_get_all(file_get_contents($file));
+
+        $namespace = '';
+        $class = '';
+
+        for ($i = 0, $count = count($tokens); $i < $count; $i++) {
+            if (!is_array($tokens[$i])) {
+                continue;
+            }
+
+            // Namespace
+            if ($tokens[$i][0] === T_NAMESPACE) {
+                $namespace = '';
+
+                for ($i++; $i < $count; $i++) {
+                    if (!is_array($tokens[$i])) {
+                        if ($tokens[$i] === ';' || $tokens[$i] === '{') {
+                            break;
+                        }
+                        continue;
+                    }
+
+                    if (in_array($tokens[$i][0], [T_STRING, T_NAME_QUALIFIED, T_NS_SEPARATOR], true)) {
+                        $namespace .= $tokens[$i][1];
+                    }
+                }
+            }
+
+            // Class
+            if ($tokens[$i][0] === T_CLASS) {
+                for ($i++; $i < $count; $i++) {
+                    if (is_array($tokens[$i]) && $tokens[$i][0] === T_STRING) {
+                        $class = $tokens[$i][1];
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        return [
+            'namespace' => $namespace ?: null,
+            'class' => $class ?: null,
+            'fqcn' => $class ? ($namespace ? "{$namespace}\\{$class}" : $class) : null,
+        ];
     }
 
     /**
