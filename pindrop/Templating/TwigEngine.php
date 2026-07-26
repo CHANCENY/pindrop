@@ -93,7 +93,10 @@ class TwigEngine
            if (str_ends_with($source, '/templates')) {
                // remove templates from path
                $source = substr($source, 0, -10);
-               $this->loader->addPath($source);
+               $namespace = substr($source, strripos($source, '/')+1, strlen($source));
+
+              
+               $this->loader->addPath($source. DIRECTORY_SEPARATOR. 'templates', $namespace);
            }
        }
     }
@@ -321,10 +324,11 @@ class TwigEngine
     {
         $list = explode('/', $templateName);
         $first = array_shift($list);
+        return $templateName;
 
+        // Old
         $theme = $this->themeManager->getTheme($first);
-       
-
+        
         /**@var PluginManager $pluginManager */
         $pluginManager = \getAppContainer()->get('plugin.manager');
         $otherSources = $pluginManager->getPluginTemplateSources();
@@ -347,13 +351,17 @@ class TwigEngine
             return implode('/', $newTemplatePath);
         }
 
+        $ll = [$first, 'templates', ...$list];
+        
+        return implode('/', $ll);
+
         $plugin = $pluginManager->getPlugin(trim($first, "@"));
 
         if (empty($plugin)) return $templateName;
 
         $templatePath = $plugin['path'] . '/templates';
         $templatePathRoot = substr($templatePath, strlen($plugin['path']), strlen($templatePath));
-
+       
         $newTemplatePath = [trim($templatePathRoot, '/'), ...$list];
         $newTemplatePath = array_filter($newTemplatePath);
 
