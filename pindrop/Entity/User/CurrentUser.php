@@ -124,7 +124,17 @@ class CurrentUser
 
             $this->user = User::fromCurrentUser($this->db, $this->logger, $this);
         }
+
         return $this->user;
+    }
+
+    public static function resolveAnonymous(): ?CurrentUser
+    {
+        $uid = $_ENV['ANONYMOUS_ID'] ?? null;
+        
+        return empty($uid) ? null : CurrentUser::findById(
+            getAppContainer()->get('database'),
+        getAppContainer()->get('logger'),$uid);
     }
 
     public function setUser(User $user): self
