@@ -324,9 +324,7 @@ class TwigEngine
     {
         $list = explode('/', $templateName);
         $first = array_shift($list);
-        return $templateName;
-
-        // Old
+        
         $theme = $this->themeManager->getTheme($first);
         
         /**@var PluginManager $pluginManager */
@@ -351,9 +349,9 @@ class TwigEngine
             return implode('/', $newTemplatePath);
         }
 
-        $ll = [$first, 'templates', ...$list];
-        
-        return implode('/', $ll);
+        return $templateName;
+
+        // Old
 
         $plugin = $pluginManager->getPlugin(trim($first, "@"));
 
