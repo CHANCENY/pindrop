@@ -8,6 +8,7 @@ use Exception;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Events\SystemEvents\Events;
 use Simp\Pindrop\Logger\LoggerInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 class CurrentUser
 {
@@ -20,7 +21,7 @@ class CurrentUser
     private ?DateTime $lastActivity = null;
     private ?DateTime $expiresAt = null;
     private ?array $user_data = null;
-    
+
     private ?User $user = null;
     private DatabaseService $db;
     private LoggerInterface $logger;
@@ -107,7 +108,7 @@ class CurrentUser
         return $this->expiresAt;
     }
 
-    public function getUserData() 
+    public function getUserData()
     {
         return $this->user_data;
     }
@@ -130,11 +131,42 @@ class CurrentUser
 
     public static function resolveAnonymous(): ?CurrentUser
     {
-        $uid = $_ENV['ANONYMOUS_ID'] ?? null;
-        
-        return empty($uid) ? null : CurrentUser::findById(
-            getAppContainer()->get('database'),
-        getAppContainer()->get('logger'),$uid);
+        $uid = (int) $_ENV['ANONYMOUS_ID'] ?? null;
+
+        if (empty($uid))
+            return null;
+
+        $currentUser = CurrentUser::findByUserId(getAppContainer()->get('database'), getAppContainer()->get('logger'), $uid);
+        if (!empty($currentUser[0]) && $currentUser[0] instanceof CurrentUser && !$currentUser[0]->isExpired()) {
+            return $currentUser[0];
+        }
+
+        if (!empty($currentUser[0]) && $currentUser[0] instanceof CurrentUser) {
+            $currentUser[0]->revokeAllUserSessions(getAppContainer()->get('database'), getAppContainer()->get('logger'), $uid);
+        }
+
+        $session = new CurrentUser(getAppContainer()->get('database'), getAppContainer()->get('logger'));
+        $user = User::loadById($uid, getAppContainer()->get('database'));
+        $request = Request::createFromGlobals();
+
+        if (!$user)
+            return null;
+        $sessionId = session_id();
+        $date = new DateTime();
+
+        $session->populateFromData([
+            'id' => 0,
+            'session_id' => $sessionId,
+            'user_id' => $uid,
+            'ip_address' => $request->getClientIp(),
+            'user_agent' => $request->headers->get('User-Agent'),
+            'user_data' => json_encode($user->toArray()),
+            'last_activity' => $date->format('d-m-Y'),
+            'expires_at' => (clone $date)->modify('+1 hour')->format('d-m-Y'),
+            'created_at' => (clone $date)->format('d-m-Y')
+        ]);
+        return $session;
+
     }
 
     public function setUser(User $user): self
@@ -157,7 +189,7 @@ class CurrentUser
                 'user_id' => $this->userId,
                 'session_id' => $this->sessionId
             ]);
-           
+
             $data = [
                 'session_id' => $this->sessionId,
                 'user_id' => $this->userId,
@@ -263,7 +295,7 @@ class CurrentUser
         try {
             $logger->debug('Finding user session by session_id', ['session_id' => $sessionId]);
             $result = $db->table('user_session')->where('session_id', '=', $sessionId)->first();
-           
+
 
             if ($result) {
                 $session = new self($db, $logger);
@@ -288,7 +320,7 @@ class CurrentUser
         try {
             $logger->debug('Finding user session by session_id', ['session_id' => $id]);
             $result = $db->table('user_session')->where('id', '=', $id)->first();
-           
+
 
             if ($result) {
                 $session = new self($db, $logger);
@@ -357,7 +389,7 @@ class CurrentUser
         try {
             $logger->debug('Revoking all user sessions', ['user_id' => $userId]);
 
-            $affected = $db->table('user_session')->where('user_id','=', $userId)->delete();
+            $affected = $db->table('user_session')->where('user_id', '=', $userId)->delete();
 
             $logger->info('All user sessions revoked', ['user_id' => $userId, 'count' => $affected]);
             return $affected;
@@ -428,8 +460,8 @@ class CurrentUser
         if (!$this->isLoggedIn()) {
             return [];
         }
-        
+
         return $this->db->table('user_session')->where('user_id', '=', $this->userId)->orderBy('last_activity', 'DESC')->get();
-    
+
     }
 }
