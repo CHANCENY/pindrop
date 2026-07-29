@@ -271,7 +271,6 @@ class RouteProvider
                     }
                 }
                 else {
-                    dump($exception);
                     die("unexpected error occurred");
                 }
 
