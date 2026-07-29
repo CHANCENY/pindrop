@@ -64,6 +64,7 @@ class DatabasePermissionGuard
 
         // Core tables: only super_admin may write, admin may read
         $owner = $this->registry->getTableOwner($table);
+        
         if ($owner === 'core') {
             $this->authorizeCoreTable($op, $table, $role);
             return;

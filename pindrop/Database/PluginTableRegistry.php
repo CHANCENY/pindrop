@@ -63,6 +63,7 @@ class PluginTableRegistry
             return;
         }
 
+
         foreach (glob($mysqlDir . '/*.sql') ?: [] as $sqlFile) {
             $sql    = file_get_contents($sqlFile);
             $tables = $this->extractTableNamesFromSql($sql);
@@ -78,7 +79,7 @@ class PluginTableRegistry
                     );
                 }
                 $this->tableOwners[$table]   = $pluginId;
-                $this->pluginTables[$pluginId][] = $table;
+                $this->pluginTables[$pluginId][] = $table;   
             }
         }
         
@@ -159,6 +160,11 @@ class PluginTableRegistry
     public function getPluginTables(string $pluginId): array
     {
         return $this->pluginTables[$pluginId] ?? [];
+    }
+
+    public function getAllPluginTables(): array 
+    {
+        return $this->pluginTables;
     }
 
     /**
@@ -247,4 +253,23 @@ class PluginTableRegistry
 
         return array_unique($tables);
     }
+
+    public function setTableOwners(array $tableOwners)
+    {
+        if (empty($tableOwners)) return;
+        $this->tableOwners = $tableOwners;
+    }
+
+    public function setPluginTables(array $pluginTables) 
+    {
+        if (empty($pluginTables)) return;
+        $this->pluginTables = $pluginTables;
+    }
+
+    public function setDbPermissions(array $dbPermissions)
+    {
+        if (empty($dbPermissions)) return;
+        $this->dbPermissions = $dbPermissions;
+    }
+
 }

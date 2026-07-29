@@ -270,6 +270,9 @@ class PluginManager
         $this->pluginTemplatesSources = $manifest['pluginTemplatesSources'] ?? [];
         $this->pluginPermissions = $manifest['pluginPermissions'] ?? [];
         $this->pluginRoles = $manifest['pluginRoles'] ?? [];
+        $this->tableRegistry->setDbPermissions($manifest['databasePermissionGurds']['dbPermissions'] ?? []);
+        $this->tableRegistry->setTableOwners($manifest['databasePermissionGurds']['tableOwners'] ?? []);
+        $this->tableRegistry->setPluginTables($manifest['databasePermissionGurds']['pluginTables'] ?? []);
 
         return true;
     }
@@ -293,6 +296,11 @@ class PluginManager
             'pluginMenus' => $this->pluginMenus,
             'pluginTemplatesSources' => $this->pluginTemplatesSources,
             'pluginPermissions' => $this->pluginPermissions,
+            'databasePermissionGurds' => [
+                'tableOwners' => $this->tableRegistry->getAllTableOwners(),
+                'pluginTables'=> $this->tableRegistry->getAllPluginTables(),
+                'dbPermissions' => $this->tableRegistry->getAllDbPermissions()
+            ]
         ];
 
         $php = '<?php return ' . var_export($manifest, true) . ';' . PHP_EOL;
@@ -653,9 +661,11 @@ class PluginManager
             // Register plugin tables with PluginTableRegistry
             if ($this->tableRegistry !== null) {
                 try {
+                   
                     $this->tableRegistry->registerPluginTables($pluginId, $plugin['path']);
                     $this->tableRegistry->registerDbPermissions($pluginId, $plugin['path']);
                 } catch (\RuntimeException $e) {
+                    
                     // Table conflict — log and continue so other plugins still load
                     error_log("[Pindrop] Table registry error for plugin '$pluginId': " . $e->getMessage());
                 }
