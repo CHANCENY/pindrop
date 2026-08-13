@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Simp\Pindrop\Database;
 
+use Simp\Pindrop\Modules\zero_knowledge_encryption\src\Services\ZeroKnowledgeEncryptionTableManager;
+
 /**
  * QueryBuilder
  *
@@ -56,9 +58,23 @@ class QueryBuilder
     private readonly ?string $tableAlias;
 
     // ── Allowed operations for validation ───────────────────────────────────
-    private const ALLOWED_OPERATORS = ['=', '!=', '<>', '<', '>', '<=', '>=',
-        'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'IS NULL', 'IS NOT NULL',
-        'BETWEEN', 'NOT BETWEEN'];
+    private const ALLOWED_OPERATORS = [
+        '=',
+        '!=',
+        '<>',
+        '<',
+        '>',
+        '<=',
+        '>=',
+        'LIKE',
+        'NOT LIKE',
+        'IN',
+        'NOT IN',
+        'IS NULL',
+        'IS NOT NULL',
+        'BETWEEN',
+        'NOT BETWEEN'
+    ];
     private const ALLOWED_DIRECTIONS = ['ASC', 'DESC'];
 
     public function __construct(
@@ -222,14 +238,16 @@ class QueryBuilder
 
     public function limit(int $limit): static
     {
-        if ($limit < 0) throw new \InvalidArgumentException("LIMIT cannot be negative.");
+        if ($limit < 0)
+            throw new \InvalidArgumentException("LIMIT cannot be negative.");
         $this->limitVal = $limit;
         return $this;
     }
 
     public function offset(int $offset): static
     {
-        if ($offset < 0) throw new \InvalidArgumentException("OFFSET cannot be negative.");
+        if ($offset < 0)
+            throw new \InvalidArgumentException("OFFSET cannot be negative.");
         $this->offsetVal = $offset;
         return $this;
     }
@@ -256,6 +274,58 @@ class QueryBuilder
         return $this;
     }
 
+    private function invokeGetZeroKnowledgeEncryptionKeyEvent($data)
+    {
+        if (class_exists('\Simp\Pindrop\Modules\zero_knowledge_encryption\src\Plugin\Events\Events')) {
+            $eventName = \Simp\Pindrop\Modules\zero_knowledge_encryption\src\Plugin\Events\Events::DB_GET_DATA;
+
+            if (class_exists('Simp\Pindrop\Modules\zero_knowledge_encryption\src\Services\ZeroKnowledgeEncryptionTableManager')) {
+                $ignoreTables = ZeroKnowledgeEncryptionTableManager::getIgnoredTables();
+
+                $tables = [$this->table, ...$this->joinTables];
+                $tables = array_diff($tables, $ignoreTables);
+
+                if (empty($tables))
+                    return $data;
+
+                if (empty($data)) return $data;
+
+                $d = appEvents()->invokeEvents($eventName, ['table' => $tables, 'data' => $data]);
+                return $d ?? $data;
+
+            }
+            return $data;
+        }
+        return $data;
+    }
+
+    private function invokeSaveZeroKnowledgeEncryptionKeyEvent($data)
+    {
+        if (class_exists('\Simp\Pindrop\Modules\zero_knowledge_encryption\src\Plugin\Events\Events')) {
+            $eventName = \Simp\Pindrop\Modules\zero_knowledge_encryption\src\Plugin\Events\Events::DB_SAVE_DATA;
+
+            if (class_exists('Simp\Pindrop\Modules\zero_knowledge_encryption\src\Services\ZeroKnowledgeEncryptionTableManager')) {
+                $ignoreTables = ZeroKnowledgeEncryptionTableManager::getIgnoredTables();
+
+                $tables = [$this->table, ...$this->joinTables];
+                $tables = array_diff($tables, $ignoreTables);
+
+                if (empty($tables))
+                    return $data;
+
+
+                if (!empty($data)) {
+
+                    $d = appEvents()->invokeEvents($eventName, ['table' => $tables, 'data' => $data]);
+
+                    return $d ?? $data;
+                }
+
+            }
+        }
+        return $data;
+    }
+
     // ── Terminal — READ ──────────────────────────────────────────────────────
     /** Execute SELECT and return all matching rows. */
     public function get(): array
@@ -263,7 +333,9 @@ class QueryBuilder
         $this->authorizeAll('select');
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
-        return $stmt instanceof \PDOStatement ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+        $results = $stmt instanceof \PDOStatement ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+        $results = $this->invokeGetZeroKnowledgeEncryptionKeyEvent($results);
+        return $results;
     }
 
     /** Execute SELECT and return first matching row or null. */
@@ -273,8 +345,10 @@ class QueryBuilder
         $this->limitVal = 1;
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
-        if (!$stmt instanceof \PDOStatement) return null;
+        if (!$stmt instanceof \PDOStatement)
+            return null;
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $row = $this->invokeGetZeroKnowledgeEncryptionKeyEvent($row);
         return $row !== false ? $row : null;
     }
 
@@ -286,8 +360,10 @@ class QueryBuilder
         $this->limitVal = 1;
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
-        if (!$stmt instanceof \PDOStatement) return null;
+        if (!$stmt instanceof \PDOStatement)
+            return null;
         $val = $stmt->fetchColumn();
+        $val = $this->invokeGetZeroKnowledgeEncryptionKeyEvent($val);
         return $val !== false ? $val : null;
     }
 
@@ -298,8 +374,11 @@ class QueryBuilder
         $this->columns = [$column];
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
-        if (!$stmt instanceof \PDOStatement) return [];
-        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        if (!$stmt instanceof \PDOStatement)
+            return [];
+        $result = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        $result = $this->invokeGetZeroKnowledgeEncryptionKeyEvent($result);
+        return $result !== false ? $result : [];
     }
 
     /** Count matching rows. */
@@ -310,9 +389,10 @@ class QueryBuilder
         $this->columns = ["COUNT($col) AS _count"];
         [$sql, $bindings] = $this->compileSelect();
         $stmt = $this->database->query($sql, ...$bindings);
-        if (!$stmt instanceof \PDOStatement) return 0;
+        if (!$stmt instanceof \PDOStatement)
+            return 0;
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return (int)($row['_count'] ?? 0);
+        return (int) ($row['_count'] ?? 0);
     }
 
     /** Check if any rows match the current WHERE conditions. */
@@ -335,7 +415,7 @@ class QueryBuilder
             'total' => $total,
             'per_page' => $perPage,
             'current_page' => $page,
-            'last_page' => (int)ceil($total / $perPage),
+            'last_page' => (int) ceil($total / $perPage),
         ];
     }
 
@@ -351,8 +431,9 @@ class QueryBuilder
         $placeholders = implode(', ', array_fill(0, count($columns), '?'));
         $colList = implode('`, `', $columns);
         $sql = "INSERT INTO `{$this->realTable}` (`$colList`) VALUES ($placeholders)";
+        $data = $this->invokeSaveZeroKnowledgeEncryptionKeyEvent($data);
         $this->database->query($sql, ...array_values($data));
-        return (int)$this->database->getPdo()->lastInsertId();
+        return (int) $this->database->getPdo()->lastInsertId();
     }
 
     /** Insert a row or ignore on duplicate key. Returns last insert ID. */
@@ -363,8 +444,9 @@ class QueryBuilder
         $placeholders = implode(', ', array_fill(0, count($columns), '?'));
         $colList = implode('`, `', $columns);
         $sql = "INSERT IGNORE INTO `{$this->realTable}` (`$colList`) VALUES ($placeholders)";
+        $data = $this->invokeSaveZeroKnowledgeEncryptionKeyEvent($data);
         $this->database->query($sql, ...array_values($data));
-        return (int)$this->database->getPdo()->lastInsertId();
+        return (int) $this->database->getPdo()->lastInsertId();
     }
 
     /** Upsert (INSERT … ON DUPLICATE KEY UPDATE). Returns last insert ID. */
@@ -379,8 +461,9 @@ class QueryBuilder
         $updateParts = array_map(fn($c) => "`$c` = VALUES(`$c`)", $updateCols);
         $sql = "INSERT INTO `{$this->realTable}` (`$colList`) VALUES ($placeholders)"
             . " ON DUPLICATE KEY UPDATE " . implode(', ', $updateParts);
+        $data = $this->invokeSaveZeroKnowledgeEncryptionKeyEvent($data);
         $this->database->query($sql, ...array_values($data));
-        return (int)$this->database->getPdo()->lastInsertId();
+        return (int) $this->database->getPdo()->lastInsertId();
     }
 
     /** Update rows matching current WHERE conditions. Returns affected rows. */
@@ -396,6 +479,7 @@ class QueryBuilder
             $setParts[] = $this->quoteColumn($col) . ' = ?';
             $setBindings[] = $val;
         }
+        $setBindings = $this->invokeSaveZeroKnowledgeEncryptionKeyEvent($setBindings);
         [$whereClause, $whereBindings] = $this->compileWhere();
         $sql = "UPDATE `{$this->realTable}` SET " . implode(', ', $setParts) . $whereClause;
         $bindings = array_merge($setBindings, $whereBindings);
@@ -409,6 +493,7 @@ class QueryBuilder
         $this->guard->authorize('delete', $this->realTable);
         [$whereClause, $whereBindings] = $this->compileWhere();
         $sql = "DELETE FROM `{$this->realTable}`" . $whereClause;
+        $whereBindings = $this->invokeSaveZeroKnowledgeEncryptionKeyEvent($whereBindings);
         $stmt = $this->database->query($sql, ...$whereBindings);
         return $stmt instanceof \PDOStatement ? $stmt->rowCount() : 0;
     }

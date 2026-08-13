@@ -61,4 +61,16 @@ class Settings
     {
         return $this->databaseService->table('site_settings')->where('key_token','=', $key)->delete();
     }
+
+    public function singleUpdate(string $key, array $value): int
+    {
+        $settings = new Setting($key, $value);
+         // json_encode instead of serialize — serialize() is a RCE vector via
+        // PHP object injection if an attacker controls stored content.
+        $encoded = json_encode(['key' => $settings->getKey(), 'value' => $settings->getValue()]);
+
+        return $this->databaseService->table('site_settings')->where('key_token','=', $key)->update([
+            'content'   => $encoded,
+        ]);
+    }
 }

@@ -235,7 +235,8 @@ class CurrentUser
 
             $data = [
                 'last_activity' => $this->lastActivity->format('Y-m-d H:i:s'),
-                'expires_at' => $this->expiresAt->format('Y-m-d H:i:s')
+                'expires_at' => $this->expiresAt->format('Y-m-d H:i:s'),
+                'user_data' => json_encode($this->user_data ?? [])
             ];
 
             $affected = $this->db->table('user_session')->where('id', '=', $this->id)->update($data);

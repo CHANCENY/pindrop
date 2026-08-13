@@ -121,43 +121,33 @@ class EventsManager
         return $subscribers;
     }
 
+    private function buildEventEmitter(?array $eventArguments): EventEmitter
+    {
+        $eventEmitter = new EventEmitter();
+        $eventEmitter->options = [];
+        $eventEmitter->raw = $eventArguments;
+        return $eventEmitter;
+    }
+
     public function invokeEvents(string $eventName, array $eventArguments = []): array
     {
         $this->events = $this->loadEvents();
         $this->eventListeners = $this->loadSubscribers();
-
-        /* The line `         = new EventEmitter();` is creating a new instance of the
-        `EventEmitter` class. This instance will be used to emit events and pass event data to event
-        subscribers. The `EventEmitter` class likely contains methods to manage and trigger events
-        within the application. */
-        $eventEmitter = new EventEmitter();
-        $eventEmitter->options = [];
-        $eventEmitter->raw = $eventArguments;
-      
-        foreach ($eventArguments as $key=>$eventArgument) {
-            if (is_string($key)) {
-                $eventEmitter->$key = $eventArgument;
-            }
-            elseif (is_numeric($key)) {
-                $eventEmitter->options[$key] = $eventArgument;
-            }
-        }
-
+        $eventEmitter = $this->buildEventEmitter($eventArguments);
         $eventSubscribers = $this->eventListeners[$eventName] ?? [];
+
+        $resultsStore = [];
         foreach ($eventSubscribers as $eventSubscriber) {
-            call_user_func_array($eventSubscriber, ['event' => &$eventEmitter]);
+
+            if (!empty($resultsStore)) {
+                $eventEmitter = $this->buildEventEmitter($resultsStore);
+            }
+            $resultsStore = call_user_func_array($eventSubscriber, ['event' => $eventEmitter]);
         }
 
-        $transformedArguments = [];
-        foreach ($eventArguments as $key=>$eventArgument) {
-            if (is_string($key)) {
-                $transformedArguments[$key] = $eventEmitter->$key;
-            }
-            elseif (is_numeric($key)) {
-                $transformedArguments[$key] = $eventEmitter->options[$key];
-            }
-        }
-        return $transformedArguments;
+        $eventEmitter = $this->buildEventEmitter($resultsStore);
+
+        return $eventEmitter->raw;
     }
 
 }

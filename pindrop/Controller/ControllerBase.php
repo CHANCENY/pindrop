@@ -123,5 +123,13 @@ class ControllerBase implements ControllerBaseInterface
         return static::class;
     }
 
+    public function getService(string $serviceName)
+    {
+        if (!getAppContainer()->has($serviceName)) {
+            throw new \InvalidArgumentException("Service '$serviceName' not found in the application container.");
+        }
+        return getAppContainer()->get($serviceName);
+    }
+
 
 }

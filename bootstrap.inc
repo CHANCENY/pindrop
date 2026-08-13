@@ -236,7 +236,8 @@ function getAppContainer(): Container
 function appEvents(): EventsManager
 {
     global $eventsManager;
-    return $eventsManager;
+    global $pluginManager;
+    return $eventsManager ? $eventsManager : new EventsManager($pluginManager);
 }
 
 /**

@@ -410,7 +410,7 @@
                 if (data.success) {
                     AdminTheme.showNotification(data.message, 'success');
                     setTimeout(function() {
-                        window.location.href = '/admin/plugins';
+                       // window.location.href = '/admin/plugins';
                     }, 1500);
                 } else {
                     AdminTheme.showNotification(data.message, 'error');
