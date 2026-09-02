@@ -122,7 +122,7 @@ class EventsManager
         return $subscribers;
     }
 
-    private function buildEventEmitter(?array $eventArguments): EventEmitter
+    private function buildEventEmitter(array|EventEmitter|null $eventArguments): EventEmitter
     {
         $eventEmitter = new EventEmitter();
         $eventEmitter->options = [];
