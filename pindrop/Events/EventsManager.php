@@ -129,7 +129,7 @@ class EventsManager
         return $eventEmitter;
     }
 
-    public function invokeEvents(string $eventName, array $eventArguments = []): array
+    public function invokeEvents(string $eventName, array $eventArguments = []): array|null
     {
         $this->events = $this->loadEvents();
         $this->eventListeners = $this->loadSubscribers();

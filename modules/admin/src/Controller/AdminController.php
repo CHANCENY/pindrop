@@ -1277,7 +1277,7 @@ Generated: " . date('Y-m-d H:i:s') . "
                         $url = trim($url);
                     }
                    
-                    $response = new RedirectResponse($url);
+                    $response = new RedirectResponse(!empty($url)? $url : '/');
                     $response->headers->setCookie(
                         new Cookie(
                             'session_id',

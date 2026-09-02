@@ -40,7 +40,8 @@ class UserServiceProvider
                     return null;
                 }
                 
-                return CurrentUser::findBySessionId($database, $logger, $sessionId);
+                return CurrentUser::findBySessionId($database, $logger, $sessionId) ?? 
+                CurrentUser::resolveAnonymous();
             },
             
             CurrentUser::class => function(ContainerInterface $container) {

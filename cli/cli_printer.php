@@ -77,7 +77,7 @@ class CLIPrinter
         $colWidths = [];
         foreach ($rows as $row) {
             foreach ($row as $i => $cell) {
-                $colWidths[$i] = max($colWidths[$i] ?? 0, strlen((string)$cell));
+                $colWidths[$i] = max($colWidths[$i] ?? 0, strlen((string) $cell));
             }
         }
 
@@ -86,7 +86,7 @@ class CLIPrinter
             foreach ($row as $i => $cell) {
                 $color = $colors[$i] ?? null;
                 $colorCode = $color && isset($this->colorsCodes[$color]) ? $this->colorsCodes[$color] : '';
-                $padding = str_repeat('', $colWidths[$i] - strlen((string)$cell));
+                $padding = str_repeat('', $colWidths[$i] - strlen((string) $cell));
                 echo $colorCode . $cell . $padding . $this->colorsCodes['reset'] . "  ";
             }
             echo PHP_EOL;
@@ -168,7 +168,7 @@ class CLIPrinter
 
             // Validate number
             if (is_numeric($input)) {
-                $choice = (int)$input - 1;
+                $choice = (int) $input - 1;
                 if (isset($options[$choice])) {
                     return $options[$choice];
                 }
@@ -177,4 +177,265 @@ class CLIPrinter
             $this->printLine("Invalid choice, please try again.", "red");
         }
     }
+
+
+    /**
+     * Print any PHP data structure as a clean tree.
+     *
+     * Example:
+     *
+     * ├── format
+     * │   ├── filename: song.mp3
+     * │   └── tags
+     * │       ├── title: My Song
+     * │       └── artist: John Doe
+     * └── streams
+     *     └── [0]
+     *         ├── codec_name: mp3
+     *         └── channels: 2
+     */
+    public function printData(
+        mixed $data,
+        ?string $title = null
+    ): void {
+        if ($title !== null) {
+            echo PHP_EOL;
+            $this->printLine($title, 'bright_blue');
+            echo PHP_EOL;
+        }
+
+        /*
+         * Root scalar.
+         */
+        if (!is_array($data) && !is_object($data)) {
+            $this->printTreeValue('', $data, '', true);
+            return;
+        }
+
+        /*
+         * Convert objects to arrays.
+         */
+        if (is_object($data)) {
+            $data = get_object_vars($data);
+        }
+
+        $items = array_keys($data);
+        $count = count($items);
+
+        foreach ($items as $position => $key) {
+            $isLast = $position === $count - 1;
+
+            $this->printTreeNode(
+                (string) $key,
+                $data[$key],
+                '',
+                $isLast
+            );
+        }
+    }
+
+
+    /**
+     * Recursively print one tree node.
+     */
+    private function printTreeNode(
+        string $key,
+        mixed $value,
+        string $prefix,
+        bool $isLast
+    ): void {
+        /*
+         * The connector for this node.
+         */
+        $connector = $isLast
+            ? '└── '
+            : '├── ';
+
+        /*
+         * Format array keys.
+         */
+        $displayKey = $this->formatTreeKey($key);
+
+        /*
+         * Nested array/object.
+         */
+        if (is_array($value) || is_object($value)) {
+
+            echo $prefix;
+
+            echo $this->colorsCodes['bright_cyan'];
+            echo $connector;
+            echo $displayKey;
+            echo $this->colorsCodes['reset'];
+
+            echo PHP_EOL;
+
+            /*
+             * Convert object to array.
+             */
+            if (is_object($value)) {
+                $value = get_object_vars($value);
+            }
+
+            /*
+             * Empty array.
+             */
+            if (empty($value)) {
+                $childPrefix = $prefix . ($isLast ? '    ' : '│   ');
+
+                echo $childPrefix;
+                echo $this->colorsCodes['dim'];
+                echo '(empty)';
+                echo $this->colorsCodes['reset'];
+                echo PHP_EOL;
+
+                return;
+            }
+
+            /*
+             * Print children.
+             */
+            $childPrefix = $prefix . (
+                $isLast
+                ? '    '
+                : '│   '
+            );
+
+            $keys = array_keys($value);
+            $count = count($keys);
+
+            foreach ($keys as $position => $childKey) {
+                $childIsLast = $position === $count - 1;
+
+                $this->printTreeNode(
+                    (string) $childKey,
+                    $value[$childKey],
+                    $childPrefix,
+                    $childIsLast
+                );
+            }
+
+            return;
+        }
+
+        /*
+         * Scalar value.
+         */
+        echo $prefix;
+
+        echo $connector;
+
+        echo $this->colorsCodes['bright_white'];
+        echo $displayKey;
+        echo $this->colorsCodes['reset'];
+
+        echo ': ';
+
+        echo $this->getValueColor($value);
+        echo $this->formatValue($value);
+        echo $this->colorsCodes['reset'];
+
+        echo PHP_EOL;
+    }
+
+
+    /**
+     * Print a scalar without a key.
+     */
+    private function printTreeValue(
+        string $key,
+        mixed $value,
+        string $prefix,
+        bool $isLast
+    ): void {
+        echo $prefix;
+
+        echo $this->getValueColor($value);
+        echo $this->formatValue($value);
+        echo $this->colorsCodes['reset'];
+
+        echo PHP_EOL;
+    }
+
+
+    /**
+     * Format a tree key.
+     *
+     * Numeric keys are displayed as [0], [1], etc.
+     *
+     * String keys are converted to a readable format.
+     */
+    private function formatTreeKey(string $key): string
+    {
+        if (is_numeric($key)) {
+            return '[' . $key . ']';
+        }
+
+        $key = str_replace(
+            ['_', '-'],
+            ' ',
+            $key
+        );
+
+        return ucwords($key);
+    }
+
+
+    /**
+     * Format values.
+     */
+    private function formatValue(mixed $value): string
+    {
+        if ($value === null) {
+            return 'null';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_string($value)) {
+            return $value === ''
+                ? '(empty)'
+                : $value;
+        }
+
+        if (is_int($value)) {
+            return (string) $value;
+        }
+
+        if (is_float($value)) {
+            return (string) $value;
+        }
+
+        if (is_resource($value)) {
+            return 'Resource';
+        }
+
+        return (string) $value;
+    }
+
+
+    /**
+     * Get value color based on type.
+     */
+    private function getValueColor(mixed $value): string
+    {
+        if ($value === null) {
+            return $this->colorsCodes['dim'];
+        }
+
+        if (is_bool($value)) {
+            return $value
+                ? $this->colorsCodes['green']
+                : $this->colorsCodes['red'];
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return $this->colorsCodes['yellow'];
+        }
+
+        return $this->colorsCodes['white'];
+    }
+
 }
