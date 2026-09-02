@@ -13,7 +13,8 @@ class EventsManager
     protected array $events;
     protected array $eventListeners;
 
-    public function __construct(PluginManager $pluginManager){
+    public function __construct(PluginManager $pluginManager)
+    {
         $this->pluginManager = $pluginManager;
         $this->events = $this->loadEvents();
         $this->eventListeners = $this->loadSubscribers();
@@ -54,19 +55,19 @@ class EventsManager
                 }
             }
             return null;
-        },$this->pluginManager->getEnabledPlugins());
+        }, $this->pluginManager->getEnabledPlugins());
 
         foreach (array_filter($pluginEventsFiles) as $file) {
 
-           if (!empty($file) && class_exists($file)) {
-               $reflection = new \ReflectionClass($file);
-               $eventTemp = $reflection->getConstants();
-               foreach ($eventTemp as $key=>$event) {
-                   if (!array_key_exists($key, $events) && !in_array($event, $events)) {
-                       $events[$key] = $event;
-                   }
-               }
-           }
+            if (!empty($file) && class_exists($file)) {
+                $reflection = new \ReflectionClass($file);
+                $eventTemp = $reflection->getConstants();
+                foreach ($eventTemp as $key => $event) {
+                    if (!array_key_exists($key, $events) && !in_array($event, $events)) {
+                        $events[$key] = $event;
+                    }
+                }
+            }
         }
 
         return $events;
@@ -109,7 +110,7 @@ class EventsManager
                 $object = $reflection->newInstance();
                 if ($object instanceof EventsSubscriberInterface) {
                     $subs = $object->getSubscribedEvents();
-                    foreach ($this->events as $key=>$event) {
+                    foreach ($this->events as $key => $event) {
                         if (!empty($subs[$event])) {
                             $subscribers[$event][] = $subs[$event];
                         }
@@ -129,7 +130,7 @@ class EventsManager
         return $eventEmitter;
     }
 
-    public function invokeEvents(string $eventName, array $eventArguments = []): array|null
+    public function invokeEvents(string $eventName, array $eventArguments = []): array|null|EventEmitter
     {
         $this->events = $this->loadEvents();
         $this->eventListeners = $this->loadSubscribers();
