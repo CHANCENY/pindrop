@@ -157,11 +157,17 @@ class RouteProvider
      */
     public function dispatch(): Response|JsonResponse|RedirectResponse|null
     {
-        try{
+        try {
 
             // csrf token generator
             $request = Request::createFromGlobals();
             \appEvents()->invokeEvents(Events::REQUEST_RECEIVED, ['request' => $request]);
+
+            if ($request->isMethod(Request::METHOD_OPTIONS)) {
+                $response = new Response();
+                $response = $this->applyPublicApiForOptionsMethodRequest($request, $response);
+                $response->send();
+            }
 
             /**@var PluginManager $pluginManager **/
             $pluginManager = \getAppContainer()->get('plugin.manager');
@@ -176,10 +182,10 @@ class RouteProvider
 
             if (\getAppContainer()->has('language.support.service')) {
                 $sLanguages = \getAppContainer()->get('language.support.service')->languages;
-                foreach ($this->routes as $k=>$route) {
+                foreach ($this->routes as $k => $route) {
 
-                    foreach ($sLanguages as $lang=>$sLanguage) {
-                        $cloneRoute =  $route;
+                    foreach ($sLanguages as $lang => $sLanguage) {
+                        $cloneRoute = $route;
                         $cloneRoute['path'] = "/{$lang}{$route['path']}";
                         $this->routes["{$k}{$lang}"] = $cloneRoute;
                     }
@@ -236,11 +242,11 @@ class RouteProvider
 
             $response = $this->router->getResponse();
 
-            \appEvents()->invokeEvents(Events::RESPONSE_BEFORE_SEND, ['response' => &$response ]);
+            \appEvents()->invokeEvents(Events::RESPONSE_BEFORE_SEND, ['response' => &$response]);
 
             if ($response instanceof Response) {
                 $response = $this->injectCsrfToken($response, $csrfToken);
-                $response = $this->applyStandardHeaders($response);
+                $response = $this->applyStandardHeaders($response, $request);
             }
 
             $response->send();
@@ -249,28 +255,26 @@ class RouteProvider
 
             // Return null since the response is already sent by the router
             return null;
-        }catch (\Throwable $exception){
+        } catch (\Throwable $exception) {
             /**@var Settings $setings **/
-            $settings =  \getAppContainer()->get(Settings::class);
+            $settings = \getAppContainer()->get(Settings::class);
             $pageNotFoundTemplate = $settings->getSetting('admin.settings')?->get('page_not_error');
             if ($pageNotFoundTemplate) {
                 $response = new Response(\getAppContainer()->get('twig')->render($pageNotFoundTemplate));
                 \appEvents()->invokeEvents(Events::RESPONSE_BEFORE_SEND, ['response' => &$response, 'exception' => $exception]);
                 $response->send();
                 \appEvents()->invokeEvents(Events::RESPONSE_SENT, ['response' => &$response]);
-            }
-            else {
+            } else {
                 $environment = getenv('APP_ENV') ?: 'development';
                 $debug = getenv('DEBUG') ?: 'true';
-                $debug = (bool)$debug;
+                $debug = (bool) $debug;
 
-                if ($environment !== 'production' && $debug === true){
+                if ($environment !== 'production' && $debug === true) {
                     $whoops = \getAppContainer()->get('whoops');
                     if ($whoops instanceof \Whoops\Run) {
                         $whoops->handleException($exception);
                     }
-                }
-                else {
+                } else {
                     die("unexpected error occurred");
                 }
 
@@ -304,14 +308,18 @@ class RouteProvider
      * ETags on dynamic HTML create more problems than they solve.  Static
      * assets are handled by Apache mod_expires in .htaccess already.
      */
-    private function applyStandardHeaders(Response $response): Response
+    private function applyStandardHeaders(Response $response, Request $request): Response
     {
-        $contentType = (string)$response->headers->get('Content-Type', 'text/html');
+        $contentType = (string) $response->headers->get('Content-Type', 'text/html');
         $isHtml = str_contains($contentType, 'text/html') || $contentType === '';
         $isJson = str_contains($contentType, 'application/json');
 
+        if (isset($_ENV['API_SUPPORT']) && $_ENV['API_SUPPORT'] == true) {
+            return $this->applyPublicApiForOptionsMethodRequest($request, $response);
+        }
+
         // ── Security headers ──────────────────────────────────────────────
-        // Only set if not already present (allows controllers to override).
+       // Only set if not already present (allows controllers to override).
         if (!$response->headers->has('X-Content-Type-Options')) {
             $response->headers->set('X-Content-Type-Options', 'nosniff');
         }
@@ -343,6 +351,69 @@ class RouteProvider
         return $response;
     }
 
+    /**
+     * 
+     * @param Response $response
+     * @return Response
+     */
+    private function applyPublicApiForOptionsMethodRequest(Request $request, Response $response): Response 
+    {
+        $origin = $request->headers->get('Origin');
+
+        /*
+         * Methods supported by the public API.
+         */
+        $response->headers->set(
+            'Access-Control-Allow-Methods',
+            'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
+        );
+
+        /*
+         * Allow arbitrary request headers.
+         *
+         * Access-Control-Allow-Headers cannot use "*" reliably across
+         * all browser/preflight scenarios, so reflect the headers requested
+         * by the browser.
+         */
+        $requestedHeaders = $request->headers->all();
+        foreach($requestedHeaders as $key=>$value) {
+            $response->headers->set($key, $value);
+        }
+
+        /*
+         * Cache the preflight response.
+         */
+        $response->headers->set(
+            'Access-Control-Max-Age',
+            '86400'
+        );
+
+        /*
+         * Headers that browser JavaScript is allowed to read.
+         */
+        $response->headers->set(
+            'Access-Control-Expose-Headers',
+            'Content-Length, Content-Type, Authorization'
+        );
+
+        /*
+         * CORS
+         *
+         * Reflect the requesting origin when supplied. This works with:
+         * - https
+         * - http
+         * - localhost
+         * - IP addresses
+         * - arbitrary ports
+         * - development environments
+         */
+        if ($origin !== null && $origin !== '') {
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+            $response->headers->set('Vary', 'Origin');
+        }
+        return $response;
+    }
+
     private function injectCsrfToken(Response $response, string $csrfToken): Response
     {
         $contentType = $response->headers->get('Content-Type');
@@ -350,7 +421,7 @@ class RouteProvider
         // Only process HTML responses
         $content = $response->getContent();
 
-        if(!str_starts_with($content, "<!DOCTYPE html>")){
+        if (!str_starts_with($content, "<!DOCTYPE html>")) {
             return $response;
         }
 
@@ -434,8 +505,10 @@ class RouteProvider
      */
     public function getRoutesByMethod(string $method): array
     {
-        return array_filter($this->routes, fn($route) => 
-            strtolower($route['method']) === strtolower($method) || $route['method'] === 'ANY'
+        return array_filter(
+            $this->routes,
+            fn($route) =>
+                strtolower($route['method']) === strtolower($method) || $route['method'] === 'ANY'
         );
     }
 
@@ -444,8 +517,10 @@ class RouteProvider
      */
     public function hasRoute(string $route_name): bool
     {
-        return !empty(array_filter($this->routes, fn($route) => 
-            $route['route_name'] === $route_name
+        return !empty(array_filter(
+            $this->routes,
+            fn($route) =>
+                $route['route_name'] === $route_name
         ));
     }
 
@@ -454,10 +529,12 @@ class RouteProvider
      */
     public function getRoute(string $route_name): ?array
     {
-        $found = array_filter($this->routes, fn($route) => 
-            $route['route_name'] === $route_name
+        $found = array_filter(
+            $this->routes,
+            fn($route) =>
+                $route['route_name'] === $route_name
         );
-        
+
         return !empty($found) ? reset($found) : null;
     }
 }

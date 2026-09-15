@@ -5,9 +5,19 @@ namespace Simp\Pindrop\Entity\User;
 use DateInterval;
 use DateTime;
 use Exception;
+use InvalidArgumentException;
+use RuntimeException;
 use Simp\Pindrop\Database\DatabaseService;
 use Simp\Pindrop\Events\SystemEvents\Events;
+use Simp\Pindrop\FactorAuthentication\TwoFactorManager;
 use Simp\Pindrop\Logger\LoggerInterface;
+use Simp\Pindrop\Modules\admin\src\Plugin\AdminSettings;
+use Simp\Pindrop\Modules\admin\src\Plugin\TwoFactorSettings;
+use Simp\Pindrop\Routing\Url;
+use Simp\Pindrop\Session\SessionStorage;
+use Simp\Pindrop\Settings\Settings;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 class CurrentUser
@@ -464,5 +474,135 @@ class CurrentUser
 
         return $this->db->table('user_session')->where('user_id', '=', $this->userId)->orderBy('last_activity', 'DESC')->get();
 
+    }
+
+    /**
+     * Login user.
+     * @param Request $request
+     * @param string $name_or_email
+     * @param string $password
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     * @return RedirectResponse|string|null
+     */
+    public static function normalLoginUser(Request $request, string $name_or_email, string $password)
+    {
+         try {
+                // Validate required fields
+                if (empty($name_or_email) || empty($password)) {
+                    throw new InvalidArgumentException("Email and password are required");
+                }
+
+                $database = getAppContainer()->get('database');
+
+                // Find user by email
+                $user = User::loadByEmail($name_or_email, $database);
+                if (!$user) {
+                    throw new InvalidArgumentException("Invalid credentials");
+                }
+
+                // Verify password
+                if (!$user->verifyPassword($password)) {
+                    throw new InvalidArgumentException("Invalid credentials");
+                }
+
+                // Check user status
+                if ($user->getStatus() === User::STATUS_BANNED) {
+                    throw new InvalidArgumentException("Account banned");
+                }
+
+                if ($user->getStatus() === User::STATUS_SUSPENDED) {
+                    throw new InvalidArgumentException("Account suspended");
+                }
+
+                $settings = new Settings($database);
+                $twoFactor = $settings->getSetting(new TwoFactorSettings()->settingKey());
+
+                if ($twoFactor && $twoFactor->get('is_enabled') == 1) {
+                    appEvents()->invokeEvents(Events::TWO_FACTOR_AUTHENTICATION_REQUIRED, [
+                        "user" => $user,
+                    ]);
+
+                    $provider = $twoFactor->get('two_factor_key');
+                    if ($provider) {
+                        $providerManager = new TwoFactorManager(getAppContainer()->get('plugin.manager'));
+                        $provider = $providerManager->getTwofactorAuthenticationProvider($provider);
+
+                        if (!empty($provider)) {
+                            SessionStorage::add('two_factor_session', [
+                                'provider' => $provider?->key(),
+                                'user' => $user->getId(),
+                            ]);
+
+                            return $provider?->redirectLink();
+                        }
+                    }
+                }
+
+                // Create session
+                $sessionId = session_id();
+                $session = new self($database, getAppContainer()->get('logger'));
+                $session->setUserId($user->getId());
+                $session->setSessionId($sessionId);
+                $session->setIpAddress($request->getClientIp());
+                $session->setUserAgent($request->headers->get('User-Agent'));
+                $session->setExpiresAt((new DateTime())->add(new DateInterval('PT24H')));
+                $session->setUser($user);
+                $session->setUserData($user->toArray());
+
+                if ($session->create()) {
+                    // Set session cookie
+                    $settings = new Settings($database);
+                    $settingsAdmin = $settings->getSetting(new AdminSettings()->settingKey());
+
+                    $url = Url::routeByName('users.view.user', ['user_id' => $user->getId()]);
+
+                    if ($settingsAdmin?->get('login_redirect')) {
+                        $url = $settingsAdmin->get('login_redirect');
+                        $url = substr($url, 0,strrpos($url, '('));
+                        $url = trim($url);
+                    }
+                   
+                    $response = new RedirectResponse(!empty($url)? $url : '/');
+                    $response->headers->setCookie(
+                        new Cookie(
+                            'session_id',
+                            $sessionId,
+                            new DateTime('+24 hours'),
+                            '/',
+                            null,
+                            true,
+                            true,
+                        )
+                    );
+                    getAppContainer()->get('logger')->info('User logged in successfully', [
+                        'user_id' => $user->getId(),
+                        'email' => $user->getEmail(),
+                        'ip' => $request->getClientIp()
+                    ]);
+
+                    appEvents()->invokeEvents(Events::AUTH_LOGIN, ['session_id' => $sessionId]);
+
+                    return $response;
+                } else {
+                    appEvents()->invokeEvents(Events::AUTH_LOGIN_FAILED, [
+                        'email' => $name_or_email
+                    ]);
+                    throw new RuntimeException("Failed to create session");
+                }
+
+            } catch (Exception $e) {
+
+                appEvents()->invokeEvents(Events::AUTH_LOGIN_FAILED, [
+                    'email' => $name_or_email
+                ]);
+                getAppContainer()->get('logger')->error('Login failed', [
+                    'error' => $e->getMessage(),
+                    'email' => $name_or_email ?? 'unknown',
+                    'ip' => $request->getClientIp()
+                ]);
+
+                return $e->getMessage();
+            }
     }
 }

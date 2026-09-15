@@ -1,0 +1,10 @@
+#!/bin/bash
+
+LANDO="/home/chance/.lando/bin/lando"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Go to the project directory
+cd "$SCRIPT_DIR" || exit 1
+
+echo "Lando environment not detected. Running cron locally..."
+    ./pindro cron:run
