@@ -1,6 +1,22 @@
 <?php
 declare(strict_types=1);
 
+require_once 'vendor/autoload.php';
+
+use DI\Container;
+use DI\DependencyException;
+use DI\NotFoundException;
+use Simp\Pindrop\Entity\User\CurrentUser;
+use Simp\Pindrop\Events\EventsManager;
+use Simp\Pindrop\Routing\RouteProvider;
+use Simp\Pindrop\Services\ServiceProvider;
+use Simp\Pindrop\Routing\RouteManager;
+use Simp\Pindrop\Routing\PluginRoutes;
+use Whoops\Handler\PrettyPageHandler;
+use Whoops\Handler\JsonResponseHandler;
+use Whoops\Run;
+use Simp\Pindrop\FileSystem\FileSystemService;
+
 // ---------------------------------------------------------------------------
 // Session scaling — database-backed sessions
 // ---------------------------------------------------------------------------
@@ -30,8 +46,6 @@ if (file_exists(__DIR__ . '/.env')) {
     unset($_line, $_k, $_v);
 }
 
-require_once 'vendor/autoload.php';
-
 // Now the autoloader is ready — register the DB session handler.
 //
 // IMPORTANT: $_sessionHandler must NOT be unset.
@@ -57,21 +71,24 @@ try {
     
 }
 
-session_start();
+// For API requests that require a session, we extract the raw hash from the X-Session-Cookie header.
+$headers = apache_request_headers();
 
-use DI\Container;
-use DI\DependencyException;
-use DI\NotFoundException;
-use Simp\Pindrop\Entity\User\CurrentUser;
-use Simp\Pindrop\Events\EventsManager;
-use Simp\Pindrop\Routing\RouteProvider;
-use Simp\Pindrop\Services\ServiceProvider;
-use Simp\Pindrop\Routing\RouteManager;
-use Simp\Pindrop\Routing\PluginRoutes;
-use Whoops\Handler\PrettyPageHandler;
-use Whoops\Handler\JsonResponseHandler;
-use Whoops\Run;
-use Simp\Pindrop\FileSystem\FileSystemService;
+// Account for cases where browsers lowercase custom headers
+$customSessionHeader = $headers['X-Session-Cookie'] ?? $headers['x-session-cookie'] ?? null;
+
+if ($customSessionHeader) {
+    // Extract just the alphanumeric hash string from "session_id=XXXX" or "PHPSESSID=XXXX"
+    if (preg_match('/(?:session_id|PHPSESSID)=([a-zA-Z0-9,-]+)/', $customSessionHeader, $matches)) {
+        $cleanSessionId = $matches[1];
+
+        // Explicitly set the cookie superglobal and target session ID using the clean hash
+        $_COOKIE[session_name()] = $cleanSessionId;
+        session_id($cleanSessionId); 
+    }
+}
+
+session_start();
 
 /**
  * Bootstrap Application

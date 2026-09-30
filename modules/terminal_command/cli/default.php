@@ -321,6 +321,8 @@ function downloadPlugin(CLIPrinter $printer, ...$values): void
             $command = "{$gitBinary} clone -b {$plugin_id} --single-branch https://github.com/CHANCENY/pindrop-features.git {$downloadDir}";
             $finished = exec($command, $output, $exitCode);
 
+            sleep(5);
+
             if ($exitCode === 0) {
                 $pluginsPath = $_ENV['PLUGIN_ROOT'];
                 if (!is_dir($pluginsPath)) {

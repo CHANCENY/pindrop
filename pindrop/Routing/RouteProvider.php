@@ -376,9 +376,7 @@ class RouteProvider
          * by the browser.
          */
         $requestedHeaders = $request->headers->all();
-        foreach($requestedHeaders as $key=>$value) {
-            $response->headers->set($key, $value);
-        }
+        
 
         /*
          * Cache the preflight response.
@@ -388,13 +386,29 @@ class RouteProvider
             '86400'
         );
 
+        $headers = [
+            'Access-Control-Allow-Origin',
+            'Access-Control-Allow-Methods',
+            'Access-Control-Allow-Headers',
+            'Access-Control-Max-Age',
+            'Access-Control-Expose-Headers',
+            'Content-Length',
+            'Content-Type',
+            'Authorization',
+            'Vary',
+            'credentials',
+            'X-Requested-With',
+             'X-Session-Cookie',
+        ];
+        foreach ($requestedHeaders as $key => $value) {
+            $headers[] = $key;
+        }
+
         /*
          * Headers that browser JavaScript is allowed to read.
          */
-        $response->headers->set(
-            'Access-Control-Expose-Headers',
-            'Content-Length, Content-Type, Authorization'
-        );
+        $response->headers->set('Access-Control-Allow-Headers', 
+        strtolower(implode(', ', $headers)));
 
         /*
          * CORS
