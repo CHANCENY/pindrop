@@ -88,33 +88,56 @@ class SchemaHandler
                 throw new \RuntimeException("Schema file is empty: {$schemaFile}");
             }
             
-            // Check if table already exists
-            if ($this->database->tableExists($tableName)) {
-                $this->logger?->warning('Table already exists', [
-                    'table' => $tableName
-                ]);
-                
-                return [
-                    'success' => false,
-                    'message' => "Table '{$tableName}' already exists",
-                    'table' => $tableName,
-                    'file' => $schemaFile
-                ];
+            $createdTables = [];
+            $existingTables = [];
+            $statements = preg_split('/;\s*(?:\R|$)/', trim($sql)) ?: [];
+            foreach ($statements as $statement) {
+                if (trim($statement) === '') {
+                    continue;
+                }
+
+                if (preg_match(
+                    '/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"]?([a-zA-Z0-9_]+)[`"]?/i',
+                    $statement,
+                    $matches
+                )) {
+                    $actualTable = $matches[1];
+                    if ($this->database->tableExists($actualTable)) {
+                        $existingTables[] = $actualTable;
+                        continue;
+                    }
+                    $this->database->exec($statement);
+                    $createdTables[] = $actualTable;
+                    continue;
+                }
+
+                $this->database->exec($statement);
             }
-            
-            // Execute schema
-            $this->database->exec($sql);
+
+            if ($createdTables === [] && $existingTables === []) {
+                throw new \RuntimeException("No SQL statements found in schema file: {$schemaFile}");
+            }
+
+            $message = sprintf(
+                'Created %d table(s); skipped %d existing table(s).',
+                count($createdTables),
+                count($existingTables)
+            );
             
             $this->logger?->info('Table created successfully', [
                 'table' => $tableName,
-                'file' => $schemaFile
+                'file' => $schemaFile,
+                'created_tables' => $createdTables,
+                'existing_tables' => $existingTables,
             ]);
             
             return [
                 'success' => true,
-                'message' => "Table '{$tableName}' created successfully",
+                'message' => $message,
                 'table' => $tableName,
-                'file' => $schemaFile
+                'file' => $schemaFile,
+                'created_tables' => $createdTables,
+                'existing_tables' => $existingTables,
             ];
             
         } catch (DatabaseException $e) {

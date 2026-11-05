@@ -191,7 +191,8 @@ class PluginManager
             'filesystem',
             'filesystem.interface',
             'database',
-            'session'
+            'session',
+            'site.settings'
         ];
 
         // Check if it's a core service

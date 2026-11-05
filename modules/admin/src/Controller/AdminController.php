@@ -896,9 +896,11 @@ Generated: " . date('Y-m-d H:i:s') . "
             $valid = false;
         }
 
-        // Validate role
-        $validRoles = ['user', 'moderator', 'admin', 'super_admin'];
-        if (!empty($userData['role']) && !in_array($userData['role'], $validRoles)) {
+        // Validate against core and plugin-defined roles.
+        /** @var PluginManager $pluginManager */
+        $pluginManager = getAppContainer()->get('plugin.manager');
+        $validRoles = array_keys($pluginManager->getAllRoles());
+        if (!empty($userData['role']) && !in_array($userData['role'], $validRoles, true)) {
             $errors[] = "Row {$rowNumber}: Invalid role '{$userData['role']}'. Valid roles: " . implode(', ', $validRoles);
             $valid = false;
         }
