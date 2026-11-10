@@ -55,6 +55,8 @@ class CLIPrinter
         'hidden' => "\033[8m",
     ];
 
+    private ?int $cachedTerminalWidth = null;
+
     // Print a single line with optional color
     public function printLine(string $text, ?string $color = null): void
     {
@@ -436,6 +438,128 @@ class CLIPrinter
         }
 
         return $this->colorsCodes['white'];
+    }
+
+    /**
+     * Detect the terminal width in columns.
+     * Falls back to $default when it can't be detected (piped output, no TTY, etc.)
+     */
+    public function getTerminalWidth(int $default = 80, bool $refresh = false): int
+    {
+        if ($this->cachedTerminalWidth !== null && !$refresh) {
+            return $this->cachedTerminalWidth;
+        }
+
+        $width = null;
+
+        // 1) COLUMNS env var (set by some shells, often not exported)
+        $env = getenv('COLUMNS');
+        if ($env !== false && (int) $env > 0) {
+            $width = (int) $env;
+        }
+
+        // 2) Windows
+        if ($width === null && DIRECTORY_SEPARATOR === '\\') {
+            $out = @shell_exec('mode con 2>NUL');
+            if ($out && preg_match('/Columns:\s+(\d+)/i', $out, $m)) {
+                $width = (int) $m[1];
+            }
+        }
+
+        // 3) Linux / macOS: stty, then tput
+        if ($width === null && DIRECTORY_SEPARATOR === '/') {
+            $out = @shell_exec('stty size 2>/dev/null');          // "rows cols"
+            if ($out && preg_match('/^\d+\s+(\d+)/', trim($out), $m)) {
+                $width = (int) $m[1];
+            } else {
+                $out = @shell_exec('tput cols 2>/dev/null');
+                if ($out && (int) $out > 0) {
+                    $width = (int) $out;
+                }
+            }
+        }
+
+        return $this->cachedTerminalWidth = ($width !== null && $width > 0) ? $width : $default;
+    }
+
+    /**
+     * Draw a progress bar that redraws itself on the same line.
+     *
+     * @param float    $value Current value (between $min and $max)
+     * @param float    $min   Value that represents 0%
+     * @param float    $max   Value that represents 100%
+     * @param int|null $width Bar width in characters (null = auto from terminal width)
+     * @param string   $label Optional text shown after the percentage
+     */
+    public function printProgress(
+        float $value,
+        float $min = 0,
+        float $max = 100,
+        ?int $width = null,
+        string $label = ''
+    ): void {
+        $range = $max - $min;
+        $ratio = $range > 0 ? ($value - $min) / $range : 1;
+        $ratio = max(0, min(1, $ratio));              // clamp to 0..1
+
+        $percent = (int) round($ratio * 100);
+
+        $suffix = sprintf(' %3d%%', $percent) . ($label !== '' ? ' ' . $label : '');
+
+        if ($width === null) {
+            // terminal width - suffix - 1 spare column (avoids line wrapping)
+            $width = $this->getTerminalWidth() - mb_strlen($suffix) - 1;
+        }
+        $width = max(10, $width);                     // never let the bar get too small
+
+        $filled = (int) round($ratio * $width);
+        $empty  = $width - $filled;
+
+        $fillColor = $percent >= 100
+            ? $this->colorsCodes['bright_green']
+            : $this->colorsCodes['bright_yellow'];
+
+        $bar = $fillColor . str_repeat('█', $filled)
+             . $this->colorsCodes['white'] . str_repeat('░', $empty)
+             . $this->colorsCodes['reset'];
+
+        // \r returns to line start, \033[K clears leftover characters
+        echo "\r\033[K" . $bar . $suffix;
+
+        if ($percent >= 100) {
+            echo PHP_EOL;                             // finish the line
+        }
+    }
+
+    /**
+     * Loop over any array and show progress automatically.
+     *
+     * @param array    $items    Anything iterable as an array
+     * @param callable $callback fn($item, $key) called for each element
+     * @param int|null $width    Bar width (null = auto from terminal width)
+     */
+    public function eachWithProgress(array $items, callable $callback, ?int $width = null): void
+    {
+        $total = count($items);
+
+        if ($total === 0) {
+            return;
+        }
+
+        if ($width === null) {
+            $longestLabel = "($total/$total)";
+            // " 100%" (5) + space (1) + label + 1 spare column
+            $width = $this->getTerminalWidth() - 5 - 1 - strlen($longestLabel) - 1;
+        }
+
+        $this->printProgress(0, 0, $total, $width);
+
+        $done = 0;
+        foreach ($items as $key => $item) {
+            $callback($item, $key);
+            $done++;
+            $this->printProgress($done, 0, $total, $width, "($done/$total)");
+        }
     }
 
 }

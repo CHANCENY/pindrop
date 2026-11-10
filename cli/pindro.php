@@ -40,4 +40,7 @@ if (empty($commandHandler)) {
     return 0;
 }
 
+global $params;
+$params = $argv;
+
 return call_user_func($commandHandler, $printer, $command, $argv);
