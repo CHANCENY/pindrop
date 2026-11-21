@@ -501,8 +501,6 @@ class User
             $data['date_of_birth'] = new \DateTime($data['date_of_birth']);
         }
 
-
-    
         // Set properties
         foreach ($data as $key => $value) {
             $property = $this->camelCase($key);

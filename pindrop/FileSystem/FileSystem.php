@@ -6,9 +6,10 @@ namespace Simp\Pindrop\FileSystem;
 
 use InvalidArgumentException;
 use RuntimeException;
+use Simp\Pindrop\Entity\File\File;
 use Simp\Pindrop\Logger\LoggerInterface;
 use Simp\StreamWrapper\WrapperRegister\WrapperRegister;
-
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * FileSystem Service
@@ -495,7 +496,7 @@ class FileSystem implements FileSystemInterface
     private function loadExtensions()
     {
 
-    $filePath = __DIR__ . DIRECTORY_SEPARATOR . "application.csv";
+        $filePath = __DIR__ . DIRECTORY_SEPARATOR . "application.csv";
         if (!file_exists($filePath)) {
             throw new InvalidArgumentException("File not found: {$filePath}");
         }
@@ -508,9 +509,9 @@ class FileSystem implements FileSystemInterface
         $map = [];
 
         // Skip header
-         fgetcsv($handle, 0, ',', '"', '\\');
+        fgetcsv($handle, 0, ',', '"', '\\');
 
-        while (($row =  fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+        while (($row = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
             if (empty($row[0])) {
                 continue;
             }
@@ -529,16 +530,65 @@ class FileSystem implements FileSystemInterface
     {
         $mime_type = mime_content_type($uri);
 
-        if (str_starts_with($mime_type,'image')) {
+        if (str_starts_with($mime_type, 'image')) {
             [$width, $height] = getimagesize($uri);
             return [
-                'width'=> $width,
-                'height'=> $height
+                'width' => $width,
+                'height' => $height
             ];
         }
         return [
             'width' => 0,
-            'height'=> 0,
+            'height' => 0,
         ];
+    }
+
+    public function uploadFromSymfonyObject(UploadedFile $uploadedFile, string $dest, array $options): array
+    {
+        return $this->uploadFile([
+            'name' => $uploadedFile->getClientOriginalName(),
+            'error' => $uploadedFile->getError(),
+            'tmp_name' => $uploadedFile->getRealPath(),
+            'size' => $uploadedFile->getSize(),
+            'type' => $uploadedFile->getType()
+        ], $dest, $options);
+    }
+
+    public function uploadAndSaveFileEntity(array|UploadedFile $uploadedFile, string $dest, array $options): ?File
+    {
+        $result = [];
+        if (is_array($uploadedFile)) {
+            $result = $this->uploadFile($uploadedFile, $dest, $options);
+        }
+        elseif ($uploadedFile instanceof UploadedFile) {
+            $result = $this->uploadFromSymfonyObject($uploadedFile, $dest, $options);
+        }
+
+        if (isset($result['success']) && $result['success'] === true) {
+            $object = $result['data'][0];
+
+            $dem = [];
+
+            if (str_starts_with($object['mime_type'], 'image')) {
+                $dem = $this->getImageDimession($object['uri']);
+            }
+
+            $file = new File([
+                'uri' => $object['uri'],
+                'filename' => $object['name'],
+                'filesize' => $object['size'],
+                'filemime' => $object['mime_type'],
+                'uid'      => $options['uid'] ?? null,
+                'alt'      => $options['alt'] ?? null,
+                'title'    => $options['title'] ?? null,
+                'description' => $options['description'] ?? null,
+                'width'    => $dem['width'] ?? null,
+                'height'   => $dem['height'] ?? null,
+            ],getAppContainer()->get('database'), getAppContainer()->get('logger'));
+
+            if ( $file->save() ) return $file;
+        }
+
+        return null;
     }
 }

@@ -280,3 +280,7 @@ function app(string $service)
 {
     return getAppContainer()->get($service);
 }
+
+function buildControllerResponse($controller, $method, $request, $route_name, $options) {
+    return call_user_func_array([$controller, $method], [$request, $route_name, $options]);
+}

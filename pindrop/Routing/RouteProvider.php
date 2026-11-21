@@ -244,9 +244,12 @@ class RouteProvider
 
             \appEvents()->invokeEvents(Events::RESPONSE_BEFORE_SEND, ['response' => &$response]);
 
+            
+
             if ($response instanceof Response) {
                 $response = $this->injectCsrfToken($response, $csrfToken);
                 $response = $this->applyStandardHeaders($response, $request);
+                
             }
 
             $response->send();

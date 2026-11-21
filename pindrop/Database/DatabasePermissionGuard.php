@@ -138,6 +138,10 @@ class DatabasePermissionGuard
             return;
         }
 
+        if ((int)$_ENV['DB_ALLOWED_NONE_ADMIN_CORE_TABLES_READ'] === 1) {
+            return;
+        }
+
         throw new DatabasePermissionException(
             "Role '$role' cannot perform '$op' on core table '$table'. "
             . "Only super_admin or system context may access core tables.",
